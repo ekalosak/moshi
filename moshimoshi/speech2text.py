@@ -1,11 +1,11 @@
-""" This module abstracts specific speech2text implementations for use in the ChitChat app. """
+""" This module abstracts specific speech2text implementations for use in the MoshiMoshi app. """
 import os
 
 from loguru import logger
 import speech_recognition as sr
 
-LANGUAGE = os.getenv('CHAT_LANGUAGE', 'en-US')
-RECOGNIZER = os.getenv('CHAT_RECOGNIZER', 'sphinx')
+LANGUAGE = os.getenv('MOSHI_LANGUAGE', 'en-US')
+RECOGNIZER = os.getenv('MOSHI_RECOGNIZER', 'sphinx')
 
 def listen() -> str:
     """ Get user dialogue from the microphone and transcribe it into text. """
@@ -17,6 +17,6 @@ def listen() -> str:
     if RECOGNIZER == 'sphinx':
         recognized_audio = r.recognize_sphinx(audio, language=LANGUAGE)
     else:
-        raise ValueError(f"Unknown CHAT_RECOGNIZER: {RECOGNIZER}")
+        raise ValueError(f"Unknown MOSHI_RECOGNIZER: {RECOGNIZER}")
     logger.info(f"Heard:\n{recognized_audio}")
     return recognized_audio

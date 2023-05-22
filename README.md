@@ -9,10 +9,14 @@ python -m moshimoshi
 
 ## Environment variables
 
+### Required
+
+- `OPENAI_API_KEY`
+
 ### Optional
 
-- `CHAT_LANGUAGE` default `en-US`
-- `CHAT_RECOGNIZER` default `sphinx`
+- `MOSHI_LANGUAGE` default `en-US`
+- `MOSHI_RECOGNIZER` default `sphinx`
 
 # Development
 These instructions are for developers looking to work on this project.
@@ -47,3 +51,11 @@ brew install portaudio
 ```sh
 pip install -r requirements.txt
 ```
+
+## Notes
+
+### pytts3
+- Problem: Getting a segfault when initializing the speech engine: `SIGSEGV (Address boundary error)`.
+- Diagnosis: `pyobjc` bug for `9.1.x`.
+- Solution: `pip install pyobjc==9.0.1`
+- Source: https://github.com/nateshmbhat/pyttsx3/issues/274#issuecomment-1544904124

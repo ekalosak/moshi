@@ -1,6 +1,8 @@
 # chitchat
+Have a conversation in another language, at your level.
 
 # Development
+These instructions are for developers looking to work on this project.
 
 ## Setup
 
@@ -13,8 +15,8 @@ eval "$(pyenv virtualenv-init -)"
 
 Make venv:
 ```sh
-pyenv virtualenv 3.10.9 (cat .pyenv) && \
-  pyenv activate (cat .pyenv)
+pyenv virtualenv 3.10-dev cc310 && \
+  pyenv activate cc310
 ```
 
 ### Pip
@@ -22,7 +24,12 @@ pyenv virtualenv 3.10.9 (cat .pyenv) && \
 python3.10 -m pip install --upgrade pip
 ```
 
-### Install Poetry
+### Install portaudio
 ```sh
-pip install poetry
+brew install portaudio
+```
+
+### Install requirements
+```sh
+pip install -r requirements.txt
 ```

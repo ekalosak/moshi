@@ -1,7 +1,10 @@
 # TODO
 
 ## Technical:
-- Refactor the main module and prompt into a main class.
+- Multiple languages
+  - EN, ES, JP out of the box.
+- More than a single loop.
+  - Refactor the main module and prompt into a main class.
 
 ## Product
 - Record conversations.

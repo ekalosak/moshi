@@ -1,10 +1,24 @@
-# chitchat
+# 🧑💬🤖 moshimoshi
 Have a conversation in another language, at your level.
+
+# Usage
+After setting up, run:
+```sh
+python -m moshimoshi
+```
+
+## Environment variables
+
+### Optional
+
+- `CHAT_LANGUAGE` default `en-US`
+- `CHAT_RECOGNIZER` default `sphinx`
 
 # Development
 These instructions are for developers looking to work on this project.
 
 ## Setup
+Built using pip and pyenv.
 
 ### Venv
 Start pyenv:
@@ -15,8 +29,8 @@ eval "$(pyenv virtualenv-init -)"
 
 Make venv:
 ```sh
-pyenv virtualenv 3.10-dev cc310 && \
-  pyenv activate cc310
+pyenv virtualenv 3.10-dev mm310 && \
+  pyenv activate mm310
 ```
 
 ### Pip

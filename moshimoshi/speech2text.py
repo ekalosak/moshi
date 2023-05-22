@@ -7,7 +7,8 @@ import speech_recognition as sr
 LANGUAGE = os.getenv('CHAT_LANGUAGE', 'en-US')
 RECOGNIZER = os.getenv('CHAT_RECOGNIZER', 'sphinx')
 
-def listen():
+def listen() -> str:
+    """ Get user dialogue from the microphone and transcribe it into text. """
     r = sr.Recognizer()
     with sr.Microphone() as source:
         logger.info("Listening...")

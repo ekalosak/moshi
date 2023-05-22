@@ -1,5 +1,5 @@
 [project]
-name = "chitchat"
+name = "moshimoshi"
 version = "23.5.0"
 requires-python = ">=3.7"
 description = "Have a conversation in a new language, at your level."
@@ -8,4 +8,4 @@ license = "MIT"
 readme = "README.md"
 
 [project.scripts]
-chitchat = "chitchat.main"
+moshimoshi = "moshimoshi.main"

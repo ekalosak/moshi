@@ -24,12 +24,12 @@ pyenv virtualenv 3.10-dev cc310 && \
 python3.10 -m pip install --upgrade pip
 ```
 
-### Install portaudio
+### Install system dependencies
 ```sh
 brew install portaudio
 ```
 
-### Install requirements
+### Install Python requirements
 ```sh
 pip install -r requirements.txt
 ```

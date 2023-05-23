@@ -21,32 +21,41 @@ if MODEL not in _models:
     raise ValueError(f"Invalid OPENAI_MODEL: {MODEL}\nMust be one of: {_models}")
 logger.success(f"Using OpenAI model: {MODEL}")
 
-PROMPT = """PROMPT:
+PROMPT = """
+# Task summary
 This dialogue is intended to help the human participant learn a language through conversation. Respond to the
 conversation as if you were having a normal chat at a bar or across a table from your partner. Pay special attention to
 the human participant's skill with the language and tailor your responses to that level of skill.
 
-Example input:
+# Constraints
+1. Be sure to only reply with one response at a time; do not include additional user or ai responses beyond your first.
+
+# Example
+## Input
 user: Hola, me llamo Juan.
-assistant: Hola Juan, me llamo Rosa. ¿Como estas?
+ai: Hola Juan, me llamo Rosa. ¿Como estas?
 user: estoy bien. ¿y tu?
 
-Expected output:
+## Output
 assistant: Yo estoy bien tambien. ¿De donde eres?
 
-DIALOGUE:
+# Dialogue:
 user: """
 
 def _cleanup(chat_completion: str) -> str:
     """ Remove prompt artifacts from the response. """
-    result = chat_completion
-    if chat_completion.startswith('assistant: '):
-        result = chat_completion.split('assistant: ')[1]
-    return result
+    logger.debug('Cleaning the AI response...')
+    if chat_completion.startswith('ai: '):
+        chat_completion = chat_completion.split('ai: ')[1]
+    if 'user: ' in chat_completion:
+        chat_completion = chat_completion.split('user: ')[0]
+    chat_completion.replace('\n', '')
+    logger.debug('AI response cleaned!')
+    return chat_completion
 
 def respond(user_dialogue: str) -> str:
     """ Use the AI language model to create a conversational response to the user dialogue. """
-    content = PROMPT + user_dialogue
+    content = PROMPT + user_dialogue + '\nai: '
     message = {
         "role": "user",
         "content": content,

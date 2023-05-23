@@ -9,7 +9,8 @@ logger.transcript = lambda x: logger.log('TRANSCRIPT', x)
 @logger.catch
 def main():
     logger.info('Starting MoshiMoshi...')
-    text2speech.say("Welcome to moshi moshi, please start your conversation.")
+    text2speech.say("Start")
+    # text2speech.say("Welcome to moshi moshi, please start your conversation.")
     while 1:
         logger.debug("Getting user_dialogue...")
         user_dialogue: str = speech2text.listen()

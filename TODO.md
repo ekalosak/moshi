@@ -1,5 +1,10 @@
 # TODO
 
+## In progress:
+- Get the es-MX pocketsphinx model working
+  - `/Users/eric/.pyenv/versions/cc310/lib/python3.10/site-packages/speech_recognition/pocketsphinx-data/en-MX`
+  - See NOTES.md
+
 ## Technical:
 - Multiple languages
   - EN, ES, JP out of the box.

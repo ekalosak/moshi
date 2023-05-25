@@ -29,13 +29,19 @@ brew install portaudio
 
 Install Python requirements:
 ```sh
-pip install -r requirements.txt
+pip install .
 ```
+This uses the `pyproject.toml`'s specified dependencies.
 
 ## Usage
 After setting up, run:
 ```sh
 python -m moshimoshi
+```
+
+## Docs
+```
+python -m pydoc -b
 ```
 
 # Operations

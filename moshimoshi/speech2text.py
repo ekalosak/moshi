@@ -2,10 +2,7 @@
 import os
 
 from loguru import logger
-import speech_recognition as sr
-
-LANGUAGE = os.getenv('MOSHI_LANGUAGE', 'en-US')
-RECOGNIZER = os.getenv('MOSHI_RECOGNIZER', 'sphinx')
+import openai
 
 logger.debug("Setting up listener...")
 reco = sr.Recognizer()

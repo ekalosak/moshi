@@ -1,11 +1,34 @@
 [project]
 name = "moshimoshi"
 version = "23.5.1"
-requires-python = ">=3.7"
 description = "Have a conversation in a new language, at your level."
-authors = ["Eric Kalosa-Kenyon <helloateric@gmail.com>"]
-license = "MIT"
 readme = "README.md"
+requires-python = ">=3.7"
+license = {text = "MIT"}
+keywords = ["language", "ai", "moshi"]
+authors = [
+  {name = "Eric Kalosa-Kenyon", email = "helloateric@gmail.com"}
+]
+classifiers = [
+  "Development Status :: 2 - Pre-Alpha",
+  "Environment :: Console",
+  "Programming Language :: Python :: 3",
+  "Intended Audience :: Education",
+  "Intended Audience :: End Users/Desktop",
+  "Topic :: Communications",
+  "Topic :: Education",
+]
 
-[project.scripts]
-moshimoshi = "moshimoshi.main"
+dependencies = [
+  "loguru",
+  "openai",
+  "pyaudio",
+  "pyttsx3",
+]
+
+[project.urls]
+Homepage = "https://github.com/ekalosak/moshimoshi/tree/main"
+Repository = "https://github.com/ekalosak/moshimoshi.git"
+
+[tool.setuptools]
+packages = ["moshimoshi"]

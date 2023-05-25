@@ -7,6 +7,8 @@ import textwrap
 from loguru import logger
 import openai
 
+from moshimoshi.text2speech import LANGUAGES
+
 logger.info("Looking for OpenAI API key...")
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 if OPENAI_API_KEY is None:
@@ -65,11 +67,11 @@ def _cleanup(chat_completion: str) -> str:
     return chat_completion
 
 def _recognize_language(language: str) -> str:
-    for lang in text2speech.LANGUAGES:
+    for lang in LANGUAGES:
         if lang in language:
             logger.debug(f"Recognized language '{lang}' from completion '{language}'")
             return lang
-    raise ValueError(f"Language '{language}' not recognized from languages {text2speech.LANGUAGES}")
+    raise ValueError(f"Language '{language}' not recognized from languages {LANGUAGES}")
 
 def _parse_completion(raw_chat_completion: str) -> tuple[str, str]:
     """ Parse the chat completion into a language and a cleaned chat. """

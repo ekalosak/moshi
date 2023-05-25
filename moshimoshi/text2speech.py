@@ -32,6 +32,7 @@ def _change_language(language: str):
 
 def say(utterance: str, language='en-scotland'):
     """ Convert an utterance of natural language into audio and play the audio. This is a blocking call. """
+    _change_language(language)
     logger.info("Speaking...")
     logger.debug(f"Saying: {textwrap.shorten(utterance, 24)}")
     engine.say(utterance)

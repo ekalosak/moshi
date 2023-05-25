@@ -56,7 +56,9 @@ python -m pydoc -b
 
 - `MOSHI_RECOGNIZER` default `whisper-api`
   - Allowed values: `whisper-api`, `sphinx`
-- `MOSHI_LANGUAGE` default not set; required when using `sphinx` recognizer;
-  - Allowed values: `en-US`;
+- `MOSHI_LANGUAGE` default not set
+  - Required when using `sphinx` recognizer
+  - Not required when using `whisper-api` recognizer
+  - Allowed values: `en-US`
 
 The app should quit at startup with an informative error if it's misconfigured.

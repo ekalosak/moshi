@@ -23,7 +23,9 @@ dependencies = [
   "loguru",
   "openai",
   "pyaudio",
+  "pyobjc==9.0.1",  # https://github.com/nateshmbhat/pyttsx3/issues/274#issuecomment-1544904124
   "pyttsx3",
+  "SpeechRecognition",
 ]
 
 [project.urls]

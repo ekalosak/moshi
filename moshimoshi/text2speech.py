@@ -2,7 +2,7 @@
 import textwrap
 
 from loguru import logger
-import pyttsx3
+import pyttsx3  # TODO use whisper tts
 
 logger.debug(f"Setting up speech engine...")
 engine = pyttsx3.init()
@@ -11,8 +11,10 @@ logger.success("Speech engine set up!")
 
 def say(utterance: str):
     """ Convert an utterance of natural language into audio and play the audio. This is a blocking call. """
+    logger.info("Speaking...")
     logger.debug(f"Saying: {textwrap.shorten(utterance, 24)}")
     engine.say(utterance)
     logger.debug('\tevent queued...')
     engine.runAndWait()
     logger.debug('Finished saying utterance.')
+    logger.info("Spoke.")

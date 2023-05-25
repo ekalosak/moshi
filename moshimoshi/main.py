@@ -1,14 +1,14 @@
 """ This module provides an entrypoint for the MoshiMoshi app. """
 from loguru import logger
 
-from moshimoshi import conversation, text2speech, speech2text
-
-logger.level("TRANSCRIPT", no=25, color="<k><W><u>")
+logger.level("TRANSCRIPT", no=25, color="<y><W><u>")
 logger.transcript = lambda x: logger.log('TRANSCRIPT', x)
+
+logger.info('Loading MoshiMoshi...')
+from moshimoshi import conversation, text2speech, speech2text
 
 @logger.catch
 def main():
-    logger.info('Starting MoshiMoshi...')
     text2speech.say("Start")
     # text2speech.say("Welcome to moshi moshi, please start your conversation.")
     while 1:
@@ -26,5 +26,6 @@ def main():
         text2speech.say(ai_dialogue)
         logger.debug("Said!")
         logger.warning("Quitting after one loop for development purposes...")
+        # TODO add the user and ai dialogue to the prompt
         break
     logger.info('Done chatting!')

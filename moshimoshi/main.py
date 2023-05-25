@@ -24,12 +24,15 @@ def main():
         logger.transcript(f'user:\n{user_dialogue}')
         assert isinstance(user_dialogue, str)
         logger.debug("Getting ai_dialogue...")
-        ai_dialogue: str = conversation.respond(user_dialogue)
+        response: conversation.Response = conversation.respond(user_dialogue)
+        ai_dialogue: str = response.chat_completion
+        language: str = response.language
         logger.debug(f"Got ai_dialogue:\n{ai_dialogue}")
-        logger.transcript(f'ai:\n{ai_dialogue}')
+        logger.debug(f"Recognized language: {language}")
+        logger.transcript(f'assistant:\n{ai_dialogue}')
         assert isinstance(ai_dialogue, str)
         logger.debug("Saying...")
-        text2speech.say(ai_dialogue)
+        text2speech.say(ai_dialogue, language)
         logger.debug("Said!")
         logger.warning("Quitting after one loop for development purposes...")
         # TODO add the user and ai dialogue to the prompt

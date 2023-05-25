@@ -18,5 +18,6 @@
 - Give vocab stats etc.
 - Determine parts of speech where the user has difficulty.
   - Prompt AI to help user learn these things.
+- Translate conversation to user's native language when finished.
 - Shorter time from finishing utterance to listening for response.
 - Embed conversations for knowledgebase search.

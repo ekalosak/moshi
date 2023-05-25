@@ -37,7 +37,6 @@ def listen() -> str:
 
 def _recognize(audio: sr.audio.AudioData) -> str:
     logger.debug("START _recognize")
-    logger.debug(f"type(audio): {type(audio)}")
     if RECOGNIZER == Recognizer.SPHINX:
         recognized_audio = rec.recognize_sphinx(audio, language=LANGUAGE)
     elif RECOGNIZER == Recognizer.WHISPER_API:

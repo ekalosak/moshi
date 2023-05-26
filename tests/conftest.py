@@ -1,4 +1,5 @@
 from pathlib import Path
+from unittest import mock
 
 import pytest
 import speech_recognition as sr
@@ -20,3 +21,8 @@ def audio(audio_file):
     with sr.AudioFile(str(audio_file)) as src:
         audio = rec.record(src)
     return audio
+
+@pytest.fixture
+def mock_rec_listen(audio):
+    with mock.patch('moshimoshi.listen.rec.listen', lambda _: audio):
+        yield

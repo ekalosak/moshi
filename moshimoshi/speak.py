@@ -31,7 +31,7 @@ def _change_language(language: Language):
     engine.setProperty('voice', voice.id)
 
 @util.timed
-def say(utterance: str, language='en-scotland'):
+def say(utterance: str, language: Language=Language.EN_US):
     """ Convert an utterance of natural language into audio and play the audio. This is a blocking call. """
     logger.debug(f"utterance: {textwrap.shorten(utterance, 64)}")
     _change_language(language)

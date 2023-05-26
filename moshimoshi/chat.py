@@ -1,6 +1,6 @@
 """ This module implements the core Chatter class that glues speech recognition, text to speech, and chat completion
 capabilities together. """
-import pprint
+from pprint import pformat
 
 from loguru import logger
 import pyfiglet
@@ -40,7 +40,7 @@ class Chatter:
     @util.timed
     def _say_assistant_response(self):
         """ Play the assistant response text as audible language. """
-        say.audio_from_text(self.assistant_utterance.content)
+        speak.audio_from_text(self.assistant_utterance.content)
 
     @util.timed
     def _detect_language(self):
@@ -54,7 +54,7 @@ class Chatter:
     @property
     def user_utterance(self) -> str:
         """ The latest user utterance. """
-        logger.trace("\n" + pprint.pformat(self.messages))
+        logger.trace("\n" + pformat(self.messages))
         for msg in self.messages[::-1]:
             if msg.role == Role.USR:
                 return msg.content

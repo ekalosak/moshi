@@ -14,9 +14,17 @@ logger.info(f"Using model: {MODEL}")
 
 logger.success("loaded")
 
+def _payload_from_messages(messages: list[Message]) -> list[dict[str, str]]:
+    """ Convert a list of messages into a payload for the messages arg of openai.ChatCompletion.create() """
+    payload = []
+    for msg in messages:
+        msg_ = {'role': msg.role.value, 'content': msg.content}
+        payload.append(msg_)
+    return payload
+
 def completion_from_assistant(messages: list[Message]) -> str:
     """ Get the conversational response from the LLM. """
-    payload = [asdict(msg) for msg in messages]
+    payload = _payload_from_messages(messages)
     logger.debug(f"payload:\n{pformat(payload)}")
     response = openai.ChatCompletion.create(
         model=MODEL,

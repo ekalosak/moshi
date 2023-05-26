@@ -54,5 +54,4 @@ python -m pydoc -b
 
 ### Optional
 
-- `MOSHI_DEBUG` default not set; when enabled expect the bumpers to go down.
 - `OPENAI_MODEL` default `gpt-3.5-turbo`

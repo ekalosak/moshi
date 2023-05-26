@@ -14,11 +14,12 @@ def _language_dict() -> dict[str, str]:
     langd = {}
     for voice in engine.getProperty('voices'):
         for lang in voice.languages:
-            langd[lang.replace("_", "").upper()] = lang
+            langd[lang.replace("-", "_").upper()] = lang
     return langd
 
 Language = Enum('Language', _language_dict())
 logger.info(f"Supported languages: {set(lang.value[:2] for lang in Language)}")
+logger.trace(Language.__members__)
 
 logger.success("loaded")
 

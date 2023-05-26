@@ -1,12 +1,15 @@
 # TODO
 
 ## In progress:
-- [P0] Backoffs for API rate limiting.
 
 ## Technical:
-- [P1] more than a single loop.
-- [P4] print athe ascii characters for the message contents in the response.choices.message.content
+- [P0] Allow usage of text-davinci-003 not just gpt-3.5
+  - Replicate by `OPENAI_MODEL=text-davinci-003 pytest tests/test_lang`
+- [P1] restore `python -m moshimoshi` functionality
+- [P2] more than a single loop.
+- [P3] Backoffs for API rate limiting.
 - [P3] try `max_tokens` in the `lang.recognize_language`
+- [P4] print athe ascii characters for the message contents in the response.choices.message.content
 
 ## Product
 - Record conversations.

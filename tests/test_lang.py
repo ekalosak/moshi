@@ -36,6 +36,6 @@ def test_recognize_language():
         ),
     ]
 )
-@pytest.mark.xfail(reason="Rate limits from OpenAI")
+@pytest.mark.xfail(reason="Rate limits from OpenAI", raises=ValueError)  # TODO replace with openaiRaiser
 def test_recognize_language_openai(sentence, language):
     assert lang.recognize_language(sentence) == language

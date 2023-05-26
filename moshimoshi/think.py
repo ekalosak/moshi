@@ -22,17 +22,33 @@ def _payload_from_messages(messages: list[Message]) -> list[dict[str, str]]:
         payload.append(msg_)
     return payload
 
-def completion_from_assistant(messages: list[Message]) -> str:
-    """ Get the conversational response from the LLM. """
+def completion_from_assistant(messages: list[Message], n=1, **kwargs) -> str | list[str]:
+    """ Get the conversational response from the LLM.
+    Args:
+        n: if > 1, returns a list of responses.
+        kwargs: passed directly to the OpenAI
+    Details on args:
+        https://platform.openai.com/docs/api-reference/chat/create
+    """
+    assert n > 0 and isinstance(n, int)
+    if n > 5:
+        logger.warning(f"Generating many responses at once can be costly: n={n}")
     payload = _payload_from_messages(messages)
     logger.debug(f"payload:\n{pformat(payload)}")
     response = openai.ChatCompletion.create(
         model=MODEL,
         messages=payload,
+        n=n,
+        **kwargs,
     )
     logger.debug(f"response:\n{pformat(response)}")
-    choice = response.choices[0]
-    if reason := choice['finish_reason'] != "stop":
-        logger.warning(f"Got finish_reason: {reason}")
-    logger.debug(f"choice: {choice}")
-    return choice.message.content
+    msg_contents = []
+    for choice in response.choices:
+        if reason := choice['finish_reason'] != "stop":
+            logger.warning(f"Got finish_reason: {reason}")
+        msg_contents.append(choice.message.content)
+    if n == 1:
+        assert len(msg_contents) == 1
+        return msg_contents[0]
+    else:
+        return msg_contents

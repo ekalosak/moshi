@@ -10,6 +10,8 @@
 ## Technical:
 - More than a single loop.
   - Refactor the main module and prompt into a main class.
+- Backoffs for API rate limiting.
+- Print athe ascii characters for the message contents in the response.choices.message.content
 
 ## Product
 - Record conversations.

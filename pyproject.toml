@@ -39,4 +39,5 @@ packages = ["moshimoshi"]
 [tool.pytest.ini_options]
 markers = [
   "openai: marks tests as requiring openai queries",
+  "speak: marks tests as requiring access to a speaker",
 ]

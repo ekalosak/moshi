@@ -54,14 +54,5 @@ python -m pydoc -b
 
 ### Optional
 
-- `MOSHI_DEBUG` default not set;
-  - When set to anything, expect the developer experience.
-- `MOSHI_RECOGNIZER` default `whisper-api`
-  - Allowed values: `whisper-api`, `sphinx`
-- `MOSHI_LANGUAGE` default not set
-  - Required when using `sphinx` recognizer
-  - Not required when using `whisper-api` recognizer
-  - Allowed values: `en-US`
+- `MOSHI_DEBUG` default not set; when enabled expect the bumpers to go down.
 - `OPENAI_MODEL` default `gpt-3.5-turbo`
-
-The app should quit at startup with an informative error if it's misconfigured.

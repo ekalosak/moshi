@@ -39,6 +39,11 @@ After setting up, run:
 python -m moshimoshi
 ```
 
+## Tests
+```bash
+pytest -v -m 'not speak and not openai'
+```
+
 ## Docs
 ```
 python -m pydoc -b

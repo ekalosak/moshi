@@ -14,7 +14,7 @@ def test_language_enum():
 def test_get_language_from_utterance():
     assert lang._get_language_from_utterance("The language code for English is `en_US`") == Language.EN_US
 
-@mock.patch('moshimoshi.lang.think.completion_from_assistant', lambda _: "asdfqwerfr_CAQWETRASDF")
+@mock.patch('moshimoshi.lang.think.completion_from_assistant', lambda *a, **kw: ["asdfqwerfr_CAQWETRASDF"])
 def test_recognize_language():
     assert lang.recognize_language("Je ne parle pas Francais.") == Language.FR_CA
 
@@ -36,6 +36,6 @@ def test_recognize_language():
         ),
     ]
 )
-
+@pytest.mark.xfail(reason="Rate limits from OpenAI")
 def test_recognize_language_openai(sentence, language):
     assert lang.recognize_language(sentence) == language

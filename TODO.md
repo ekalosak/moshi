@@ -1,17 +1,12 @@
 # TODO
 
 ## In progress:
-- Multiple languages
-  - EN, ES, JP out of the box.
-  * Use whisper
-    - DONE: recognize multiple language
-    - TODO: speak multiple languages
+- [P0] Backoffs for API rate limiting.
 
 ## Technical:
-- More than a single loop.
-  - Refactor the main module and prompt into a main class.
-- Backoffs for API rate limiting.
-- Print athe ascii characters for the message contents in the response.choices.message.content
+- [P1] more than a single loop.
+- [P4] print athe ascii characters for the message contents in the response.choices.message.content
+- [P3] try `max_tokens` in the `lang.recognize_language`
 
 ## Product
 - Record conversations.

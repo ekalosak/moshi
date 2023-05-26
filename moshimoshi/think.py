@@ -22,7 +22,7 @@ def _payload_from_messages(messages: list[Message]) -> list[dict[str, str]]:
         payload.append(msg_)
     return payload
 
-def completion_from_assistant(messages: list[Message], n=1, **kwargs) -> str | list[str]:
+def completion_from_assistant(messages: list[Message], n: int=1, **kwargs) -> str | list[str]:
     """ Get the conversational response from the LLM.
     Args:
         n: if > 1, returns a list of responses.

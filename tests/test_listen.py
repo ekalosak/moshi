@@ -10,10 +10,11 @@ def test_get_audio_from_mic(audio):
     assert audio == raudio
 
 @pytest.mark.openai
-def test_transcribe_audio(audio):
-    transcription = _transcribe_audio(audio)
+def test_transcribe_audio_opeani(audio):
+    transcription = listen._transcribe_audio(audio)
     assert transcription == "test"
 
 @mock.patch('moshimoshi.listen.rec.recognize_whisper_api', lambda _: "test")
 def test_transcribe_audio(audio):
-    transcription = _transcribe_audio(audio)
+    transcription = listen._transcribe_audio(audio)
+    assert transcription == "test"

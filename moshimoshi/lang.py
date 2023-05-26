@@ -1,10 +1,12 @@
 """ This module provides various language utilities. """
 from enum import Enum
+import pprint
 
 from loguru import logger
 import pyttsx3
 
 from moshimoshi.base import Role, Message
+from moshimoshi import think
 
 engine = pyttsx3.init()
 
@@ -28,6 +30,5 @@ def recognize_language(utterance: str) -> Language:
         Message(Role.SYS, f"Valid language codes are: {all_lang_codes}"),
         Message(Role.USR, utterance)
     ]
-    logger.debug(messages)
-    # TODO call openai
-    raise NotImplementedError
+    logger.trace("\n" + pprint.pformat(messages))
+    return think.completion_from_assistant(messages)

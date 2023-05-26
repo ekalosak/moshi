@@ -1,5 +1,7 @@
 """ This module implements the core Chatter class that glues speech recognition, text to speech, and chat completion
 capabilities together. """
+import pprint
+
 from loguru import logger
 import pyfiglet
 
@@ -52,7 +54,8 @@ class Chatter:
     @property
     def user_utterance(self) -> str:
         """ The latest user utterance. """
-        for msg in self.messages.reverse():
+        logger.trace("\n" + pprint.pformat(self.messages))
+        for msg in self.messages[::-1]:
             if msg.role == Role.USR:
                 return msg.content
         raise ValueError("No user utterances in self.messages")
@@ -68,7 +71,7 @@ class Chatter:
     def run(self):
         """ This blocking function runs the core application loop. """
         self.iter = 1
-        logger.log("INSTRUCTION", "\n" + pyfiglet.Figlet(font="mini").renderText("moshi  moshi"))
+        logger.log("INSTRUCTION", "\n" + pyfiglet.Figlet(font="roman").renderText("moshi\nmoshi"))
         while 1:
             logger.debug(f"iter: {self.iter}")
             self._get_user_speech()

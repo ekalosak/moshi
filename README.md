@@ -54,6 +54,8 @@ python -m pydoc -b
 
 ### Optional
 
+- `MOSHI_DEBUG` default not set;
+  - When set to anything, expect the developer experience.
 - `MOSHI_RECOGNIZER` default `whisper-api`
   - Allowed values: `whisper-api`, `sphinx`
 - `MOSHI_LANGUAGE` default not set

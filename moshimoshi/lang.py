@@ -1,0 +1,27 @@
+""" This module provides various language utilities. """
+from enum import Enum
+
+from moshimoshi.base import Role, Message
+
+engine = pyttsx3.init()
+
+def _language_dict() -> dict[str, str]:
+    langd = {}
+    for voice in engine.getProperty('voices'):
+        for lang in voice.languages:
+            langd[lang.replace("_", "").upper()] = lang
+    return langd
+
+Language = Enum('Language', _language_dict())
+logger.debug(Language)
+
+def recognize_language(utterance: str) -> Language:
+    """ Get the language code corresponding to the language detected in the utterance. """
+    all_lang_codes = ", ".join(str(lang.value) for lang in Language)
+    messages = [
+        Message(Role.SYS, "Return the language code corresponding to the language used by the user."),
+        Message(Role.SYS, f"Valid language codes are: {all_lang_codes}"),
+        Message(Role.USR, utterance)
+    ]
+    logger.debug(messages)
+    ... # TODO call openai

@@ -2,34 +2,64 @@
 capabilities together. """
 from loguru import logger
 
-from moshimoshi import conversation, text2speech, speech2text
+from moshimoshi import think, say, listen
+from moshimoshi.base import Message, Role
 
 class Chatter:
+    """ Main class for this app. """
+
     def __init__(self):
-        self.messages = [
-        ]
+        self.messages = [Message(Role.SYS, "Use elementary vocabulary to help a beginner learn a language.")]
         self.language = None
 
+    def _get_user_speech(self):
+        """ Get and transcribe the user's audible speech. """
+        user_dialogue = listen.dialogue_from_mic()
+        message = Message(Role.USR, user_dialogue)
+        logger.debug(message)
+        self.messages.append(message)
+
+    def _get_assistant_response(self):
+        """ Get the chat response from the LLM. """
+        assistant_dialogue = think.completion_from_assistant(self.messages)
+        message = Message(Role.AST, assistant_dialogue)
+        logger.debug(message)
+        self.messages.append(message)
+
+    def _say_assistant_response(self):
+        """ Play the assistant response text as audible language. """
+        say.audio_from_text(self.assistant_utterance.content)
+
+    def _detect_language(self):
+        """ Detect the language the user is speaking. """
+        if self.language:
+            logger.debug(f"Language already detected: {self.language}")
+            return
+        self.language = lang.recognize_language(self.user_utterance)
+        logger.debug(f"Language detected: {self.language}")
+
+    @property
+    def user_utterance(self) -> str:
+        """ The latest user utterance. """
+        for msg in self.messages.reverse():
+            if msg.role == Role.USR:
+                return msg.content
+        raise ValueError("No user utterances in self.messages")
+
+    @property
+    def assistant_utterance(self) -> str:
+        """ The latest assistant utterance. """
+        for msg in self.messages.reverse():
+            if msg.role == Role.AST:
+                return msg.content
+        raise ValueError("No assistant utterances in self.messages")
+
     def run(self):
-        """ Runs the main chat loop: stt->nlp->tts """
+        """ This blocking function runs the core application loop. """
+        logger.info("Starting up...")
         while 1:
-            logger.debug("Getting user_dialogue...")
-            user_dialogue: str = speech2text.listen()
-            logger.debug(f"Got user_dialogue:\n'''\n{user_dialogue}\n'''")
-            logger.transcript(f'user:\n{user_dialogue}')
-            assert isinstance(user_dialogue, str)
-            logger.debug("Getting ai_dialogue...")
-            response: conversation.Response = conversation.respond(user_dialogue)
-            ai_dialogue: str = response.chat_completion
-            language: str = response.language
-            logger.debug(f"Got ai_dialogue:\n{ai_dialogue}")
-            logger.debug(f"Recognized language: {language}")
-            logger.transcript(f'assistant:\n{ai_dialogue}')
-            assert isinstance(ai_dialogue, str)
-            logger.debug("Saying...")
-            text2speech.say(ai_dialogue, language)
-            logger.debug("Said!")
-            logger.warning("Quitting after one loop for development purposes...")
-            # TODO add the user and ai dialogue to the prompt
-            break
+            self._get_user_speech()
+            self._detect_language()
+            self._get_assistant_response()
+            self._say_assistant_response()
         logger.info('Done chatting!')

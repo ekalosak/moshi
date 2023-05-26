@@ -40,7 +40,7 @@ class Chatter:
     @util.timed
     def _say_assistant_response(self):
         """ Play the assistant response text as audible language. """
-        speak.audio_from_text(self.assistant_utterance.content)
+        speak.say(self.assistant_utterance)
 
     @util.timed
     def _detect_language(self):
@@ -63,7 +63,7 @@ class Chatter:
     @property
     def assistant_utterance(self) -> str:
         """ The latest assistant utterance. """
-        for msg in self.messages.reverse():
+        for msg in self.messages[::-1]:
             if msg.role == Role.AST:
                 return msg.content
         raise ValueError("No assistant utterances in self.messages")

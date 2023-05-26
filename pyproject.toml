@@ -35,3 +35,8 @@ Repository = "https://github.com/ekalosak/moshimoshi.git"
 
 [tool.setuptools]
 packages = ["moshimoshi"]
+
+[tool.pytest.ini_options]
+markers = [
+  "openai: marks tests as requiring openai queries",
+]

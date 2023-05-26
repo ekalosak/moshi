@@ -4,7 +4,7 @@
 
 ## Technical:
 - [P0] Allow usage of text-davinci-003 not just gpt-3.5
-  - Replicate by `OPENAI_MODEL=text-davinci-003 pytest tests/test_lang`
+  - Replicate by `OPENAI_MODEL=text-davinci-003 pytest tests/test_lang.py`
 - [P1] restore `python -m moshimoshi` functionality
 - [P2] more than a single loop.
 - [P3] Backoffs for API rate limiting.
@@ -19,3 +19,4 @@
 - Translate conversation to user's native language when finished.
 - Shorter time from finishing utterance to listening for response.
 - Embed conversations for knowledgebase search.
+- Rename to "Moshi"

@@ -11,11 +11,11 @@ logger.success("loaded")
 def timed(f: Callable):
     """ Log timing of a function. """
     @wraps(f)
-    def wrapper(*a, **k):
+    def timer(*a, **k):
         t0 = time()
-        logger.debug(f"START")
+        logger.trace(f"START {f.__name__}")
         res = f(*a, **k)
         td = time() - t0
-        logger.debug(f"END\t{td} sec")
+        logger.trace("END   {}\t{:10.4f} sec".format(f.__name__, td))
         return res
-    return wrapper
+    return timer

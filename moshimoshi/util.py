@@ -6,6 +6,8 @@ from typing import Callable
 
 from loguru import logger
 
+logger.success("loaded")
+
 def timed(f: Callable):
     """ Log timing of a function. """
     @wraps(f)

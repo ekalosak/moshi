@@ -5,8 +5,11 @@ from loguru import logger
 import pyttsx3
 
 from moshimoshi import util
+from moshimoshi.lang import Language
 
 engine = pyttsx3.init()
+
+logger.success("loaded")
 
 class NoVoiceError(Exception):
     """ Raised when a voice can't be found for a particular language. """

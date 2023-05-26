@@ -1,6 +1,9 @@
 """ This module provides various language utilities. """
 from enum import Enum
 
+from loguru import logger
+import pyttsx3
+
 from moshimoshi.base import Role, Message
 
 engine = pyttsx3.init()
@@ -13,7 +16,9 @@ def _language_dict() -> dict[str, str]:
     return langd
 
 Language = Enum('Language', _language_dict())
-logger.debug(Language)
+logger.info(f"Supported languages: {set(lang.value[:2] for lang in Language)}")
+
+logger.success("loaded")
 
 def recognize_language(utterance: str) -> Language:
     """ Get the language code corresponding to the language detected in the utterance. """
@@ -24,4 +29,5 @@ def recognize_language(utterance: str) -> Language:
         Message(Role.USR, utterance)
     ]
     logger.debug(messages)
-    ... # TODO call openai
+    # TODO call openai
+    raise NotImplementedError

@@ -2,6 +2,10 @@
 from dataclasses import dataclass
 from enum import Enum
 
+from loguru import logger
+
+logger.success("loaded")
+
 class Role(str, Enum):
     SYS = "system"
     USR = "user"

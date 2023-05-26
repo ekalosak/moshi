@@ -2,8 +2,10 @@
 capabilities together. """
 from loguru import logger
 
-from moshimoshi import think, say, listen
+from moshimoshi import think, speak, listen
 from moshimoshi.base import Message, Role
+
+logger.success("loaded")
 
 class Chatter:
     """ Main class for this app. """
@@ -11,6 +13,7 @@ class Chatter:
     def __init__(self):
         self.messages = [Message(Role.SYS, "Use elementary vocabulary to help a beginner learn a language.")]
         self.language = None
+        self.iter = None
 
     def _get_user_speech(self):
         """ Get and transcribe the user's audible speech. """
@@ -56,10 +59,10 @@ class Chatter:
 
     def run(self):
         """ This blocking function runs the core application loop. """
-        logger.info("Starting up...")
+        self.iter = 1
         while 1:
+            logger.debug("iter: {self.iter}")
             self._get_user_speech()
             self._detect_language()
             self._get_assistant_response()
             self._say_assistant_response()
-        logger.info('Done chatting!')

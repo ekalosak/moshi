@@ -62,5 +62,6 @@ python -m pydoc -b
   - Required when using `sphinx` recognizer
   - Not required when using `whisper-api` recognizer
   - Allowed values: `en-US`
+- `OPENAI_MODEL` default `gpt-3.5-turbo`
 
 The app should quit at startup with an informative error if it's misconfigured.

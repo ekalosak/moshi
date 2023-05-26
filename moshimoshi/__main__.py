@@ -1,7 +1,13 @@
 """ This module provides an entrypoint for the MoshiMoshi app. """
-from moshimoshi import core
+from loguru import logger
 
-@logger.catch
-def main():
-    chatbot = core.Chatter()
-    chatbot.run()
+from moshimoshi import chat
+
+logger.info("Loading MoshiMoshi...")
+logger.debug('creating chatbot...')
+chatbot = chat.Chatter()
+logger.debug(f"chatbot: {chatbot}")
+logger.success("MoshiMoshi loaded!")
+logger.info("Starting MoshiMoshi...")
+chatbot.run()
+logger.success("Goodbye!")

@@ -7,15 +7,6 @@ import speech_recognition as sr
 
 from moshimoshi import util
 
-class Recognizer(str, Enum):
-    SPHINX = "sphinx"
-    WHISPER_API = "whisper-api"
-
-RECOGNIZER = Recognizer(os.getenv("MOSHI_RECOGNIZER", "whisper-api"))
-LANGUAGE = os.getenv("MOSHI_LANGUAGE")
-if LANGUAGE and RECOGNIZER != Recognizer.SPHINX:
-    logger.warning(f"Env var MOSHI_LANGUAGE ignored when MOSHI_RECOGNIZER is not sphinx, got: {LANGUAGE} {RECOGNIZER}")
-
 rec = sr.Recognizer()
 mic = sr.Microphone()
 
@@ -29,12 +20,7 @@ def _get_audio_from_mic() -> sr.audio.AudioData:
 @util.timed
 def _transcribe_audio(audio: sr.audio.AudioData) -> str:
     """ Transcribe audio (sound waves) into text (natural language). """
-    if RECOGNIZER == Recognizer.SPHINX:
-        return rec.recognize_sphinx(audio, language=LANGUAGE)
-    elif RECOGNIZER == Recognizer.WHISPER_API:
-        return rec.recognize_whisper_api(audio)
-    else:
-        raise ValueError(f"Unrecognized MOSHI_RECOGNIZER: {MOSHI_RECOGNIZER}")
+    return rec.recognize_whisper_api(audio)
 
 @util.timed
 def dialogue_from_mic() -> str:

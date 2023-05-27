@@ -4,6 +4,7 @@ from enum import Enum
 import os
 from pprint import pformat
 import textwrap
+from typing import NewType
 
 from loguru import logger
 import openai

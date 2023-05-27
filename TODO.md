@@ -10,6 +10,7 @@
     - include in the final report, but make sure it doesn't make it into the transcript
 - [P3] record conversations en toto; save to disk upon exit
 - [P3] generate a "teacher's report"
+- [P3] saying "quit quit quit" quits; keyboard interrupt quits;
 - [P4] thread the openai calls; add a keepalive debug message
 - [P4] print athe ascii characters for the message contents in the response.choices.message.content
 - [P4] backoffs for API rate limiting.

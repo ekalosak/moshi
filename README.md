@@ -3,6 +3,13 @@ Have a conversation in another language, at your level.
 
 # Development
 
+## Development docs
+Project status, design, and ticketing system are in these docs:
+- `TODO.md` has the most concrete tasks, from statements about product features to concrete technical tickets.
+- `DESIGN.md` has the overall product design.
+- `NOTES.md` has developer notes regarding technical decisions, particularly icky bugs, etc.
+- `planning/` has other notes and content, usually linked to by the top level .md docs.
+
 ## Setup
 
 Start pyenv:

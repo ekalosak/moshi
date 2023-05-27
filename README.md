@@ -50,7 +50,7 @@ Note that the `setup.cfg` puts the `.egg-info` into the local `./egg` directory;
 ## Usage
 After setting up, run:
 ```sh
-python -m moshimoshi
+LOGURU_LEVEL=INFO OPENAI_MODEL="text-davinci-003" python -m moshimoshi
 ```
 
 ## Tests

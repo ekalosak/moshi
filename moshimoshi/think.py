@@ -34,7 +34,11 @@ class Model(str, Enum):
     TEXTADA001 = "text-ada-001"
 
 
-MODEL = Model(os.getenv("OPENAI_MODEL", "gpt-3.5-turbo"))
+try:
+    _MODEL = os.getenv("OPENAI_MODEL", "gpt-3.5-turbo")
+    MODEL = Model(_MODEL)
+except ValueError:
+    logger.error(f"Invalid OPENAI_MODEL={_MODEL} please select one of: {[m.value for m in Model]}")
 logger.info(f"Using model: {MODEL}")
 
 logger.success("loaded")

@@ -23,6 +23,11 @@ Plugin system allows for multiple teaching modules, each with their own target.
     - beginner 12 week course
     - basic vocabulary and grammar modules
 
+# Etc. features
+- Embed conversations for knowledgebase search.
+    - Allows assistant to call back to previous conversations.
+- Translate conversation to user's native language when finished.
+
 # Privacy
 """
 The only user data I collect is your conversation transcripts. Voice recordings are deleted at the end of each session.

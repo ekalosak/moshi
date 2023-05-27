@@ -1,11 +1,10 @@
 # TODO
 
 ## In progress:
-- [P0] [MM-01] speak in the detected language
-- [P1] stop clipping the responses
+- [P2] clean assistant responses of the "user: ", "Assistant: " etc. pieces
 
 ## Tickets
-- [P2] clean assistant responses of the "user: ", "Assistant: " etc. pieces
+- [P1] stop clipping the responses; it appears that `max_tokens` is being used or something.
 - [P3] detect the AI responding that it doesn't understand
     - include in the final report, but make sure it doesn't make it into the transcript
 - [P3] record conversations en toto; save to disk upon exit
@@ -13,21 +12,19 @@
 - [P3] saying "quit quit quit" quits; keyboard interrupt quits;
 - [P4] prefer female language in `_get_voice_for_language`
 - [P4] thread the openai calls; add a keepalive debug message
-- [P4] print athe ascii characters for the message contents in the response.choices.message.content
 - [P4] backoffs for API rate limiting.
     - openai.error.RateLimitError
+- [P5] Rename to "Moshi"
 
 ## Bugs
-- Sometimes response (using davinci-003) is a translation
-    - How to make sure the response is in the target language?
-        - Perhaps inject a system line with the language code?
+- Sometimes chat response is completely empty
+- Sometimes tts hangs for a long time after utterance
 
 ## Product
 - Plugins:
     - Plugin system design in DESIGN.md
     - Create a prompt alteration that injects a text article for discussion (story, news, etc.)
 - Curricula:
-    - Research and design a theory of curriculum
     - Grammar:
         - simple sentence structure
         - basic prepositions
@@ -38,14 +35,18 @@
         - animals
 - Determine parts of speech where the user has difficulty.
   - Prompt AI to help user learn these things.
-- Translate conversation to user's native language when finished.
-- Shorter time from finishing utterance to listening for response.
-- Embed conversations for knowledgebase search.
-- Rename to "Moshi"
+
+## Backlog
+- [P4] print athe ascii characters for the message contents in the response.choices.message.content
 
 # DONE
 
 ## 23.5.3
+- [P0] [BUG-01] sometimes response (using davinci-003) is a translation
+    - How to make sure the response is in the target language?
+        - Perhaps inject a system line with the language code?
+        - ^ This worked, see associated commit's changes to chat.py::Chatter.__init__()
+- [P0] [FEAT-01] speak in the detected language
 - [P1] restore `python -m moshimoshi` functionality; quasi-works
 - [P1] __eq__ for Language based on lang not region
 - [P2] more than a single loop.

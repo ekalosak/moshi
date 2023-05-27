@@ -24,7 +24,11 @@ class Chatter:
         self.messages = [
             Message(
                 Role.SYS,
-                "Use elementary vocabulary to help a beginner learn a language.",
+                "You are a conversational partner for helping language learners practice spoken language.",
+            ),
+            Message(
+                Role.SYS,
+                "Do not provide a translation. Respond in the language the user speaks.",
             )
         ]
         self.language = None

@@ -11,6 +11,7 @@ from moshimoshi import lang, listen, speak, think, util
 from moshimoshi import Message, Role
 
 logger.level("INSTRUCTION", no=38, color="<light-yellow><bold>")
+logger.level("SPLASH", no=39, color="<light-yellow><bold>")
 logger.success("loaded")
 
 MAX_CHAT_LOOPS = int(os.getenv("MOSHI_MAX_LOOPS", 0))
@@ -84,14 +85,14 @@ class Chatter:
     def _hello(self):
         """ Print the hello splash. """
         logger.log(
-            "INSTRUCTION",
+            "SPLASH",
             "\n" + pyfiglet.Figlet(font="roman").renderText("moshi\nmoshi"),
         )
 
     def _bye(self):
         """ Print the goodbye splash. """
         logger.log(
-            "INSTRUCTION",
+            "SPLASH",
             "\n" + pyfiglet.Figlet(font="roman").renderText("bye"),
         )
 

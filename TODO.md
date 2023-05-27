@@ -9,7 +9,11 @@
     - include in the final report, but make sure it doesn't make it into the transcript
 - [P3] record conversations en toto; save to disk upon exit
 - [P3] generate a "teacher's report"
-- [P3] saying "quit quit quit" quits; keyboard interrupt quits;
+- [P3] Interrupt system
+    - [P3] saying "quit quit quit" quits;
+    - [P3] saying "help help help" prints the help text;
+- [P3] saying "I don't understand" or similar should cause the model to provide a translation
+    - Also, pause and ask user to press space to continue
 - [P4] prefer female language in `_get_voice_for_language`
 - [P4] thread the openai calls; add a keepalive debug message
 - [P4] backoffs for API rate limiting.
@@ -19,6 +23,8 @@
 ## Bugs
 - Sometimes chat response is completely empty
 - Sometimes tts hangs for a long time after utterance
+- Seeing "Got finish reason: True" as a warning in logs
+    - `moshimoshi.think:_chat_completion:102`
 
 ## Product
 - Plugins:
@@ -51,6 +57,7 @@
 - [P1] __eq__ for Language based on lang not region
 - [P2] more than a single loop.
 - [P3] try `max_tokens` in the `lang.recognize_language`
+- [p3] keyboard interrupt quits gracefully.
 
 ## 23.5.2
 

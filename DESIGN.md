@@ -23,6 +23,22 @@ Plugin system allows for multiple teaching modules, each with their own target.
     - beginner 12 week course
     - basic vocabulary and grammar modules
 
+### Grammar
+
+### Vocabulary
+
+### Culture
+
+### Idioms
+
+### Other
+- History
+- Science
+- Pop culture
+- Cooking
+- Business
+- Dating
+
 # Etc. features
 - Embed conversations for knowledgebase search.
     - Allows assistant to call back to previous conversations.

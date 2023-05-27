@@ -36,7 +36,7 @@ This uses the `pyproject.toml`'s specified dependencies.
 For a development installation, use the `-e` flag:
 ```sh
 mkdir egg && \
-    pip install -e .
+    pip install -e .[dev,test]
 ```
 Note that the `setup.cfg` puts the `.egg-info` into the local `./egg` directory; you have to create the `egg` dir first.
 

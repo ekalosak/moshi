@@ -18,7 +18,6 @@ classifiers = [
   "Topic :: Communications",
   "Topic :: Education",
 ]
-
 dependencies = [
   "loguru",
   "openai",
@@ -27,6 +26,16 @@ dependencies = [
   "pyobjc==9.0.1",  # https://github.com/nateshmbhat/pyttsx3/issues/274#issuecomment-1544904124
   "pyttsx3",
   "SpeechRecognition",
+]
+
+[project.optional-dependencies]
+tests = [
+  'pytest',
+  # 'pytest-benchmark[histogram]>=3.2.1',
+]
+dev = [
+  'black',
+  'flake8',
 ]
 
 [project.urls]

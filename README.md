@@ -73,6 +73,6 @@ python -m pydoc -b
 
 ### Optional
 
-- `OPENAI_MODEL` default `gpt-3.5-turbo`
-- `MOSHI_LANGUAGE_DETECT_COMPLETIONS` default 3; how many completions to use when trying to detect the language.
+- `OPENAI_MODEL` default `gpt-3.5-turbo`; `text-davinci-003` is also pretty good and has much higher rate limits.
+- `MOSHI_LANGUAGE_DETECT_COMPLETIONS` default `3`; how many completions to use when trying to detect the language.
 - `MOSHI_MAX_LOOPS` default `0`; max number of AI responses to make in a conversation before quitting.

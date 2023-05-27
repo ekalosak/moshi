@@ -10,7 +10,7 @@ from loguru import logger
 from moshimoshi import lang, listen, speak, think, util
 from moshimoshi import Message, Role
 
-logger.level("INSTRUCTION", no=38, color="<yellow><bold>")
+logger.level("INSTRUCTION", no=38, color="<light-yellow><bold>")
 logger.success("loaded")
 
 MAX_CHAT_LOOPS = int(os.getenv("MOSHI_MAX_LOOPS", 0))
@@ -49,7 +49,7 @@ class Chatter:
     @util.timed
     def _say_assistant_response(self):
         """Play the assistant response text as audible language."""
-        speak.say(self.assistant_utterance)
+        speak.say(self.assistant_utterance, self.language)
 
     @util.timed
     def _detect_language(self):

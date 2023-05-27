@@ -1,8 +1,8 @@
 # TODO
 
 ## In progress:
+- [P0] [MM-01] speak in the detected language
 - [P1] stop clipping the responses
-- [P1] speak in the detected language
 
 ## Tickets
 - [P2] clean assistant responses of the "user: ", "Assistant: " etc. pieces
@@ -11,10 +11,16 @@
 - [P3] record conversations en toto; save to disk upon exit
 - [P3] generate a "teacher's report"
 - [P3] saying "quit quit quit" quits; keyboard interrupt quits;
+- [P4] prefer female language in `_get_voice_for_language`
 - [P4] thread the openai calls; add a keepalive debug message
 - [P4] print athe ascii characters for the message contents in the response.choices.message.content
 - [P4] backoffs for API rate limiting.
     - openai.error.RateLimitError
+
+## Bugs
+- Sometimes response (using davinci-003) is a translation
+    - How to make sure the response is in the target language?
+        - Perhaps inject a system line with the language code?
 
 ## Product
 - Plugins:

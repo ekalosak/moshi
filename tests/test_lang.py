@@ -4,6 +4,10 @@ import pytest
 
 from moshimoshi import lang, Language
 
+def test_language_eq():
+    assert Language('fr_FR') == Language('fr_CA')
+    assert Language('es_ES') == Language('es_MX')
+
 def test_language_enum():
     langs = str([l.value for l in lang.Language])
     assert 'en_US' in langs

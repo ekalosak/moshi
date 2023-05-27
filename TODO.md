@@ -22,6 +22,9 @@
 
 # DONE
 
+## 23.5.3
+- [P1] __eq__ for Language based on lang not region
+
 ## 23.5.2
 
 - [P0] Allow usage of text-davinci-003 not just gpt-3.5

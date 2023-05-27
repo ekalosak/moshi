@@ -13,7 +13,6 @@ N_COMPLETIONS = os.getenv("MOSHI_LANGUAGE_DETECT_COMPLETIONS", 3)
 
 engine = pyttsx3.init()
 
-
 def _language_dict() -> dict[str, str]:
     langd = {}
     for voice in engine.getProperty("voices"):
@@ -23,6 +22,7 @@ def _language_dict() -> dict[str, str]:
 
 
 Language = Enum("Language", _language_dict())
+Language.__eq__ = lambda x, y: x.value[:2] == y.value[:2]
 logger.info(f"Supported languages: {set(lang.value[:2] for lang in Language)}")
 logger.trace(Language.__members__)
 

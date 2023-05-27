@@ -11,11 +11,12 @@ from moshimoshi import lang, listen, speak, think, util
 from moshimoshi import Message, Role
 
 logger.level("INSTRUCTION", no=38, color="<light-yellow><bold>")
-logger.level("SPLASH", no=39, color="<light-yellow><bold>")
-logger.success("loaded")
+logger.level("SPLASH", no=39, color="<light-magenta><bold>")
 
 MAX_CHAT_LOOPS = int(os.getenv("MOSHI_MAX_LOOPS", 0))
 assert MAX_CHAT_LOOPS >= 0
+
+logger.success("loaded")
 
 class Chatter:
     """Main class for this app."""

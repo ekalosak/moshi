@@ -1,9 +1,14 @@
 # Design
 Planning and research for product design.
 
-# Core
-Core design principles:
+## Core principles
 - Focus on speech.
+- Longitudinal, multi-conversation functionality.
+- Tailor content to the user's interests and skill level.
+
+## High level
+The curriculum is some mix of de novo conversations and structured lessons.
+De novo conversations are dificult because you have to come up with a topic...
 
 # Plugins
 Plugin system allows for multiple teaching modules, each with their own target.
@@ -26,6 +31,9 @@ Plugin system allows for multiple teaching modules, each with their own target.
 ### Grammar
 
 ### Vocabulary
+- colors
+- numbers
+- fruits and vegetables
 
 ### Culture
 

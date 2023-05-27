@@ -10,21 +10,25 @@
 - [P3] record conversations en toto; save to disk upon exit
 - [P3] generate a "teacher's report"
 - [P3] Interrupt system
-    - [P3] saying "quit quit quit" quits;
-    - [P3] saying "help help help" prints the help text;
+    - saying "quit quit quit" quits;
+    - saying "help help help" prints the help text;
+    - non-quitting messages should pause after responding and ask user to press space to continue;
 - [P3] saying "I don't understand" or similar should cause the model to provide a translation
-    - Also, pause and ask user to press space to continue
 - [P4] prefer female language in `_get_voice_for_language`
 - [P4] thread the openai calls; add a keepalive debug message
 - [P4] backoffs for API rate limiting.
     - openai.error.RateLimitError
-- [P5] Rename to "Moshi"
 
 ## Bugs
 - Sometimes chat response is completely empty
 - Sometimes tts hangs for a long time after utterance
 - Seeing "Got finish reason: True" as a warning in logs
     - `moshimoshi.think:_chat_completion:102`
+- Sometimes responses can be very repetative; I suspect I should up the frequency penalty or etc.
+- Sometimes responses contain special characters like `[`;
+    - on their own this is annoying and they should be cleaned
+    - in the long term, a response like `[Nombre]` is an opportunity to have an orthogonal system select and record
+      attributes.
 
 ## Product
 - Plugins:
@@ -44,6 +48,7 @@
 
 ## Backlog
 - [P4] print athe ascii characters for the message contents in the response.choices.message.content
+- [P5] Rename to "Moshi"
 
 # DONE
 

@@ -1,13 +1,13 @@
 """ This module provides various language utilities. """
-from enum import Enum
 import os
 import pprint
+from enum import Enum
 
-from loguru import logger
 import pyttsx3
+from loguru import logger
 
-from moshimoshi.base import Role, Message
 from moshimoshi import think
+from moshimoshi.base import Message, Role
 
 N_COMPLETIONS = os.getenv("MOSHI_LANGUAGE_DETECT_COMPLETIONS", 3)
 

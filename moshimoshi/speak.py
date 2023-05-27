@@ -1,8 +1,8 @@
 """ This module abstracts specific speech2text implementations for use in the MoshiMoshi app. """
 import textwrap
 
-from loguru import logger
 import pyttsx3
+from loguru import logger
 
 from moshimoshi import util
 from moshimoshi.lang import Language

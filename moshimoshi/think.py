@@ -1,13 +1,13 @@
 """ This module abstracts specific chatbot implementations for use in the ChitChat app. """
+import os
+import textwrap
 from dataclasses import asdict
 from enum import Enum
-import os
 from pprint import pformat
-import textwrap
 from typing import NewType
 
-from loguru import logger
 import openai
+from loguru import logger
 
 from moshimoshi.base import Message
 

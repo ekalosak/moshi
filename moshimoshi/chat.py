@@ -2,10 +2,10 @@
 capabilities together. """
 from pprint import pformat
 
-from loguru import logger
 import pyfiglet
+from loguru import logger
 
-from moshimoshi import think, speak, listen, lang, util
+from moshimoshi import lang, listen, speak, think, util
 from moshimoshi.base import Message, Role
 
 logger.level("INSTRUCTION", no=38, color="<yellow><bold>")

@@ -1,9 +1,9 @@
 """ This module abstracts specific speech2text implementations for use in the MoshiMoshi app. """
-from enum import Enum
 import os
+from enum import Enum
 
-from loguru import logger
 import speech_recognition as sr
+from loguru import logger
 
 from moshimoshi import util
 

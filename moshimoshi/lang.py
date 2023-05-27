@@ -73,5 +73,6 @@ def recognize_language(utterance: str) -> Language:
         try:
             return _get_language_from_utterance(assistant_utterance)
         except LanguageNotFoundError as e:
-            logger.debug(e)
+            logger.debug(f"Failed to get a language from assistant_utterance: {assistant_utterance}")
+            logger.error(str(e))
     raise LanguageNotFoundError("None of the responses contained a language code.")

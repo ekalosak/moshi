@@ -1,8 +1,9 @@
 from unittest import mock
 
 import pytest
+from openai.error import RateLimitError
 
-from moshimoshi import lang, Language
+from moshimoshi import lang, Language, Model
 
 def test_language_eq():
     assert Language('fr_FR') == Language('fr_CA')
@@ -24,22 +25,23 @@ def test_recognize_language():
 
 @pytest.mark.openai
 @pytest.mark.parametrize(
-    "sentence,language",
+    "sentence,language,model",
     [
         pytest.param(
-            "This is an English sentence.", Language.EN_US, id="English"
+            "This is an English sentence.", Language.EN_US, Model.TEXTDAVINCI002, id="English"
         ),
         pytest.param(
-            "Jé ne parle pás Francais.", Language.FR_CA, id="French"
+            "Jé ne parle pás Francais.", Language.FR_CA, Model.TEXTDAVINCI002, id="French"
         ),
         pytest.param(
-            "¿Hablas Español tu?", Language.ES_MX, id="Spanish"
+            "¿Hablas Español tu?", Language.ES_MX, Model.TEXTDAVINCI002, id="Spanish"
         ),
         pytest.param(
-            "もしもし", Language.JA_JP, id="Japanese"
+            "もしもし", Language.JA_JP, Model.TEXTDAVINCI002, id="Japanese"
         ),
     ]
 )
-@pytest.mark.xfail(reason="Rate limits from OpenAI", raises=ValueError)  # TODO replace with openaiRaiser
-def test_recognize_language_openai(sentence, language):
-    assert lang.recognize_language(sentence) == language
+@pytest.mark.xfail(reason="Rate limit", raises=RateLimitError)
+def test_recognize_language_openai(sentence, language, model):
+    with mock.patch("moshimoshi.think.MODEL", model):
+        assert lang.recognize_language(sentence) == language

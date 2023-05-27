@@ -1,16 +1,20 @@
 """ This module implements the core Chatter class that glues speech recognition, text to speech, and chat completion
 capabilities together. """
+import itertools
+import os
 from pprint import pformat
 
 import pyfiglet
 from loguru import logger
 
 from moshimoshi import lang, listen, speak, think, util
-from moshimoshi.base import Message, Role
+from moshimoshi import Message, Role
 
 logger.level("INSTRUCTION", no=38, color="<yellow><bold>")
 logger.success("loaded")
 
+MAX_CHAT_LOOPS = int(os.getenv("MOSHI_MAX_LOOPS", 0))
+assert MAX_CHAT_LOOPS >= 0
 
 class Chatter:
     """Main class for this app."""
@@ -24,7 +28,6 @@ class Chatter:
             )
         ]
         self.language = None
-        self.iter = None
 
     @util.timed
     def _get_user_speech(self):
@@ -55,7 +58,7 @@ class Chatter:
             logger.debug(f"Language already detected: {self.language}")
             return
         self.language = lang.recognize_language(self.user_utterance)
-        logger.debug(f"Language detected: {self.language}")
+        logger.info(f"Language detected: {self.language}")
 
     @property
     def user_utterance(self) -> str:
@@ -76,15 +79,16 @@ class Chatter:
 
     def run(self):
         """This blocking function runs the core application loop."""
-        self.iter = 1
         logger.log(
             "INSTRUCTION",
             "\n" + pyfiglet.Figlet(font="roman").renderText("moshi\nmoshi"),
         )
-        while 1:
-            logger.debug(f"iter: {self.iter}")
+        for i in itertools.count():
+            if i == MAX_CHAT_LOOPS and MAX_CHAT_LOOPS != 0:
+                logger.info(f"Reached MAX_CHAT_LOOPS: {MAX_CHAT_LOOPS}, i={i}")
+                break
+            logger.debug(f"Starting loop number: i={i}")
             self._get_user_speech()
             self._detect_language()
             self._get_assistant_response()
             self._say_assistant_response()
-            self.iter = self.iter + 1

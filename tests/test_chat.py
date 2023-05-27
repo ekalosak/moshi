@@ -1,6 +1,8 @@
 from unittest import mock
 
-from moshimoshi import Language
+import pytest
+
+from moshimoshi import Language, Model
 
 def test_chatter_init(chatter):
     assert chatter
@@ -31,3 +33,11 @@ def test_detect_language(chatter):
     chatter._get_user_speech()
     chatter._detect_language()
     assert chatter.language == Language.EN_US
+
+@pytest.mark.openai
+@mock.patch('moshimoshi.chat.listen.dialogue_from_mic', lambda: "Hello, Mr. AI.")
+@mock.patch('moshimoshi.chat.speak.say', lambda _: None)
+@mock.patch('moshimoshi.think.MODEL', Model.TEXTADA001)
+@mock.patch('moshimoshi.chat.MAX_CHAT_LOOPS', 3)
+def test_run(chatter):
+    chatter.run()

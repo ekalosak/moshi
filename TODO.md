@@ -51,21 +51,4 @@
 - [P5] Rename to "Moshi"
 
 # DONE
-
-## 23.5.3
-- [P0] [BUG-01] sometimes response (using davinci-003) is a translation
-    - How to make sure the response is in the target language?
-        - Perhaps inject a system line with the language code?
-        - ^ This worked, see associated commit's changes to chat.py::Chatter.__init__()
-- [P0] [FEAT-01] speak in the detected language
-- [P1] restore `python -m moshimoshi` functionality; quasi-works
-- [P1] __eq__ for Language based on lang not region
-- [P2] more than a single loop.
-- [P3] try `max_tokens` in the `lang.recognize_language`
-- [p3] keyboard interrupt quits gracefully.
-
-## 23.5.2
-
-- [P0] Allow usage of text-davinci-003 not just gpt-3.5
-  - Replicate by `OPENAI_MODEL=text-davinci-003 pytest tests/test_lang.py`
-  - see moshimoshi/think.py; working on abstracting the model-endpoint compatability inside `completion_from_assistant()`
+Move this section to the CHANGELOG.md when you're done.

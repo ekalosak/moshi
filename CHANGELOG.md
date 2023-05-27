@@ -1,4 +1,7 @@
-# 23.5.2 WIP
+# 23.5.3 WIP
+Restoring main functionality ...
+
+# 23.5.2
 Major refactor from POC to an architecture appropriate for the POV.
 Introducing Chatter class, object oriented to set up for multi-utterance conversation.
 Decomposed the singular chat completion into two.
@@ -7,6 +10,9 @@ Decomposed the singular chat completion into two.
 Use system/user/assistant call structure rather than single monolith prompt.
   - more details on https://platform.openai.com/docs/guides/chat/introduction
 Added tests.
+All chat completion and regular completion models supported (gpt-3.5 and text-x-00y).
+Main functionality still broken, but enough of the refactor and new support is added to make it worth calling this a
+version.
 
 # 23.5.1
 POC implementation of multi-language detection and response.

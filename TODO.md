@@ -1,12 +1,9 @@
 # TODO
 
 ## In progress:
-- [P0] Allow usage of text-davinci-003 not just gpt-3.5
-  - Replicate by `OPENAI_MODEL=text-davinci-003 pytest tests/test_lang.py`
-  - see moshimoshi/think.py; working on abstracting the model-endpoint compatability inside `completion_from_assistant()`
+- [P1] restore `python -m moshimoshi` functionality
 
 ## Technical:
-- [P1] restore `python -m moshimoshi` functionality
 - [P2] more than a single loop.
 - [P3] Backoffs for API rate limiting.
     - openai.error.RateLimitError
@@ -22,3 +19,11 @@
 - Shorter time from finishing utterance to listening for response.
 - Embed conversations for knowledgebase search.
 - Rename to "Moshi"
+
+# DONE
+
+## 23.5.2
+
+- [P0] Allow usage of text-davinci-003 not just gpt-3.5
+  - Replicate by `OPENAI_MODEL=text-davinci-003 pytest tests/test_lang.py`
+  - see moshimoshi/think.py; working on abstracting the model-endpoint compatability inside `completion_from_assistant()`

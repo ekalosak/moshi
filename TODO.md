@@ -5,10 +5,11 @@
 
 ## Technical:
 - [P2] more than a single loop.
-- [P3] Backoffs for API rate limiting.
-    - openai.error.RateLimitError
 - [P3] try `max_tokens` in the `lang.recognize_language`
+- [P3] thread the openai calls; add a keepalive debug message
 - [P4] print athe ascii characters for the message contents in the response.choices.message.content
+- [P4] Backoffs for API rate limiting.
+    - openai.error.RateLimitError
 
 ## Product
 - Record conversations.

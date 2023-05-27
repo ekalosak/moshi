@@ -61,10 +61,10 @@ def recognize_language(utterance: str) -> Language:
         Message(Role.USR, modified_utterance),
     ]
     logger.trace("\n" + pprint.pformat(messages))
-    # TODO max_tokens?
     assistant_utterances = think.completion_from_assistant(
         messages,
         n=N_COMPLETIONS,
+        max_tokens=16,
         presence_penalty=-2,
         temperature=0.2,
     )

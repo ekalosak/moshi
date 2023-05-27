@@ -114,8 +114,6 @@ def _completion(payload: CompletionPayload, n: int, **kwargs) -> list[str]:
         msg_contents.append(choice.text.strip())
     return msg_contents
 
-# TODO handle InvalidRequestError
-# TODO handle RateLimitError
 def completion_from_assistant(
     messages: list[Message], n: int = 1, **kwargs
 ) -> str | list[str]:

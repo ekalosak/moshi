@@ -11,18 +11,24 @@ from moshimoshi.base import Message, Role
 logger.level("INSTRUCTION", no=38, color="<yellow><bold>")
 logger.success("loaded")
 
+
 class Chatter:
-    """ Main class for this app. """
+    """Main class for this app."""
 
     @util.timed
     def __init__(self):
-        self.messages = [Message(Role.SYS, "Use elementary vocabulary to help a beginner learn a language.")]
+        self.messages = [
+            Message(
+                Role.SYS,
+                "Use elementary vocabulary to help a beginner learn a language.",
+            )
+        ]
         self.language = None
         self.iter = None
 
     @util.timed
     def _get_user_speech(self):
-        """ Get and transcribe the user's audible speech. """
+        """Get and transcribe the user's audible speech."""
         logger.log("INSTRUCTION", "SPEAK NOW")
         user_dialogue = listen.dialogue_from_mic()
         message = Message(Role.USR, user_dialogue)
@@ -31,7 +37,7 @@ class Chatter:
 
     @util.timed
     def _get_assistant_response(self):
-        """ Get the chat response from the LLM. """
+        """Get the chat response from the LLM."""
         assistant_dialogue = think.completion_from_assistant(self.messages)
         message = Message(Role.AST, assistant_dialogue)
         logger.debug(message)
@@ -39,12 +45,12 @@ class Chatter:
 
     @util.timed
     def _say_assistant_response(self):
-        """ Play the assistant response text as audible language. """
+        """Play the assistant response text as audible language."""
         speak.say(self.assistant_utterance)
 
     @util.timed
     def _detect_language(self):
-        """ Detect the language the user is speaking. """
+        """Detect the language the user is speaking."""
         if self.language:
             logger.debug(f"Language already detected: {self.language}")
             return
@@ -53,7 +59,7 @@ class Chatter:
 
     @property
     def user_utterance(self) -> str:
-        """ The latest user utterance. """
+        """The latest user utterance."""
         logger.trace("\n" + pformat(self.messages))
         for msg in self.messages[::-1]:
             if msg.role == Role.USR:
@@ -62,16 +68,19 @@ class Chatter:
 
     @property
     def assistant_utterance(self) -> str:
-        """ The latest assistant utterance. """
+        """The latest assistant utterance."""
         for msg in self.messages[::-1]:
             if msg.role == Role.AST:
                 return msg.content
         raise ValueError("No assistant utterances in self.messages")
 
     def run(self):
-        """ This blocking function runs the core application loop. """
+        """This blocking function runs the core application loop."""
         self.iter = 1
-        logger.log("INSTRUCTION", "\n" + pyfiglet.Figlet(font="roman").renderText("moshi\nmoshi"))
+        logger.log(
+            "INSTRUCTION",
+            "\n" + pyfiglet.Figlet(font="roman").renderText("moshi\nmoshi"),
+        )
         while 1:
             logger.debug(f"iter: {self.iter}")
             self._get_user_speech()

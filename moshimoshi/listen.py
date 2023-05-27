@@ -10,6 +10,7 @@ from moshimoshi import util
 rec = sr.Recognizer()
 mic = sr.Microphone()
 
+
 @util.timed
 def _get_audio_from_mic() -> sr.audio.AudioData:
     with mic as source:
@@ -17,14 +18,16 @@ def _get_audio_from_mic() -> sr.audio.AudioData:
         logger.debug(f"Got audio: {audio.sample_rate} Hz, {audio.sample_width} sec")
     return audio
 
+
 @util.timed
 def _transcribe_audio(audio: sr.audio.AudioData) -> str:
-    """ Transcribe audio (sound waves) into text (natural language). """
+    """Transcribe audio (sound waves) into text (natural language)."""
     return rec.recognize_whisper_api(audio)
+
 
 @util.timed
 def dialogue_from_mic() -> str:
-    """ Get user dialogue from the microphone and transcribe it into text. """
+    """Get user dialogue from the microphone and transcribe it into text."""
     audio = _get_audio_from_mic()
     transcription = _transcribe_audio(audio)
     return transcription

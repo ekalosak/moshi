@@ -6,10 +6,12 @@ from loguru import logger
 
 logger.success("loaded")
 
+
 class Role(str, Enum):
     SYS = "system"
     USR = "user"
     AST = "assistant"
+
 
 @dataclass
 class Message:

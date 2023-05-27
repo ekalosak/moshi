@@ -8,8 +8,10 @@ from loguru import logger
 
 logger.success("loaded")
 
+
 def timed(f: Callable):
-    """ Log timing of a function. """
+    """Log timing of a function."""
+
     @wraps(f)
     def timer(*a, **k):
         t0 = time()
@@ -18,4 +20,5 @@ def timed(f: Callable):
         td = time() - t0
         logger.trace("END   {}\t{:10.4f} sec".format(f.__name__, td))
         return res
+
     return timer

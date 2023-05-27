@@ -4,7 +4,7 @@ from loguru import logger
 from moshimoshi import chat
 
 logger.info("Loading MoshiMoshi...")
-logger.debug('creating chatbot...')
+logger.debug("creating chatbot...")
 chatbot = chat.Chatter()
 logger.debug(f"chatbot: {chatbot}")
 logger.success("MoshiMoshi loaded!")

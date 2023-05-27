@@ -77,12 +77,21 @@ class Chatter:
                 return msg.content
         raise ValueError("No assistant utterances in self.messages")
 
-    def run(self):
-        """This blocking function runs the core application loop."""
+    def _hello(self):
         logger.log(
             "INSTRUCTION",
             "\n" + pyfiglet.Figlet(font="roman").renderText("moshi\nmoshi"),
         )
+
+    def _bye(self):
+        logger.log(
+            "INSTRUCTION",
+            "\n" + pyfiglet.Figlet(font="roman").renderText("bye"),
+        )
+
+    def run(self):
+        """This blocking function runs the core application loop."""
+        self._hello()
         for i in itertools.count():
             if i == MAX_CHAT_LOOPS and MAX_CHAT_LOOPS != 0:
                 logger.info(f"Reached MAX_CHAT_LOOPS: {MAX_CHAT_LOOPS}, i={i}")
@@ -92,3 +101,4 @@ class Chatter:
             self._detect_language()
             self._get_assistant_response()
             self._say_assistant_response()
+        self._bye()

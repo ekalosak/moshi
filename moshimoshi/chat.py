@@ -83,18 +83,10 @@ class Chatter:
                 return msg.content
         raise ValueError("No assistant utterances in self.messages")
 
-    def _hello(self):
-        """ Print the hello splash. """
+    def _splash(self, text: str):
         logger.log(
             "SPLASH",
-            "\n" + pyfiglet.Figlet(font="roman").renderText("moshi\nmoshi"),
-        )
-
-    def _bye(self):
-        """ Print the goodbye splash. """
-        logger.log(
-            "SPLASH",
-            "\n" + pyfiglet.Figlet(font="roman").renderText("bye"),
+            "\n" + pyfiglet.Figlet(font="roman").renderText(text),
         )
 
     def _main(self):
@@ -115,7 +107,7 @@ class Chatter:
 
     def run(self):
         """This blocking function runs the core application loop."""
-        self._hello()
+        self._splash("moshi\nmoshi")
         for i in itertools.count():
             if i == MAX_CHAT_LOOPS and MAX_CHAT_LOOPS != 0:
                 logger.info(f"Reached MAX_CHAT_LOOPS: {MAX_CHAT_LOOPS}, i={i}")
@@ -127,4 +119,4 @@ class Chatter:
                 logger.debug(f"Got quit signal, exiting gracefully: {e}")
                 break
         self._report()
-        self._bye()
+        self._splash("bye")

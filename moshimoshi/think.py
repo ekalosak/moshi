@@ -66,6 +66,7 @@ def _chat_completion_payload_from_messages(
     for msg in messages:
         msg_ = {"role": msg.role.value, "content": msg.content}
         payload.append(msg_)
+    logger.debug(f"payload:\n{pformat(payload)}")
     return payload
 
 
@@ -74,16 +75,44 @@ def _completion_payload_from_messages(messages: list[Message]) -> CompletionPayl
     Source:
         - https://platform.openai.com/docs/api-reference/completions/create
     """
-    ...
+    payload = ""
+    for msg in messages:
+        msgstr = f"{msg.role}: {msg.content}"
+        payload = payload + '\n' + msgstr
+    logger.debug(f"payload:\n{pformat(payload)}")
+    return payload
 
 
-def _chat_completion(payload: ChatCompletionPayload, n: int, **kwargs):
-    ...
+def _chat_completion(payload: ChatCompletionPayload, n: int, **kwargs) -> list[str]:
+    """ Get the message """
+    msg_contents = []
+    response = openai.ChatCompletion.create(
+        model=MODEL,
+        messages=payload,
+        n=n,
+        **kwargs,
+    )
+    logger.debug(f"response:\n{pformat(response)}")
+    for choice in response.choices:
+        if reason := choice["finish_reason"] != "stop":
+            logger.warning(f"Got finish_reason: {reason}")
+        msg_contents.append(choice.message.content)
+    return msg_contents
 
-
-def _completion(payload: CompletionPayload, n: int, **kwargs):
-    ...
-
+def _completion(payload: CompletionPayload, n: int, **kwargs) -> list[str]:
+    msg_contents = []
+    response = openai.Completion.create(
+        model=MODEL,
+        prompt=payload,
+        n=n,
+        **kwargs,
+    )
+    logger.debug(f"response:\n{pformat(response)}")
+    for choice in response.choices:
+        if reason := choice["finish_reason"] != "stop":
+            logger.warning(f"Got finish_reason: {reason}")
+        msg_contents.append(choice.text.strip())
+    return msg_contents
 
 # TODO handle InvalidRequestError
 # TODO handle RateLimitError
@@ -100,21 +129,17 @@ def completion_from_assistant(
     assert n > 0 and isinstance(n, int)
     if n > 5:
         logger.warning(f"Generating many responses at once can be costly: n={n}")
-    # TODO BELOW: make behavior depend on model type
-    payload = _chat_completion_payload_from_messages(messages)
-    logger.debug(f"payload:\n{pformat(payload)}")
-    response = openai.ChatCompletion.create(
-        model=MODEL,
-        messages=payload,
-        n=n,
-        **kwargs,
-    )
-    logger.debug(f"response:\n{pformat(response)}")
     msg_contents = []
-    for choice in response.choices:
-        if reason := choice["finish_reason"] != "stop":
-            logger.warning(f"Got finish_reason: {reason}")
-        msg_contents.append(choice.message.content)
+    if _get_type_of_model(MODEL) == ModelType.CHAT:
+        payload = _chat_completion_payload_from_messages(messages)
+        msg_contents = _chat_completion(payload, n, **kwargs)
+    elif _get_type_of_model(MODEL) == ModelType.COMP:
+        payload = _completion_payload_from_messages(messages)
+        msg_contents = _completion(payload, n, **kwargs)
+    else:
+        raise TypeError(f"Model not supported: {MODEL}")
+    assert isinstance(msg_contents, list)
+    assert all(isinstance(mc, str) for mc in msg_contents)
     if n == 1:
         assert len(msg_contents) == 1
         return msg_contents[0]

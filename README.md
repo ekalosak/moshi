@@ -50,7 +50,7 @@ Note that the `setup.cfg` puts the `.egg-info` into the local `./egg` directory;
 
 ## Docs
 ```
-python -m pydoc -b
+(cd moshi/ && python -m pydoc -b)
 ```
 
 # Usage

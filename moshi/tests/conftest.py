@@ -26,3 +26,18 @@ def audio(audio_file):
 def mock_rec_listen(audio):
     with mock.patch('moshimoshi.listen.rec.listen', lambda _: audio):
         yield
+
+@pytest.fixture
+def mock_dialogue_from_mic():
+    with mock.patch('moshimoshi.chat.listen.dialogue_from_mic', lambda: "test dialogue_from_mic"):
+        yield
+
+@pytest.fixture
+def mock_completion_from_assistant():
+     with mock.patch('moshimoshi.chat.think.completion_from_assistant', lambda _: "test completion_from_assistant"):
+        yield
+
+@pytest.fixture
+def mock_say():
+    with mock.patch('moshimoshi.chat.speak.say', lambda *a, **k: None):
+        yield

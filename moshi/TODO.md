@@ -5,6 +5,7 @@
 
 ## Tickets
 - [P1] stop clipping the responses; it appears that `max_tokens` is being used or something.
+- [P2] Rename to "moshi"
 - [P3] detect the AI responding that it doesn't understand
     - include in the final report, but make sure it doesn't make it into the transcript
 - [P3] record conversations en toto; save to disk upon exit
@@ -48,7 +49,6 @@
 
 ## Backlog
 - [P4] print athe ascii characters for the message contents in the response.choices.message.content
-- [P5] Rename to "Moshi"
 
 # DONE
 Move this section to the CHANGELOG.md when you're done.

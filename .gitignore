@@ -1,5 +1,7 @@
 data/
 build/
 *.egg-info/
-*pyc
+*.pyc
 *node_modules/
+*.js
+*.js.*

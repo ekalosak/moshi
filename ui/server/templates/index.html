@@ -10,9 +10,10 @@ Initial text
 {% endblock %}
 
 {% block js %}
-<script type="text/javascript" src="{{ url_for('static', filename='core.js') }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='dist/core.js') }}"></script>
 <script type="text/javascript">
   const moshi_container = document.getElementById("moshi-container")
   moshi_container.textContent = hello('bar')
+  {# moshi_container.textContent = get_num() #}
 </script>
 {% endblock %}

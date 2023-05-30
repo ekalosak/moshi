@@ -2,6 +2,12 @@
   "name": "moshi",
   "version": "23.5.0",
   "dependencies": {
-    "typescript": "5.0.4"
+    "@types/node": "^20.2.5",
+    "axios": "^1.4.0",
+    "typescript": "^5.0.4"
+  },
+  "devDependencies": {
+    "webpack": "^5.84.1",
+    "webpack-cli": "^5.1.1"
   }
 }

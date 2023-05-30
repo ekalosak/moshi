@@ -19,11 +19,6 @@ LOGURU_LEVEL=INFO OPENAI_MODEL="text-davinci-003" python -m moshi
 pytest -v -m 'not speak and not openai'
 ```
 
-## Docs
-```
-python -m pydoc -b
-```
-
 # Operations
 
 ## Environment variables

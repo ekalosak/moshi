@@ -48,6 +48,11 @@ mkdir egg && \
 ```
 Note that the `setup.cfg` puts the `.egg-info` into the local `./egg` directory; you have to create the `egg` dir first.
 
+## Docs
+```
+python -m pydoc -b
+```
+
 # Usage
 Usage instructions for each constituent project are provided in the corresponding project subdirectory e.g.
 [`moshi/README.md`](moshi/README.md).

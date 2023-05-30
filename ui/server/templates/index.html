@@ -1,15 +1,11 @@
-<!-- Ripped shamelessly from: https://github.com/hypebeast/flask-elm-starter-kit/blob/master/server/templates/home.html -->
-
 {% block content %}
 <h1 class="title">Moshi</h1>
 <h2 class="subtitle">Have a spoken conversation in another language, at your level.</h2>
 <hr>
-<div id="moshi-container"></div>
+<div id="moshi-container">
+</div>
 {% endblock %}
 
 {% block js %}
-<script type="text/javascript">
-  var node = document.getElementById('moshi-container');
-  var app = Elm.Main.embed(node);
-</script>
+<script type="text/javascript" src="{{ url_for('static', filename='core.js') }}"></script>
 {% endblock %}

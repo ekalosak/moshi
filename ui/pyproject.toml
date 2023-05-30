@@ -26,6 +26,7 @@ dependencies = [
 [project.optional-dependencies]
 tests = [
   'pytest',
+  'Flask',
 ]
 dev = [
   'black',

@@ -1,5 +1,5 @@
 [project]
-name = "moshimoshi"
+name = "moshi"
 version = "23.5.3"
 description = "Have a conversation in a new language, at your level."
 readme = "README.md"
@@ -40,11 +40,11 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/ekalosak/moshimoshi/tree/main"
-Repository = "https://github.com/ekalosak/moshimoshi.git"
+Homepage = "https://github.com/ekalosak/moshi/tree/main"
+Repository = "https://github.com/ekalosak/moshi.git"
 
 [tool.setuptools]
-packages = ["moshimoshi"]
+packages = ["moshi"]
 
 [tool.pytest.ini_options]
 markers = [

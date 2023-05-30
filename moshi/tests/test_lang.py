@@ -3,7 +3,7 @@ from unittest import mock
 import pytest
 from openai.error import RateLimitError
 
-from moshimoshi import lang, Language, Model
+from moshi import lang, Language, Model
 
 def test_language_eq():
     assert Language('fr_FR') == Language('fr_CA')
@@ -19,7 +19,7 @@ def test_language_enum():
 def test_get_language_from_utterance():
     assert lang._get_language_from_utterance("The language code for English is `en_US`") == Language.EN_US
 
-@mock.patch('moshimoshi.lang.think.completion_from_assistant', lambda *a, **kw: ["asdfqwerfr_CAQWETRASDF"])
+@mock.patch('moshi.lang.think.completion_from_assistant', lambda *a, **kw: ["asdfqwerfr_CAQWETRASDF"])
 def test_recognize_language():
     assert lang.recognize_language("Je ne parle pas Francais.") == Language.FR_CA
 
@@ -43,5 +43,5 @@ def test_recognize_language():
 )
 @pytest.mark.xfail(reason="Rate limit", raises=RateLimitError)
 def test_recognize_language_openai(sentence, language, model):
-    with mock.patch("moshimoshi.think.MODEL", model):
+    with mock.patch("moshi.think.MODEL", model):
         assert lang.recognize_language(sentence) == language

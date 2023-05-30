@@ -9,7 +9,7 @@ from typing import NewType
 import openai
 from loguru import logger
 
-from moshimoshi.base import Message
+from moshi.base import Message
 
 
 class ModelType(str, Enum):

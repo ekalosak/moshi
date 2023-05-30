@@ -2,8 +2,8 @@ from unittest import mock
 import pytest
 import openai
 
-from moshimoshi import Message, Model, ModelType, Role
-from moshimoshi import think
+from moshi import Message, Model, ModelType, Role
+from moshi import think
 
 @pytest.mark.openai
 @pytest.mark.xfail(
@@ -17,7 +17,7 @@ def test_completion(model):
     msgs = [
         Message(Role.SYS, "Respond with 'This is a star spangled test'")
     ]
-    with mock.patch('moshimoshi.think.MODEL', model):
+    with mock.patch('moshi.think.MODEL', model):
         resp = think.completion_from_assistant(msgs)
     print(resp)
     assert isinstance(resp, str)

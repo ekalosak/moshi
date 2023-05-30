@@ -1,4 +1,5 @@
 # 25.5.4 WIP
+- [P2] Rename to "moshi"
 
 # 23.5.3
 - full MVP implemented - the core chat loop "just works".

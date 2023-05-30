@@ -1,6 +1,6 @@
 import pytest
 
-from moshimoshi import speak
+from moshi import speak
 
 @pytest.mark.speak
 def test_speak():

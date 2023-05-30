@@ -2,7 +2,7 @@ from unittest import mock
 
 import pytest
 
-from moshimoshi import Language, Model
+from moshi import Language, Model
 
 def test_chatter_init(chatter):
     assert chatter
@@ -28,7 +28,7 @@ def test_say_assistant_response(chatter):
     chatter._say_assistant_response()
 
 @pytest.mark.usefixtures("mock_dialogue_from_mic")
-@mock.patch('moshimoshi.chat.lang.recognize_language', lambda _: Language.EN_US)
+@mock.patch('moshi.chat.lang.recognize_language', lambda _: Language.EN_US)
 def test_detect_language(chatter):
     chatter._get_user_speech()
     chatter._detect_language()
@@ -37,7 +37,7 @@ def test_detect_language(chatter):
 @pytest.mark.openai
 @pytest.mark.usefixtures("mock_dialogue_from_mic")
 @pytest.mark.usefixtures("mock_say")
-@mock.patch('moshimoshi.think.MODEL', Model.TEXTADA001)
-@mock.patch('moshimoshi.chat.MAX_CHAT_LOOPS', 3)
+@mock.patch('moshi.think.MODEL', Model.TEXTADA001)
+@mock.patch('moshi.chat.MAX_CHAT_LOOPS', 3)
 def test_run(chatter):
     chatter.run()

@@ -4,7 +4,7 @@ from unittest import mock
 import pytest
 import speech_recognition as sr
 
-from moshimoshi import chat
+from moshi import chat
 
 @pytest.fixture
 def chatter():
@@ -24,20 +24,20 @@ def audio(audio_file):
 
 @pytest.fixture
 def mock_rec_listen(audio):
-    with mock.patch('moshimoshi.listen.rec.listen', lambda _: audio):
+    with mock.patch('moshi.listen.rec.listen', lambda _: audio):
         yield
 
 @pytest.fixture
 def mock_dialogue_from_mic():
-    with mock.patch('moshimoshi.chat.listen.dialogue_from_mic', lambda: "test dialogue_from_mic"):
+    with mock.patch('moshi.chat.listen.dialogue_from_mic', lambda: "test dialogue_from_mic"):
         yield
 
 @pytest.fixture
 def mock_completion_from_assistant():
-     with mock.patch('moshimoshi.chat.think.completion_from_assistant', lambda _: "test completion_from_assistant"):
+     with mock.patch('moshi.chat.think.completion_from_assistant', lambda _: "test completion_from_assistant"):
         yield
 
 @pytest.fixture
 def mock_say():
-    with mock.patch('moshimoshi.chat.speak.say', lambda *a, **k: None):
+    with mock.patch('moshi.chat.speak.say', lambda *a, **k: None):
         yield

@@ -7,8 +7,8 @@ from pprint import pformat
 import pyfiglet
 from loguru import logger
 
-from moshimoshi import lang, listen, speak, think, util
-from moshimoshi import Message, Role
+from moshi import lang, listen, speak, think, util
+from moshi import Message, Role
 
 logger.level("INSTRUCTION", no=38, color="<light-yellow><bold>")
 logger.level("SPLASH", no=39, color="<light-magenta><bold>")

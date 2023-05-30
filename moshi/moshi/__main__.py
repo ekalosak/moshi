@@ -1,7 +1,7 @@
 """ This module provides an entrypoint for the MoshiMoshi app. """
 from loguru import logger
 
-from moshimoshi import chat
+from moshi import chat
 
 logger.info("Loading MoshiMoshi...")
 logger.debug("creating chatbot...")

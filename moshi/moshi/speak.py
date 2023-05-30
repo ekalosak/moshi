@@ -4,8 +4,8 @@ import textwrap
 import pyttsx3
 from loguru import logger
 
-from moshimoshi import util
-from moshimoshi.lang import Language
+from moshi import util
+from moshi.lang import Language
 
 engine = pyttsx3.init()
 

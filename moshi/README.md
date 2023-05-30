@@ -1,5 +1,5 @@
-# 🧑💬🤖 moshimoshi
-Have a conversation in another language, at your level.
+# 🧑💬🤖 moshi
+Have a spoken conversation in another language, at your level.
 
 # Development
 
@@ -50,7 +50,7 @@ Note that the `setup.cfg` puts the `.egg-info` into the local `./egg` directory;
 ## Usage
 After setting up, run:
 ```sh
-LOGURU_LEVEL=INFO OPENAI_MODEL="text-davinci-003" python -m moshimoshi
+LOGURU_LEVEL=INFO OPENAI_MODEL="text-davinci-003" python -m moshi
 ```
 
 ## Tests

@@ -5,7 +5,7 @@ from enum import Enum
 import speech_recognition as sr
 from loguru import logger
 
-from moshimoshi import util
+from moshi import util
 
 rec = sr.Recognizer()
 mic = sr.Microphone()

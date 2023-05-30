@@ -1,7 +1,12 @@
 # ui
 The browser-based user interface for [Moshi](../README.md).
 
+# Architecture
+Frontend in TypeScript; backend in Python.
+
 # Usage
+
+## Server
 Run the web server with:
 ```sh
 flask --app ui.main run
@@ -9,25 +14,25 @@ flask --app ui.main run
 
 # Development
 
-## Elm
+## Setup
 
-### Setup Elm
-Install Elm compiler, then make project artifacts:
-```sh
-mkdir elm && cd elm && elm init
+### Python
+Make a virtual environment and install the `server` project with dependencies:
+```bash
+pip install -e .
 ```
 
-### Compile Elm
-```sh
-elm make src/Main.elm --optimize
+### TypeScript
+
+Install `npm`:
+```bash
+brew install npm
 ```
 
-Also note there's a REPL: `elm repl`.
-
-### Quickstart
-```
-elm reactor
+To install the project dependencies from `project.json`, run from this directory:
+```bash
+npm install
 ```
 
-# Sources
-- https://github.com/hypebeast/flask-elm-starter-kit/
+Sources:
+- [TypeScript docs](https://www.typescriptlang.org/download)

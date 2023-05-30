@@ -39,7 +39,7 @@ Homepage = "https://github.com/ekalosak/moshi/tree/main"
 Repository = "https://github.com/ekalosak/moshi.git"
 
 [tool.setuptools]
-packages = ["src"]
+packages = ["server"]
 
 [tool.pytest.ini_options]
 markers = [

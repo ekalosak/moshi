@@ -1,0 +1,7 @@
+{
+  "name": "moshi",
+  "version": "23.5.0",
+  "dependencies": {
+    "typescript": "5.0.4"
+  }
+}

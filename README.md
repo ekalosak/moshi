@@ -3,7 +3,7 @@ Have a spoken conversation in another language, at your level.
 
 # Architecture
 - `moshi` the core functionality.
-- `web` the frontend and server that plug `moshi` into the browser.
+- `ui` the frontend and server that plug `moshi` into the browser.
 
 # Development
 

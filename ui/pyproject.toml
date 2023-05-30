@@ -1,0 +1,46 @@
+[project]
+name = "ui"
+version = "23.5.3"
+description = "Web browser user interface for Moshi."
+readme = "README.md"
+requires-python = ">=3.7"
+license = {text = "Proprietary"}
+keywords = ["language", "ai", "moshi"]
+authors = [
+  {name = "Eric Kalosa-Kenyon", email = "helloateric@gmail.com"}
+]
+classifiers = [
+  "Development Status :: 2 - Pre-Alpha",
+  "Environment :: Web Environment",
+  "Programming Language :: Python :: 3",
+  "Intended Audience :: Education",
+  "Intended Audience :: End Users/Desktop",
+  "Topic :: Communications",
+  "Topic :: Education",
+]
+dependencies = [
+  "loguru",
+  "pyaudio",
+]
+
+[project.optional-dependencies]
+tests = [
+  'pytest',
+]
+dev = [
+  'black',
+  'flake8',
+  'isort',
+]
+
+[project.urls]
+Homepage = "https://github.com/ekalosak/moshi/tree/main"
+Repository = "https://github.com/ekalosak/moshi.git"
+
+[tool.setuptools]
+packages = ["ui"]
+
+[tool.pytest.ini_options]
+markers = [
+  "speak: marks tests as requiring access to a speaker",
+]

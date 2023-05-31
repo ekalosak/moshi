@@ -21,10 +21,8 @@ classifiers = [
 dependencies = [
   "loguru",
   "pyaudio",
-  'Flask',
-  "flask-sse",
-  "gunicorn",
-  "gevent"
+  "flask",
+  "flask-socketio"
 ]
 
 [project.optional-dependencies]

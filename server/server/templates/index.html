@@ -3,65 +3,26 @@
 <h1 class="title">Moshi</h1>
 <h2 class="subtitle">Have a spoken conversation in another language, at your level.</h2>
 <hr>
-<div id="num-c">
-No num yet
-</div>
-<hr>
-<div id="stream-c">
-  <ul>
-    <li>Initial element</li>
-  </ul>
-</div>
-<hr>
 {% endblock %}
 
 {% block js %}
-
-{# <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script> #}
-{# evtSource.onmessage = function(e) { #}
-{#   console.log("Got event: " + e.data); #}
-{#   const newElement = document.createElement("li"); #}
-{#   newElement.textContent = "message: " + e.data; #}
-{#   eventList.appendChild(newElement); #}
-{# }; #}
-
-
+<script src="https://cdn.socket.io/4.3.1/socket.io.min.js"></script>
 <script type="text/javascript">
-const evtSource = new EventSource('/stream');
-const eventList = document.querySelector("ul");
-console.log('eventList: ' + eventList);
-console.log('evtSource.withCredentials: ' + evtSource.withCredentials);
-console.log('evtSource.readyState: ' + evtSource.readyState);
-console.log('evtSource.url: ' + evtSource.url);
+  const socket = io.connect('http://localhost:5000');
 
-evtSource.onopen = function() {
-  console.log("Connection to server opened.");
-  console.log('evtSource.readyState: ' + evtSource.readyState);
-};
+  socket.on('connect', function() {
+    console.log('Connected to the server');
+  });
 
-evtSource.onmessage = function(e) {
-  console.log("Got event: " + e.data);
-};
+  socket.on('stream_data', function(data) {
+    console.log('Received data:', data.data);
+    // Use the data as needed
+  });
 
-evtSource.onerror = function() {
-  console.log("EventSource failed.");
-};
+  socket.on('disconnect', function() {
+    console.log('Disconnected from the server');
+  });
+
+  socket.emit('start_stream');
 </script>
-
-<script type="text/javascript">
-{# setInterval(updateNum, 1000); #}
-const numC = document.getElementById("num-c");
-numC.textContent = 'Repeated call to /num disabled, uncomment that line to re-enable.';
-function updateNum()
-{
-  fetch("/num")
-  .then((response) => response.json())
-  .then(data => {
-    console.log('Got num: ' + data);
-    numC.append(data);
-  })
-  .catch(error => console.error(error));
-}
-</script>
-
 {% endblock %}

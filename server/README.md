@@ -23,11 +23,6 @@ pip install -e .
 ```
 This will install the python dependencies from `pyproject.toml`.
 
-### Redis pub-sub server
-```bash
-brew install redis
-```
-
 ## Development server
 Run the web server with:
 ```sh

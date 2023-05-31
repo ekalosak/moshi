@@ -20,7 +20,7 @@ navigator.mediaDevices.getUserMedia({ audio: true })
     }
 
     // Emit the audio data to the server
-    socket.emit('audio_stream', outputData);
+    socket.emit('demo_audio_stream', outputData);
   };
 
   audioInput.connect(scriptNode);
@@ -31,7 +31,7 @@ navigator.mediaDevices.getUserMedia({ audio: true })
 });
 
 // Receive and process audio data from the server
-socket.on('audio_stream', function(audioData) {
+socket.on('demo_audio_stream', function(audioData) {
   // Process the received audio data
   // In this example, we simply log the received audio data
   console.log(audioData);

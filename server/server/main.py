@@ -8,7 +8,7 @@ from flask import Flask, render_template
 from flask_socketio import SocketIO, emit
 from loguru import logger
 
-import moshi
+# import moshi
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret_key'
@@ -55,16 +55,14 @@ def handle_start_stream():
         time.sleep(random.uniform(0., 1.))
         emit('stream_data', {'data': chunk})
 
-@socketio.on('audio_stream')
-def handle_audio_stream(audio_data):
-    # Process the audio data received from the client
-    # In this example, we simply emit the received audio data back to all connected clients
-    logger.debug(f'audio_data: {audio_data[:64]}')
-    emit('audio_stream', audio_data)
+@socketio.on('demo_audio_stream')
+def handle_demo_audio_stream(audio_data):
+    logger.trace('got chunk')
+    emit('demo_audio_stream', audio_data)
 
-@app.route('/')
+@app.route('/demo_stream')
 def index():
-    return render_template('index.html')
+    return render_template('demo_stream.html')
 
 if __name__ == '__main__':
     socketio.run(app)

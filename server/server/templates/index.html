@@ -3,28 +3,45 @@
 <h1 class="title">Moshi</h1>
 <h2 class="subtitle">Have a spoken conversation in another language, at your level.</h2>
 <hr>
-<div id="moshi-container">
-Initial text
+<div id="num-c">
+No num yet
+</div>
+<div id="stream-c">
+No stream yet
 </div>
 <hr>
 {% endblock %}
 
 {% block js %}
-{# <script type="text/javascript" src="{{ url_for('static', filename='core.js') }}"></script> #}
+
+{# <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script> #}
+
 <script type="text/javascript">
-  setInterval(updateNum, 500);
-  function updateNum()
-  {
-    const moshi_container = document.getElementById("moshi-container")
-    fetch("http://localhost:5000/num")
-    .then((response) => response.json())
-    .then(data => {
-      console.log('Got num: ' + data);
-      moshi_container.textContent = data;
-    })
-    .catch(error => console.error(error));
-  }
-  {# moshi_container.textContent = hello('bar') #}
-  {# moshi_container.textContent = get_num() #}
+const evtSource = new EventSource('/stream');
+const eventList = document.querySelector("ul");
+
+evtSource.onmessage = (e) => {
+  const newElement = document.createElement("li");
+
+  newElement.textContent = `message: ${e.data}`;
+  eventList.appendChild(newElement);
+};
 </script>
+
+<script type="text/javascript">
+setInterval(updateNum, 1000);
+const numC = document.getElementById("num-c");
+numC.textContent = '3';
+function updateNum()
+{
+  fetch("/num")
+  .then((response) => response.json())
+  .then(data => {
+    console.log('Got num: ' + data);
+    numC.append(data);
+  })
+  .catch(error => console.error(error));
+}
+</script>
+
 {% endblock %}

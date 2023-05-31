@@ -1,51 +1,35 @@
-# ui
-The browser-based user interface for [Moshi](../README.md).
+# server
+This project provides the server for the browser-based user interface for [Moshi](../README.md).
 
 # Architecture
-Frontend in TypeScript; backend in Python.
-As such, the two project subdirectories are:
-- `server/`
-- `client/`
+- Flask for the server.
+- Javascript for the frontend.
+- Websockets for the streaming.
 
 # Usage
 
-## Server
-Run the web server with:
-```sh
-flask --app server.main run
+```bash
+gunicorn server.main:app --worker-class gevent --bind 127.0.0.1:5000
 ```
 
 # Development
 
 ## Setup
 
-### Python
+### Python Flask server
 Make a virtual environment and install the `server` project with dependencies:
 ```bash
 pip install -e .
 ```
 This will install the python dependencies from `pyproject.toml`.
 
-### TypeScript
-
-Install `npm`:
+### Redis pub-sub server
 ```bash
-brew install npm
+brew install redis
 ```
 
-To install the project dependencies from `project.json`, run from this directory:
-```bash
-npm install
+## Development server
+Run the web server with:
+```sh
+flask --app server.main run
 ```
-
-Sources:
-- [TypeScript docs](https://www.typescriptlang.org/download)
-
-## Build
-
-### TypeScript
-Build the project:
-```bash
-npx tsc -p client/tsconfig.json
-```
-The build artifacts should be in the same directory: `client/hello.js`.

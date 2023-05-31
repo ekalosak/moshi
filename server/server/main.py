@@ -1,7 +1,7 @@
 import random
 import string
 
-from flask import Flask, render_template, Response, stream_with_context
+from flask import Flask, render_template, Response
 
 app = Flask(__name__)
 
@@ -14,13 +14,16 @@ def generate_chunks(length, num_chunks):
 
 @app.route('/stream', methods=['GET'])
 def stream():
-    @stream_with_context
     def generate():
-        for chunk in generate_chunks(10, 10):
+        for chunk in generate_chunks(10, 3):
             print(chunk)
             yield chunk
 
     response = Response(generate(), mimetype='text/event-stream')
+    response.headers.add("Access-Control-Allow-Origin", "*")
+    response.headers.add("Access-Control-Allow-Headers", "*")
+    response.headers.add("Access-Control-Allow-Methods", "*")
+    print(response.headers)
     return response
 
 @app.route("/")

@@ -22,6 +22,9 @@ dependencies = [
   "loguru",
   "pyaudio",
   'Flask',
+  "flask-sse",
+  "gunicorn",
+  "gevent"
 ]
 
 [project.optional-dependencies]

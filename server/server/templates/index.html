@@ -6,8 +6,11 @@
 <div id="num-c">
 No num yet
 </div>
+<hr>
 <div id="stream-c">
-No stream yet
+  <ul>
+    <li>Initial element</li>
+  </ul>
 </div>
 <hr>
 {% endblock %}
@@ -15,23 +18,40 @@ No stream yet
 {% block js %}
 
 {# <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script> #}
+{# evtSource.onmessage = function(e) { #}
+{#   console.log("Got event: " + e.data); #}
+{#   const newElement = document.createElement("li"); #}
+{#   newElement.textContent = "message: " + e.data; #}
+{#   eventList.appendChild(newElement); #}
+{# }; #}
+
 
 <script type="text/javascript">
 const evtSource = new EventSource('/stream');
 const eventList = document.querySelector("ul");
+console.log('eventList: ' + eventList);
+console.log('evtSource.withCredentials: ' + evtSource.withCredentials);
+console.log('evtSource.readyState: ' + evtSource.readyState);
+console.log('evtSource.url: ' + evtSource.url);
 
-evtSource.onmessage = (e) => {
-  const newElement = document.createElement("li");
+evtSource.onopen = function() {
+  console.log("Connection to server opened.");
+  console.log('evtSource.readyState: ' + evtSource.readyState);
+};
 
-  newElement.textContent = `message: ${e.data}`;
-  eventList.appendChild(newElement);
+evtSource.onmessage = function(e) {
+  console.log("Got event: " + e.data);
+};
+
+evtSource.onerror = function() {
+  console.log("EventSource failed.");
 };
 </script>
 
 <script type="text/javascript">
-setInterval(updateNum, 1000);
+{# setInterval(updateNum, 1000); #}
 const numC = document.getElementById("num-c");
-numC.textContent = '3';
+numC.textContent = 'Repeated call to /num disabled, uncomment that line to re-enable.';
 function updateNum()
 {
   fetch("/num")

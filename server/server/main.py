@@ -54,6 +54,12 @@ def handle_start_stream():
         time.sleep(random.uniform(0., 1.))
         emit('stream_data', {'data': chunk})
 
+@socketio.on('audio_stream')
+def handle_audio_stream(audio_data):
+    # Process the audio data received from the client
+    # In this example, we simply emit the received audio data back to all connected clients
+    emit('audio_stream', audio_data)
+
 @app.route('/')
 def index():
     return render_template('index.html')

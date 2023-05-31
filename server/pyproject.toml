@@ -1,6 +1,6 @@
 [project]
 name = "ui"
-version = "23.5.0"
+version = "23.5.1"
 description = "Web browser user interface for Moshi."
 readme = "README.md"
 requires-python = ">=3.7"
@@ -22,7 +22,8 @@ dependencies = [
   "flask",
   "flask-socketio",
   "loguru",
-  "pyaudio"
+  "pyaudio",
+  "moshi"
 ]
 
 [project.optional-dependencies]

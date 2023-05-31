@@ -2,6 +2,7 @@ from flask import Flask, render_template
 from flask_socketio import SocketIO, emit
 import random
 import string
+import time
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret_key'
@@ -10,9 +11,13 @@ socketio = SocketIO(app)
 def random_string(length):
     return ''.join(random.choice(string.ascii_letters) for _ in range(length))
 
-def generate_chunks(length, num_chunks):
-    for i in range(num_chunks):
-        yield random_string(length)
+def generate_chunks(length, num_chunks=None):
+    if num_chunks:
+        for i in range(num_chunks):
+            yield random_string(length)
+    else:
+        while 1:
+            yield random_string(length)
 
 @socketio.on('connect')
 def handle_connect():
@@ -26,8 +31,9 @@ def handle_disconnect():
 @socketio.on('start_stream')
 def handle_start_stream():
     print('Starting stream')
-    for chunk in generate_chunks(10, 3):
+    for chunk in generate_chunks(10):
         print(chunk)
+        time.sleep(random.uniform(0., 1.))
         emit('stream_data', {'data': chunk})
 
 @app.route('/')

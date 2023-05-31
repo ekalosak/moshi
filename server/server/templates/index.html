@@ -3,20 +3,31 @@
 <h1 class="title">Moshi</h1>
 <h2 class="subtitle">Have a spoken conversation in another language, at your level.</h2>
 <hr>
+<div id="text-stream">
+  <h3>Streamed via websockets:</h3>
+  <ul id="text-stream-ul">
+  </ul>
+</div>
+<hr>
 {% endblock %}
 
 {% block js %}
 <script src="https://cdn.socket.io/4.3.1/socket.io.min.js"></script>
 <script type="text/javascript">
   const socket = io.connect('http://localhost:5000');
+  console.log('Made socket: ' + socket);
+  var ulElement = document.getElementById("text-stream-ul");
+  console.log('Got ulElement: ' + ulElement);
 
   socket.on('connect', function() {
     console.log('Connected to the server');
   });
 
-  socket.on('stream_data', function(data) {
-    console.log('Received data:', data.data);
-    // Use the data as needed
+  socket.on('stream_data', function(chunk) {
+    console.log('Received data:', chunk.data);
+    var liElement = document.createElement("li");
+    liElement.textContent = chunk.data;
+    ulElement.appendChild(liElement);
   });
 
   socket.on('disconnect', function() {

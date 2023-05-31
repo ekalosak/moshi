@@ -19,10 +19,10 @@ classifiers = [
   "Topic :: Education",
 ]
 dependencies = [
-  "loguru",
-  "pyaudio",
   "flask",
-  "flask-socketio"
+  "flask-socketio",
+  "loguru",
+  "pyaudio"
 ]
 
 [project.optional-dependencies]

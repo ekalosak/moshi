@@ -15,14 +15,14 @@ socket.on('connect', function() {
 });
 
 socket.on('stream_data', function(chunk) {
-  console.log('Received data:', chunk.data);
+  // console.log('Received data:', chunk.data);
   var liElement = document.createElement("li");
   liElement.textContent = chunk.data;
   ulElement.appendChild(liElement);
 });
 
 socket.on('log', function(data) {
-  console.log('Log data: ' + data);
+  // console.log('Log data: ' + data);
   var logLevel = data.level;
   var logMessage = data.message;
   var logTime = data.time;

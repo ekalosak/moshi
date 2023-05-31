@@ -19,6 +19,8 @@
 
 {% block js %}
 <script src="https://cdn.socket.io/4.3.1/socket.io.min.js"></script>
-<script src="{{url_for('static', filename='demo_stream.js')}}"></script>
+{# The demo_stream looks for the xyz-stream-ul elements #}
+<script src="{{url_for('static', filename='demo_log_stream.js')}}"></script>
+<script src="{{url_for('static', filename='demo_audio_stream.js')}}"></script>
 {% endblock %}
 

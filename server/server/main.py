@@ -2,6 +2,7 @@ from pprint import pprint
 import random
 import string
 import time
+from textwrap import shorten
 
 from flask import Flask, render_template
 from flask_socketio import SocketIO, emit
@@ -38,19 +39,19 @@ def generate_chunks(length, num_chunks):
 
 @socketio.on('connect')
 def handle_connect():
-    print('Client connected')
+    logger.info('Client connected')
     emit('server_response', {'data': 'Connected to the server'})
 
 @socketio.on('disconnect')
 def handle_disconnect():
-    print('Client disconnected')
+    logger.info('Client disconnected')
 
 @socketio.on('start_stream')
 def handle_start_stream():
-    print('Starting stream')
+    logger.info('Starting stream')
     for chunk in generate_chunks(10, 10):
-        print(chunk)
-        logger.info('some ping')
+        logger.debug(f'prepared chunk: {chunk}')
+        logger.info(f'sending chunk: {shorten(chunk, 16)}')
         time.sleep(random.uniform(0., 1.))
         emit('stream_data', {'data': chunk})
 
@@ -58,6 +59,7 @@ def handle_start_stream():
 def handle_audio_stream(audio_data):
     # Process the audio data received from the client
     # In this example, we simply emit the received audio data back to all connected clients
+    logger.debug(f'audio_data: {audio_data[:64]}')
     emit('audio_stream', audio_data)
 
 @app.route('/')

@@ -1,5 +1,5 @@
 [project]
-name = "ui"
+name = "moshi-server"
 version = "23.5.1"
 description = "Web browser user interface for Moshi."
 readme = "README.md"
@@ -21,6 +21,8 @@ classifiers = [
 dependencies = [
   "flask",
   "flask-socketio",
+  "gevent",
+  "gunicorn",
   "loguru",
   "pyaudio",
   "moshi"

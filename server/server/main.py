@@ -13,7 +13,7 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret_key'
 socketio = SocketIO(app)
 
-# rec = sr.Recognizer()
+rec = sr.Recognizer()
 
 # NOTE these must match the client's audio formatting parameters
 FRAME = 1024 * 4
@@ -50,6 +50,7 @@ class WebSocketAudioSource(AudioSource):
     def __enter__(self):
         """ Set up the stream and return self. """
         self.stream = WebSocketAudioStream(self.deq)
+        return self
 
     def __exit__(self, exc_type, exc_value, traceback):
         """ Tear down the stream. """
@@ -61,14 +62,12 @@ audio_source = WebSocketAudioSource(audio_deq)
 def handle_audio_data(frame):
     """ Write frames of the audio stream to the WebSocketAudioSource. """
     assert len(frame) == FRAME, f"Got unexpected frame size: {len(frame)}; expected: {FRAME}"
-    # print(frame)
     if recording:
         audio_deq.append_left(frame)
-    else:
-        print('not recording')
 
 @socketio.on('listen')
 def handle_listen_request():
+    print('got listen request')
     audio_deq.clear()
     recording = True
     emit('start_recording')

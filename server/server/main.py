@@ -1,41 +1,87 @@
-from pprint import pprint
-import random
-import string
-import time
-from textwrap import shorten
+import collections
 
 from flask import Flask, render_template
 from flask_socketio import SocketIO, emit
 from loguru import logger
+import pyaudio
+from speech_recognition import AudioSource
+import speech_recognition as sr
 
-# import moshi
+from server import util
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret_key'
 socketio = SocketIO(app)
 
-class WebSocketHandler:
-    # Custom logger to emit log messages through WebSocket
-    def __call__(self, record):
-        log_data = {
-            'level': record.record['level'].name,
-            'message': record.record['message'],
-            'time': record.record['time'].isoformat(),
-            'name': record.record['name'],
-            'function': record.record['function'],
-            'line': record.record['line'],
-        }
-        socketio.emit('log', log_data)
+# rec = sr.Recognizer()
 
-log_handler = WebSocketHandler()
-logger.add(log_handler)
+# NOTE these must match the client's audio formatting parameters
+FRAME = 1024 * 4
+FORMAT = pyaudio.paInt16
+CHANNELS = 1
+RATE = 44100
 
-def random_string(length):
-    return ''.join(random.choice(string.ascii_letters) for _ in range(length))
+# MAX_SIZE = int(RATE / FRAME * 2)  # 2 seconds worth of time
+# audio_deq = collections.deque(maxlen=MAX_SIZE)  # elements are bytestrings of len FRAME
+audio_deq = collections.deque()  # mega big max size
+recording = False
 
-def generate_chunks(length, num_chunks):
-    for i in range(num_chunks):
-        yield random_string(length)
+class WebSocketAudioStream:
+    """ This class provides a way to read buffer frames from a websocket bytestream representing audio data.
+    This is where buffering may be done in the future
+    """
+    def __init__(self, deq):
+        self.deq = deq
+
+    def read(self, size=FRAME) -> 'Frame':
+        assert size == FRAME, f"WebSocketAudioStream only supports reading chunks of size {FRAME}, got: {size}"
+        return self.deq.pop()
+
+class WebSocketAudioSource(AudioSource):
+    """ This class provides a way to adapt a websocket stream of audio bytes into an AudioSource for speech_recognition. """
+    def __init__(self, deq):
+        self.format = FORMAT
+        self.CHUNK = FRAME  # so named due to speech_recognition.Recognizer requirement
+        self.SAMPLE_RATE = RATE
+        self.SAMPLE_WIDTH = pyaudio.get_sample_size(self.format)
+        self.deq = deq
+        self.stream = None
+
+    def __enter__(self):
+        """ Set up the stream and return self. """
+        self.stream = WebSocketAudioStream(self.deq)
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        """ Tear down the stream. """
+        self.stream = None
+
+audio_source = WebSocketAudioSource(audio_deq)
+
+@socketio.on('demo_audio_stream')
+def handle_audio_data(frame):
+    """ Write frames of the audio stream to the WebSocketAudioSource. """
+    assert len(frame) == FRAME, f"Got unexpected frame size: {len(frame)}; expected: {FRAME}"
+    # print(frame)
+    if recording:
+        audio_deq.append_left(frame)
+    else:
+        print('not recording')
+
+@socketio.on('listen')
+def handle_listen_request():
+    audio_deq.clear()
+    recording = True
+    emit('start_recording')
+    with audio_source as source:
+        audio = rec.listen(source)
+    recording = False
+    emit('stop_recording')
+    transcript = rec.recognize_sphinx(audio)
+    emit('transcript', transcript)
+
+@socketio.on('transcript')
+def log_transcript(transcript):
+    logger.info(f"Got transcript: {transcript}")
 
 @socketio.on('connect')
 def handle_connect():
@@ -46,23 +92,9 @@ def handle_connect():
 def handle_disconnect():
     logger.info('Client disconnected')
 
-@socketio.on('start_stream')
-def handle_start_stream():
-    logger.info('Starting stream')
-    for chunk in generate_chunks(10, 10):
-        logger.debug(f'prepared chunk: {chunk}')
-        logger.info(f'sending chunk: {shorten(chunk, 16)}')
-        time.sleep(random.uniform(0., 1.))
-        emit('stream_data', {'data': chunk})
-
-@socketio.on('demo_audio_stream')
-def handle_demo_audio_stream(audio_data):
-    logger.trace('got chunk')
-    emit('demo_audio_stream', audio_data)
-
-@app.route('/demo_stream')
-def index():
-    return render_template('demo_stream.html')
+@app.route('/')
+def demo_audio_recognition():
+    return render_template('demo_audio_recognition.html')
 
 if __name__ == '__main__':
     socketio.run(app)

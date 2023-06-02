@@ -64,8 +64,10 @@
         const message = event.data;
 
         if (message === 'start_recording') {
+          console.log('got start_recording');
           changeStatus('RECORDING');
         } else if (message === 'stop_recording') {
+          console.log('got stop_recording');
           changeStatus('NOT RECORDING');
         }
       };

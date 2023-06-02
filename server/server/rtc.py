@@ -1,84 +1,214 @@
-"""
-Web server using aiortc and Flask to receive client microphone audio.
-
-The server creates a Flask web application that handles two routes:
-- '/' serves the home page that initiates the microphone audio streaming.
-- '/offer' receives the client's SDP offer, establishes a peer connection using aiortc,
-  and starts consuming the client's microphone audio.
-
-Dependencies:
-- aiortc: Async WebRTC and ORTC implementation
-- Flask: A micro web framework for Python
-
-Example usage:
-1. Start the server: python rtc.py
-2. Open a browser and navigate to http://localhost:5000
-3. Grant access to the microphone when prompted.
-4. The server will receive the client's microphone audio and print any data channel messages.
-
-Note: This is a basic example and may require modifications for more complex scenarios or additional functionality.
-"""
+# https://github.com/aiortc/aiortc/blob/main/examples/server/server.py
+import argparse
 import asyncio
-import aiortc
-from aiortc.contrib.media import MediaPlayer
-from flask import Flask, render_template, Response
-from loguru import logger
+import json
+import logging
+import os
+import ssl
+import uuid
 
-app = Flask(__name__)
-loop = asyncio.get_event_loop()
-pc = None
+import cv2
+from aiohttp import web
+from aiortc import MediaStreamTrack, RTCPeerConnection, RTCSessionDescription
+from aiortc.contrib.media import MediaBlackhole, MediaPlayer, MediaRecorder, MediaRelay
 
-@app.route('/')
-def index():
-    return render_template('demo_rtc.html')
+ROOT = os.path.dirname(__file__)
 
-@app.route('/offer', methods=['POST'])
-def offer(request):
-    global pc
+logger = logging.getLogger("pc")
+pcs = set()
+relay = MediaRelay()
 
-    async def consume_audio(track):
-        player = MediaPlayer(track)
-        while True:
-            frame = await player.read()
-            if frame is None:
-                break
+class AudioTrack(MediaStreamTrack):
+    """
+    An audio stream track that provides access to frames from an another track.
+    This adapts the WebRTC MediaStreamTrack to an AudioSource..? for sr.
+    """
+    ...
 
-    async def answer(request):
-        offer = await request.json()
-        pc = await create_peer_connection()
+# class VideoTransformTrack(MediaStreamTrack):
+#     """
+#     A video stream track that transforms frames from an another track.
+#     """
+#
+#     kind = "video"
+#
+#     def __init__(self, track, transform):
+#         super().__init__()  # don't forget this!
+#         self.track = track
+#         self.transform = transform
+#
+#     async def recv(self):
+#         frame = await self.track.recv()
+#
+#         if self.transform == "cartoon":
+#             img = frame.to_ndarray(format="bgr24")
+#
+#             # prepare color
+#             img_color = cv2.pyrDown(cv2.pyrDown(img))
+#             for _ in range(6):
+#                 img_color = cv2.bilateralFilter(img_color, 9, 9, 7)
+#             img_color = cv2.pyrUp(cv2.pyrUp(img_color))
+#
+#             # prepare edges
+#             img_edges = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
+#             img_edges = cv2.adaptiveThreshold(
+#                 cv2.medianBlur(img_edges, 7),
+#                 255,
+#                 cv2.ADAPTIVE_THRESH_MEAN_C,
+#                 cv2.THRESH_BINARY,
+#                 9,
+#                 2,
+#             )
+#             img_edges = cv2.cvtColor(img_edges, cv2.COLOR_GRAY2RGB)
+#
+#             # combine color and edges
+#             img = cv2.bitwise_and(img_color, img_edges)
+#
+#             # rebuild a VideoFrame, preserving timing information
+#             new_frame = VideoFrame.from_ndarray(img, format="bgr24")
+#             new_frame.pts = frame.pts
+#             new_frame.time_base = frame.time_base
+#             return new_frame
+#         elif self.transform == "edges":
+#             # perform edge detection
+#             img = frame.to_ndarray(format="bgr24")
+#             img = cv2.cvtColor(cv2.Canny(img, 100, 200), cv2.COLOR_GRAY2BGR)
+#
+#             # rebuild a VideoFrame, preserving timing information
+#             new_frame = VideoFrame.from_ndarray(img, format="bgr24")
+#             new_frame.pts = frame.pts
+#             new_frame.time_base = frame.time_base
+#             return new_frame
+#         elif self.transform == "rotate":
+#             # rotate image
+#             img = frame.to_ndarray(format="bgr24")
+#             rows, cols, _ = img.shape
+#             M = cv2.getRotationMatrix2D((cols / 2, rows / 2), frame.time * 45, 1)
+#             img = cv2.warpAffine(img, M, (cols, rows))
+#
+#             # rebuild a VideoFrame, preserving timing information
+#             new_frame = VideoFrame.from_ndarray(img, format="bgr24")
+#             new_frame.pts = frame.pts
+#             new_frame.time_base = frame.time_base
+#             return new_frame
+#         else:
+#             return frame
 
-        @pc.on("track")
-        async def on_track(track):
-            if track.kind == "audio":
-                pc.addTrack(track)
-                await consume_audio(track)
 
-        await pc.setRemoteDescription(aiortc.sdp.SDPType.OFFER, offer)
-        answer = await pc.createAnswer()
-        await pc.setLocalDescription(answer)
+async def index(request):
+    content = open(os.path.join(ROOT, "index.html"), "r").read()
+    return web.Response(content_type="text/html", text=content)
 
-        return Response(answer.sdp, content_type='application/json')
 
-    return loop.run_until_complete(answer(request))
+async def javascript(request):
+    content = open(os.path.join(ROOT, "client.js"), "r").read()
+    return web.Response(content_type="application/javascript", text=content)
 
-async def create_peer_connection():
-    config = aiortc.RTCConfiguration()
-    pc = aiortc.RTCPeerConnection(configuration=config)
-    pc.createDataChannel('data')
+
+async def offer(request):
+    params = await request.json()
+    offer = RTCSessionDescription(sdp=params["sdp"], type=params["type"])
+
+    pc = RTCPeerConnection()
+    pc_id = "PeerConnection(%s)" % uuid.uuid4()
+    pcs.add(pc)
+
+    def log_info(msg, *args):
+        logger.info(pc_id + " " + msg, *args)
+
+    log_info("Created for %s", request.remote)
+
+    # prepare local media
+    player = MediaPlayer(os.path.join(ROOT, "demo-instruct.wav"))
+    if args.record_to:
+        recorder = MediaRecorder(args.record_to)
+    else:
+        recorder = MediaBlackhole()
 
     @pc.on("datachannel")
     def on_datachannel(channel):
         @channel.on("message")
         def on_message(message):
-            print("Received message:", message)
+            if isinstance(message, str) and message.startswith("ping"):
+                channel.send("pong" + message[4:])
 
-    return pc
+    @pc.on("connectionstatechange")
+    async def on_connectionstatechange():
+        log_info("Connection state is %s", pc.connectionState)
+        if pc.connectionState == "failed":
+            await pc.close()
+            pcs.discard(pc)
 
-if __name__ == '__main__':
-    logger.info('Starting server...')
-    try:
-        app.run()
-    except Exception as e:
-        logger.error(f"Terminated with error: {e}")
+    @pc.on("track")
+    def on_track(track):
+        log_info("Track %s received", track.kind)
+
+        if track.kind == "audio":
+            pc.addTrack(player.audio)
+            recorder.addTrack(track)
+        else:
+            raise TypeError(f"Track kind not supported, expected 'audio', got: '{track.kind}'")
+
+        @track.on("ended")
+        async def on_ended():
+            log_info("Track %s ended", track.kind)
+            await recorder.stop()
+
+    # handle offer
+    await pc.setRemoteDescription(offer)
+    await recorder.start()
+
+    # send answer
+    answer = await pc.createAnswer()
+    await pc.setLocalDescription(answer)
+
+    return web.Response(
+        content_type="application/json",
+        text=json.dumps(
+            {"sdp": pc.localDescription.sdp, "type": pc.localDescription.type}
+        ),
+    )
+
+
+async def on_shutdown(app):
+    # close peer connections
+    coros = [pc.close() for pc in pcs]
+    await asyncio.gather(*coros)
+    pcs.clear()
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description="WebRTC audio / data-channels demo"
+    )
+    parser.add_argument("--cert-file", help="SSL certificate file (for HTTPS)")
+    parser.add_argument("--key-file", help="SSL key file (for HTTPS)")
+    parser.add_argument(
+        "--host", default="127.0.0.1", help="Host for HTTP server (default: 127.0.0.1)"
+    )
+    parser.add_argument(
+        "--port", type=int, default=5000, help="Port for HTTP server (default: 5000)"
+    )
+    parser.add_argument("--record-to", help="Write received media to a file."),
+    parser.add_argument("--verbose", "-v", action="count")
+    args = parser.parse_args()
+
+    if args.verbose:
+        logging.basicConfig(level=logging.DEBUG)
     else:
-        logger.success("Terminated gracefully.")
+        logging.basicConfig(level=logging.INFO)
+
+    if args.cert_file:
+        ssl_context = ssl.SSLContext()
+        ssl_context.load_cert_chain(args.cert_file, args.key_file)
+    else:
+        ssl_context = None
+
+    app = web.Application()
+    app.on_shutdown.append(on_shutdown)
+    app.router.add_get("/", index)
+    app.router.add_get("/client.js", javascript)
+    app.router.add_post("/offer", offer)
+    web.run_app(
+        app, access_log=None, host=args.host, port=args.port, ssl_context=ssl_context
+    )

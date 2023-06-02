@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Microphone Audio</title>
+</head>
+<body>
+    <h1>Microphone Audio</h1>
+    <div id="message">Not recording...</div>
+    <script>  // record audio and send to '/offer' endpoint; WebRTC
+        async function startAudio() {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            const audioTracks = stream.getAudioTracks();
+            const audioTrack = audioTracks[0];
+            const peerConnection = new RTCPeerConnection();
+            peerConnection.addTrack(audioTrack, stream);
+
+            const offer = await peerConnection.createOffer();
+            await peerConnection.setLocalDescription(offer);
+
+            const response = await fetch('/offer', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(offer)
+            });
+
+            const answer = await response.text();
+            await peerConnection.setRemoteDescription({ type: 'answer', sdp: answer });
+        }
+
+        startAudio();
+    </script>
+    <script>  // set message to recording or not recording dpd on start and stop signals
+        const messageDiv = document.getElementById('message');
+        const mediaRecorder = new MediaRecorder(stream);
+
+        mediaRecorder.onstart = function() {
+            messageDiv.innerText = 'Recording!';
+        };
+
+        mediaRecorder.onstop = function() {
+            messageDiv.innerText = 'Not recording...';
+        };
+    </script>
+</body>
+</html>

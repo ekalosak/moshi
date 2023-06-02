@@ -6,6 +6,7 @@ import os
 import ssl
 import uuid
 
+# mine
 from pprint import pformat
 import functools
 import sys
@@ -14,32 +15,60 @@ from aiohttp import web
 from aiortc import MediaStreamTrack, RTCPeerConnection, RTCSessionDescription
 from aiortc.contrib.media import MediaBlackhole, MediaPlayer, MediaRecorder, MediaRelay
 
+# mine
 from loguru import logger
 from loguru._defaults import LOGURU_FORMAT
+from speech_recognition import AudioSource
 
-ROOT = os.path.dirname(__file__)
 LOG_FORMAT = LOGURU_FORMAT + " | <g><d>{extra}</d></g>"
 logger.remove()
 logger.add(sink=sys.stderr, format=LOG_FORMAT, colorize=True)
 
+ROOT = os.path.dirname(__file__)
 pcs = set()  # peer connections
-relay = MediaRelay()
 
-class WebMicStream(MediaStreamTrack):
+class WebMicTrack(MediaStreamTrack):
     """
-    An audio stream track that provides access to frames from a WebRTC track.
+    An audio track that provides access to frames from a WebRTC track.
+    Thin wrapper indicating source (WebMic) and kind (audio).
     """
     kind = 'audio'
-
     def __init__(self, track):
-        super().__init__()  # don't forget this!
+        super().__init__()
         self.track = track
-
     async def recv(self):
-        frame = await self.track.recv()
-        # TODO put this into the AudioSource..?
-        return frame
+        return await self.track.recv()
 
+class WebMicSource(AudioSource):
+    def __init__(self, buf_track):
+        self.track = buf_track
+        self.stream = None
+    def __enter__(self):
+        self.stream = WebMicStream(self.track)
+        return self
+    def __exit__(self):
+        self.stream = None
+
+    def WebMicStream:
+        def __init__(self, track, audio_format=None):
+            assert audio_format is None, "not yet supported"
+            self.resampler = av.AudioResampler(
+                format='s16',   # Specify the desired output format, e.g., signed 16-bit PCM
+                layout='mono',  # Specify the desired output layout, e.g., mono
+                rate=44100      # Specify the desired output sample rate, e.g., 44.1 kHz
+            )
+            self.track = track
+            self.timeout = 0.1  # seconds to wait for frame NOTE currently unused
+
+        def read(self) -> bytes:
+            """ Adapts the async track.recv() to a synchronous call.
+            Bytes must adhere to the AudioSource constants (CHUNK, SAMPLE_RATE, and SAMPLE_WIDTH)
+            """
+            co_frame = self.track.recv()  # coroutine
+            ev_loop = asyncio.get_event_loop()  # event loop
+            av_frame = ev_loop.run_until_complete(co_frame)  # A[T] -> T  NOTE consider converting the coroutine to a future and calling ft.result(timeout)
+            pa_frame = util.pyav_audioframe_to_bytes(av_frame)  # av.AudioFrame -> bytes
+            return pa_frame
 
 async def index(request):
     logger.info(request)
@@ -55,7 +84,6 @@ def async_with_pcid(f):
     @functools.wraps(f)
     async def wrapped(*a, **k):
         pcid = uuid.uuid4()
-        # with logger.contextualize(extra={'PeerConnection': str(pcid)}):
         with logger.contextualize(PeerConnection=str(pcid)):
             return await f(*a, **k)
     return wrapped
@@ -66,16 +94,16 @@ async def offer(request):
     This endpoint handles an offer request from a client and returns an answer with the SDP 
     """
     params = await request.json()
+    logger.trace(f"request params: {params}")
     offer = RTCSessionDescription(sdp=params["sdp"], type=params["type"])
 
     pc = RTCPeerConnection()
     pcs.add(pc)
-
-    logger.info(f"Created for: {request.remote}")
+    logger.info(f"Created peer connection and offer for remote: {request.remote}")
+    logger.trace(f"offer: {offer}")
 
     # prepare local media
-    # player = MediaPlayer(os.path.join(ROOT, "demo-instruct.wav"))
-    recorder = MediaBlackhole()  # TODO this should be an AudioSream that provides AudioSource to speech_recognition
+    relay = MediaRelay()
 
     @pc.on("datachannel")
     def on_datachannel(channel):
@@ -96,25 +124,26 @@ async def offer(request):
         logger.info(f"Track {track.kind} received")
 
         if track.kind == "audio":
-            # pc.addTrack(player.audio)  # NOTE this plays the wav; it should be instead a player that relays the synth voice
-            recorder.addTrack(track)
+            buf_track = relay.addTrack(track, buffered=True)
+            webmic_track = WebMicTrack(buf_track)
+            audio_source = WebMicSource(webmic_track)
         else:
             raise TypeError(f"Track kind not supported, expected 'audio', got: '{track.kind}'")
 
         @track.on("ended")
         async def on_ended():
             logger.info(f"Track {track.kind} ended")
-            await recorder.stop()
+            # await recorder.stop()  # TODO stop the ... track?
 
     # handle offer
     await pc.setRemoteDescription(offer)
-    await recorder.start()
+    # await recorder.start()
 
     # send answer
     answer = await pc.createAnswer()
     await pc.setLocalDescription(answer)
 
-    logger.debug(f"answer: {answer}")
+    logger.trace(f"answer: {answer}")
     return web.Response(
         content_type="application/json",
         text=json.dumps(
@@ -142,7 +171,6 @@ if __name__ == "__main__":
     parser.add_argument(
         "--port", type=int, default=5000, help="Port for HTTP server (default: 5000)"
     )
-    # parser.add_argument("--verbose", "-v", action="count")
     args = parser.parse_args()
 
     if args.cert_file:

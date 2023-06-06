@@ -11,6 +11,5 @@ async def test_audio_listener(audio_track):
     await ud.start()
     # TODO timeout by audio_track._track_audio_len_seconds
     utterance = await ud.get_utterance()
-    await al.stop()
     print(utterance)
-    import sys; sys.exit()
+    await ud.stop()

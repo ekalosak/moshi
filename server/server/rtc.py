@@ -81,18 +81,19 @@ async def offer(request):
 
         if track.kind != 'audio':
             raise TypeError(f"Track kind not supported, expected 'audio', got: '{track.kind}'")
+            # TODO when debugged, only addTrack on kind == 'audio' and not this obverse
+        listener.addTrack(track)
 
         @track.on("ended")
         async def on_ended():
             logger.info(f"Track {track.kind} ended")
             await listener.stop()
 
-    # start the listener
+    await pc.setRemoteDescription(offer)
+
+    # NOTE on_track should have been called by this point
     await listener.start()
 
-    # setup the WebRTC connection
-    await pc.setRemoteDescription(offer)
-    # NOTE listener.start was here - if u nd debug, here.
     answer = await pc.createAnswer()
     await pc.setLocalDescription(answer)
 

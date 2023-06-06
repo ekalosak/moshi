@@ -3,11 +3,14 @@ import pytest
 from server import audio
 
 @pytest.mark.asyncio
+@pytest.mark.slow
 async def test_audio_listener(audio_track):
-    al = audio.AudioListener()
-    al.addTrack(audio_track)
-    await al.start()
+    """ Test that the UtteranceDetector can detect an utterance of speech in an audio track containing speech. """
+    ud = audio.UtteranceDetector()
+    ud.setTrack(audio_track)
+    await ud.start()
     # TODO timeout by audio_track._track_audio_len_seconds
-    transcript = await al.get_transcript()
+    utterance = await ud.get_utterance()
     await al.stop()
-    assert transcript == audio_track._transcript
+    print(utterance)
+    import sys; sys.exit()

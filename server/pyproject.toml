@@ -49,4 +49,5 @@ packages = ["server"]
 [tool.pytest.ini_options]
 markers = [
   "speak: marks tests as requiring access to a speaker",
+  "slow: marks tests as requiring more than a second or two to run",
 ]

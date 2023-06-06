@@ -8,7 +8,12 @@ RESOURCEDIR = Path(__file__).parent / 'resources'
 
 @pytest.fixture
 def utterance_wav_file() -> Path:
-    return RESOURCEDIR / 'test.wav'
+    return RESOURCEDIR / 'test_phrase_8sec_spoken_13sec_total.wav'
+
+@pytest.fixture
+def short_wav_file() -> Path:
+    return RESOURCEDIR / 'test_one_word.wav'
+
 
 @pytest.fixture
 def audio_track(utterance_wav_file) -> mediastreams.MediaStreamTrack:

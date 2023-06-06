@@ -1,66 +1,38 @@
-""" This module provides some utility functions. """
-import av.audio.frame as av_frame
-import av.audio.format as av_format
-import pyaudio
-# import numpy as np
+import asyncio
+import sys
+
 from loguru import logger
+from loguru._defaults import LOGURU_FORMAT
+import requests
 
-# NOTE likely to delete all the pyaudio stuff because
+def setup_loguru():
+    LOG_FORMAT = LOGURU_FORMAT + " | <g><d>{extra}</d></g>"
+    logger.remove()
+    logger.add(sink=sys.stderr, format=LOG_FORMAT, colorize=True)
 
-def pyav_audioframe_to_bytes(af: av_frame.AudioFrame) -> bytes:
-    """ Convert an AudioFrame to the bytes representing it.
-    Note that the conversion is performed with the frame's own format; if you want a specific format, use a resampler to
-    change the frame's format before passing to this function.
-    Bytes are produced in 'C' order; little endian;
-    Must be mono.
-    Source:
-        - Little endian produced by speech_recognition:
-          https://github.com/Uberi/speech_recognition/blob/master/speech_recognition/__init__.py#L311
+
+async def async_web_request(url):
+    """ Run a synchronous web request in a task, making it async.
+    Example:
+    ```
+    async def main():
+        url = 'https://example.com'
+
+        # Start the web request in the background
+        request_task = asyncio.create_task(async_web_request(url))
+
+        # Perform other tasks in the meantime
+        print("Doing other work...")
+
+        # Wait for the web request to complete
+        response = await request_task
+
+        # Process the response
+        print(response)
+
+    asyncio.run(main())
+    ```
     """
-    logger.debug(f"AudioFrame format: {af.format")
-    ar = af.to_numpy()  # TODO order, dtype
-    bt = ar.tobytes()
-    return bt
-
-def pyav_to_pyaudio_format(pyav_format: av_format.AudioFormat) -> int:
-    """
-    Convert PyAV AudioFormat to PyAudio audio format.
-
-    Args:
-        pyav_format (AudioFormat): PyAV audio format.
-
-    Returns:
-        int: PyAudio audio format.
-
-    Raises:
-        ValueError: If the PyAV format is unsupported.
-    """
-    if pyav_format == av_format.AudioFormat.PCM_S16LE:
-        return pyaudio.paInt16
-    elif pyav_format == av_format.AudioFormat.PCM_S16BE:
-        return pyaudio.paInt16  # Same as PyAV's S16LE, just different endianness
-    elif pyav_format == av_format.AudioFormat.PCM_F32LE:
-        return pyaudio.paFloat32
-    # Add more mappings as needed for other PyAV formats
-    else:
-        raise ValueError(f"Unsupported PyAV format: {pyav_format}")
-
-def pyaudio_to_pyav_format(pyaudio_format: int) -> av_format.AudioFormat:
-    """
-    Convert PyAudio audio format to PyAV AudioFormat.
-
-    Args:
-        pyaudio_format (int): PyAudio audio format.
-
-    Returns:
-        AudioFormat: PyAV audio format.
-
-    Raises:
-        ValueError: If the PyAudio format is unsupported.
-    """
-    if pyaudio_format == pyaudio.paInt16:
-        return av_format.AudioFormat.PCM_S16LE
-    elif pyaudio_format == pyaudio.paFloat32:
-        return av_format.AudioFormat.PCM_F32LE
-    else:
-        raise ValueError(f"Unsupported PyAudio format: {pyaudio_format}")
+    loop = asyncio.get_event_loop()
+    response = await loop.run_in_executor(None, requests.get, url)
+    return response.text

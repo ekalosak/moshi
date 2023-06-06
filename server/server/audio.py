@@ -26,11 +26,12 @@ def get_frame_seconds(af: AudioFrame) -> float:
     return seconds
 
 def _track_str(track) -> str:
-    return f"{track.kind}:{track.id}"
+    return f"{track.readyState}:{track.kind}:{track.id}"
 
 @dataclass
 class ListeningConfig:
     ambient_noise_measurement_seconds: float=.5  # how long to measure ambient noise for the background audio energy
+    silence_detection_ignore_spike_seconds: float=0.05  # until silence is broken for this long, it still counts as contiguous silence
     utterance_end_silence_seconds: float=1.5  # must be silent for this long after an utterance for detection to terminate
     utterance_length_min_seconds: float=.8  # must speak for this long before detection can occur
     utterance_start_timeout_seconds: float=8.  # how long to wait for user to start speaking before timing out
@@ -54,6 +55,8 @@ class UtteranceDetector:
         """
         if track.kind != 'audio':
             raise ValueError(f"Non-audio tracks not supported, got track: {_track_str(track)}")
+        if track.readyState != 'live':
+            raise ValueError(f"Non-live tracks not supported, got track: {_track_str(track)}")
         if self.__track is not None:
             raise ValueError(f"Track already set: {_track_str(self.__track)}")
         self.__track = track
@@ -97,6 +100,7 @@ class UtteranceDetector:
         logger.debug(f"frame: {frame}")
         fifo = AudioFifo()
         silence_time_sec = 0.
+        silence_broken_time = 0.
         total_utterance_sec = 0.
         while silence_time_sec < self.__config.utterance_end_silence_seconds:
             try:
@@ -110,8 +114,11 @@ class UtteranceDetector:
             frame_time = get_frame_seconds(frame)
             if frame_energy < background_energy:
                 silence_time_sec += frame_time
+                silence_broken_time = 0.
             else:
-                silence_time_sec = 0.
+                silence_broken_time += frame_time
+                if silence_broken_time > self.__config.silence_detection_ignore_spike_seconds:
+                    silence_time_sec = 0.
             logger.trace(f"silence_time_sec: {silence_time_sec}")
             total_utterance_sec += frame_time
         logger.info(f"Utterance stopped after {total_utterance_sec:.3f} seconds")
@@ -155,4 +162,6 @@ class UtteranceDetector:
             self.__utterance_detected.wait(),
             self.__config.utterance_timeout_seconds
         )
+        utterance_time = get_frame_seconds(self.__utterance)
+        logger.info(f"Got utterance: {utterance_time:.3f} sec")
         return self.__utterance

@@ -59,7 +59,7 @@ async def offer(request):
     logger.info(f"Created peer connection and offer for remote: {request.remote}")
     logger.trace(f"offer: {offer}")
 
-    listener = audio.AudioListener()
+    detector = audio.UtteranceDetector()
 
     @pc.on("datachannel")
     def on_datachannel(channel):
@@ -81,18 +81,17 @@ async def offer(request):
 
         if track.kind != 'audio':
             raise TypeError(f"Track kind not supported, expected 'audio', got: '{track.kind}'")
-            # TODO when debugged, only addTrack on kind == 'audio' and not this obverse
-        listener.addTrack(track)
+        detector.setTrack(track)
 
         @track.on("ended")
         async def on_ended():
             logger.info(f"Track {track.kind} ended")
-            await listener.stop()
+            await detector.stop()
 
     await pc.setRemoteDescription(offer)
 
-    # NOTE on_track should have been called by this point
-    await listener.start()
+    # on_track should have been called by this point, so start should be ok
+    await detector.start()
 
     answer = await pc.createAnswer()
     await pc.setLocalDescription(answer)

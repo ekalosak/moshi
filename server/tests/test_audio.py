@@ -15,4 +15,4 @@ async def test_audio_listener(audio_track):
     await ud.stop()
     assert isinstance(utterance, AudioFrame)
     utterance_time = audio.get_frame_seconds(utterance)
-    assert 7. <= utterance_time <= 8., f"{str(audio_track)} is about 7.5 seconds of speech"
+    assert 7. <= utterance_time <= 8.5, f"{str(audio_track)} is about 7.5 seconds of speech"

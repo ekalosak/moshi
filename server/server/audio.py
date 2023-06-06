@@ -14,10 +14,12 @@ from loguru import logger
 import numpy as np
 
 def get_frame_energy(af: AudioFrame) -> float:
-    arr = af.to_ndarray()
+    arr = af.to_ndarray()  # produces array with dtype of int16
     logger.trace(f"arr.shape: {arr.shape}")
-    energy = np.sqrt(np.mean(np.square(arr)))
+    # int16 is too small for squares of typical signal stregth so int32 is used
+    energy = np.sqrt(np.mean(np.square(arr, dtype=np.int32)))
     logger.trace(f"frame energy: {energy}")
+    assert not np.isnan(energy)
     return energy
 
 def get_frame_seconds(af: AudioFrame) -> float:

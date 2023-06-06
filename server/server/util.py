@@ -5,6 +5,8 @@ import pyaudio
 # import numpy as np
 from loguru import logger
 
+# NOTE likely to delete all the pyaudio stuff because
+
 def pyav_audioframe_to_bytes(af: av_frame.AudioFrame) -> bytes:
     """ Convert an AudioFrame to the bytes representing it.
     Note that the conversion is performed with the frame's own format; if you want a specific format, use a resampler to

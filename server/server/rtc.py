@@ -19,6 +19,8 @@ from aiortc.contrib.media import MediaBlackhole, MediaPlayer, MediaRecorder, Med
 from loguru import logger
 from loguru._defaults import LOGURU_FORMAT
 from speech_recognition import AudioSource
+import speech_recognition as sr
+import pyaudio
 
 LOG_FORMAT = LOGURU_FORMAT + " | <g><d>{extra}</d></g>"
 logger.remove()
@@ -26,6 +28,7 @@ logger.add(sink=sys.stderr, format=LOG_FORMAT, colorize=True)
 
 ROOT = os.path.dirname(__file__)
 pcs = set()  # peer connections
+rec = sr.Recognizer()
 
 class WebMicTrack(MediaStreamTrack):
     """
@@ -40,33 +43,49 @@ class WebMicTrack(MediaStreamTrack):
         return await self.track.recv()
 
 class WebMicSource(AudioSource):
-    def __init__(self, buf_track):
+    """ This class does two important things:
+    1. Adapt the async aiortc.MediaStreamTrack.recv() to a syncronous read()
+    2. Adapt the av.AudioFrame unboxed from the MediaStreamTrack.recv() into bytes expected by the Recognizer.
+    """
+    def __init__(self, buf_track, fmt=pyaudio.paInt16):
         self.track = buf_track
         self.stream = None
+        self.format = fmt
+        self.CHUNK = 4096  # NOTE this must match the AudioFrame.frame_size
+        self.SAMPLE_RATE = 44100
+        # self.SAMPLE_WIDTH = 
     def __enter__(self):
-        self.stream = WebMicStream(self.track)
+        self.stream = WebMicSource.WebMicStream(self.track)
         return self
-    def __exit__(self):
+    def __exit__(self, extp, exval, tb):
+        # TODO perhaps... close the stream..?
         self.stream = None
 
-    def WebMicStream:
+    class WebMicStream:
         def __init__(self, track, audio_format=None):
             assert audio_format is None, "not yet supported"
-            self.resampler = av.AudioResampler(
-                format='s16',   # Specify the desired output format, e.g., signed 16-bit PCM
-                layout='mono',  # Specify the desired output layout, e.g., mono
-                rate=44100      # Specify the desired output sample rate, e.g., 44.1 kHz
-            )
+            # self.resampler = av.AudioResampler(
+            #     format='s16',   # Specify the desired output format, e.g., signed 16-bit PCM
+            #     layout='mono',  # Specify the desired output layout, e.g., mono
+            #     rate=44100      # Specify the desired output sample rate, e.g., 44.1 kHz
+            # )
             self.track = track
-            self.timeout = 0.1  # seconds to wait for frame NOTE currently unused
+            self.timeout = 0.1
 
-        def read(self) -> bytes:
+        def read(self, size: int) -> bytes:
             """ Adapts the async track.recv() to a synchronous call.
-            Bytes must adhere to the AudioSource constants (CHUNK, SAMPLE_RATE, and SAMPLE_WIDTH)
+            FUTURE: The returned bytes adhere to the AudioSource constants (CHUNK, SAMPLE_RATE, and SAMPLE_WIDTH) via
+            the resampler.
+            Example usage: https://github.com/Uberi/speech_recognition/blob/master/speech_recognition/__init__.py#L198
+            Args:
+                - size: number of bytes to read off the buffer
             """
             co_frame = self.track.recv()  # coroutine
-            ev_loop = asyncio.get_event_loop()  # event loop
-            av_frame = ev_loop.run_until_complete(co_frame)  # A[T] -> T  NOTE consider converting the coroutine to a future and calling ft.result(timeout)
+            # ev_loop = asyncio.get_event_loop()  # event loop
+            # ft_frame = asyncio.ensure_future(co_frame)
+            av_frame = asyncio.run(co_frame)
+            # av_frame = ev_loop.run_until_complete(ft_frame)
+            # av_frame = ft_frame.result(timeout=self.timeout)  # A[T] -> T
             pa_frame = util.pyav_audioframe_to_bytes(av_frame)  # av.AudioFrame -> bytes
             return pa_frame
 
@@ -81,6 +100,7 @@ async def javascript(request):
     return web.Response(content_type="application/javascript", text=content)
 
 def async_with_pcid(f):
+    """ Contextualize the logger with a PeerConnection uid. """
     @functools.wraps(f)
     async def wrapped(*a, **k):
         pcid = uuid.uuid4()
@@ -103,7 +123,7 @@ async def offer(request):
     logger.trace(f"offer: {offer}")
 
     # prepare local media
-    relay = MediaRelay()
+    relay = MediaRelay()  # produces a buffered track that'll be wrapped in the WebMicTrack
 
     @pc.on("datachannel")
     def on_datachannel(channel):
@@ -123,12 +143,20 @@ async def offer(request):
     def on_track(track):
         logger.info(f"Track {track.kind} received")
 
-        if track.kind == "audio":
-            buf_track = relay.addTrack(track, buffered=True)
-            webmic_track = WebMicTrack(buf_track)
-            audio_source = WebMicSource(webmic_track)
-        else:
+        if track.kind != 'audio':
             raise TypeError(f"Track kind not supported, expected 'audio', got: '{track.kind}'")
+        buf_track = relay.subscribe(track, buffered=True)
+        logger.debug(f"Created buffered track: {buf_track}")
+        webmic_track = WebMicTrack(buf_track)
+        logger.debug(f"Created web mic track: {webmic_track}")
+        audio_source = WebMicSource(webmic_track)
+        logger.debug(f"Created audio source: {audio_source}")
+        with audio_source as source:  # __enter__ initializes the stream
+            logger.debug(f"Created audio stream: {source.stream}")
+            audio = rec.listen(source)
+        logger.success(f"Got audio: {audio}")
+        transcript = rec.recognize_sphinx(audio)
+        logger.info(f"Got transcript: {transcript}")
 
         @track.on("ended")
         async def on_ended():

@@ -1,107 +1,154 @@
-import io
-import collections
+# https://github.com/aiortc/aiortc/blob/main/examples/server/server.py
+import argparse
+import asyncio
+import json
+import os
+import ssl
+import uuid
 
-from flask import Flask, render_template
-from flask_socketio import SocketIO, emit
+# mine
+import functools
+
+from aiohttp import web
+from aiortc import MediaStreamTrack, RTCPeerConnection, RTCSessionDescription
+from aiortc.contrib.media import MediaBlackhole, MediaPlayer, MediaRecorder, MediaRelay
+
+# mine
 from loguru import logger
-import pyaudio
-from speech_recognition import AudioSource
-import speech_recognition as sr
 
-from server import util
+# mine
+from server import util, audio
 
-# these must match the client's audio formatting parameters
-FRAME = 1024 * 4
-FORMAT = pyaudio.paInt16
-CHANNELS = 1
-RATE = 44100
+util.setup_loguru()
 
-app = Flask(__name__)
-app.config['SECRET_KEY'] = 'secret_key'
-socketio = SocketIO(app)
+ROOT = os.path.dirname(__file__)
+pcs = set()  # peer connections
 
-rec = sr.Recognizer()
-buffer = io.BytesIO()
+async def index(request):
+    """ HTTP endpoint for index.html """
+    logger.info(request)
+    content = open(os.path.join(ROOT, "index.html"), "r").read()
+    return web.Response(content_type="text/html", text=content)
 
-MAX_BUFFER_SIZE = 1024 * 1024 * 8  # 8MiB
+async def javascript(request):
+    """ HTTP endpoint for client.js """
+    content = open(os.path.join(ROOT, "client.js"), "r").read()
+    return web.Response(content_type="application/javascript", text=content)
 
-class WebSocketAudioStream:
-    """ This class provides a way to read frames from a websocket bytestream representing audio data.
+def async_with_pcid(f):
+    """ Decorator for contextualizing the logger with a PeerConnection uid. """
+    @functools.wraps(f)
+    async def wrapped(*a, **k):
+        pcid = uuid.uuid4()
+        with logger.contextualize(PeerConnection=str(pcid)):
+            return await f(*a, **k)
+    return wrapped
+
+@async_with_pcid
+async def offer(request):
+    """ In WebRTC, there's an initial offer->answer exchange that negotiates the connection parameters.
+    This endpoint accepts an offer request from a client and returns an answer with the SDP (session description protocol).
+    Moreover, it sets up the PeerConnection (pc) and the event listeners on the connection.
     """
-    def __init__(self, buf):
-        self.buf = buf
-        self.pos = self.buf.tell()
+    params = await request.json()
+    logger.trace(f"request params: {params}")
+    offer = RTCSessionDescription(sdp=params["sdp"], type=params["type"])
 
-    def read(self, size=FRAME) -> 'Frame':
-        # TODO may require a synchronization to handle the race condition between having seek'd to pos and having
-        # written new frames: https://chat.openai.com/c/940dc6ea-de06-4610-85ee-9a4ec0fb3b0a
-        # also truncating the buffer to keep its size under control
-        # TODO Consider abstracting the buffer into this class entirely to control this stuff.
-        self.buf.seek(self.pos)
-        self.pos += size
-        frame = self.buf.read(size)
-        return frame
+    pc = RTCPeerConnection()
+    pcs.add(pc)
+    logger.info(f"Created peer connection and offer for remote: {request.remote}")
+    logger.trace(f"offer: {offer}")
 
-class WebSocketAudioSource(AudioSource):
-    """ This class provides a way to adapt a websocket stream of audio bytes into an AudioSource for speech_recognition. """
-    def __init__(self, buf):
-        self.format = FORMAT
-        self.CHUNK = FRAME  # so named due to speech_recognition.Recognizer requirement
-        self.SAMPLE_RATE = RATE
-        self.SAMPLE_WIDTH = pyaudio.get_sample_size(self.format)
-        self.buf = buf
-        self.stream = None
+    detector = audio.UtteranceDetector()
 
-    def __enter__(self):
-        """ Set up the stream and return self. """
-        self.stream = WebSocketAudioStream(self.buf)
-        return self
+    @pc.on("datachannel")
+    def on_datachannel(channel):
+        if channel.label == 'keepalive':
+            @channel.on("message")
+            def on_message(message):
+                if isinstance(message, str) and message.startswith("ping"):
+                    channel.send("pong" + message[4:])
 
-    def __exit__(self, exc_type, exc_value, traceback):
-        """ Tear down the stream. """
-        self.stream = None
+        elif channel.label == 'utterance':
+            @channel.on("message")
+            def on_message(message):
+                # TODO respond with utterance status updates
+                if isinstance(message, str) and message.startswith("ping"):
+                    channel.send("pong" + message[4:])
+        else:
+            raise ValueError(f"Got unknown channel: {channel.label}")
 
-audio_source = WebSocketAudioSource(buffer)
+    @pc.on("connectionstatechange")
+    async def on_connectionstatechange():
+        logger.info(f"Connection state is: {pc.connectionState}")
+        if pc.connectionState == "failed":
+            await pc.close()
+            pcs.discard(pc)
 
-@socketio.on('demo_audio_stream')
-def handle_audio_data(frame):
-    """ Write frames of the audio stream to the WebSocketAudioSource. """
-    assert len(frame) == FRAME, f"Got unexpected frame size: {len(frame)}; expected: {FRAME}"
-    assert isinstance(frame, bytes), f"Expected bytestring, got: {type(frame)}"
-    buf_sz = buffer.getbuffer().nbytes + len(frame)
-    if buf_sz > MAX_BUFFER_SIZE:
-        logger.info(f"truncating buffer as its size is {buf_sz} bytes.")
-        truncated_size = buffer.truncate(buffer.tell())
-        buffer.seek(0)
-        logger.debug(f"truncated size: {truncated_size}")
-    buffer.write(frame)
+    @pc.on("track")
+    def on_track(track):
+        logger.info(f"Track {track.kind} received")
 
-@socketio.on('listen')
-def handle_listen_request():
-    logger.debug('got listen request')
-    emit('start_recording')
-    with audio_source as source:
-        audio = rec.listen(source)
-    emit('stop_recording')
-    transcript = rec.recognize_sphinx(audio)
-    emit('transcript', transcript)
+        if track.kind != 'audio':
+            raise TypeError(f"Track kind not supported, expected 'audio', got: '{track.kind}'")
+        detector.setTrack(track)
 
-@socketio.on('transcript')
-def log_transcript(transcript):
-    logger.info(f"Got transcript: {transcript}")
+        @track.on("ended")
+        async def on_ended():
+            logger.info(f"Track {track.kind} ended")
+            await detector.stop()
 
-@socketio.on('connect')
-def handle_connect():
-    logger.info('Client connected')
-    emit('server_response', {'data': 'Connected to the server'})
+    await pc.setRemoteDescription(offer)
 
-@socketio.on('disconnect')
-def handle_disconnect():
-    logger.info('Client disconnected')
+    # on_track should have been called by this point, so start should be ok
+    await detector.start()
 
-@app.route('/')
-def demo_audio_recognition():
-    return render_template('demo_audio_recognition.html')
+    answer = await pc.createAnswer()
+    await pc.setLocalDescription(answer)
 
-if __name__ == '__main__':
-    socketio.run(app)
+    logger.trace(f"answer: {answer}")
+    return web.Response(
+        content_type="application/json",
+        text=json.dumps(
+            {"sdp": pc.localDescription.sdp, "type": pc.localDescription.type}
+        ),
+    )
+
+
+async def on_shutdown(app):
+    logger.info(f"Shutting down {len(pcs)} PeerConnections...")
+    # close peer connections
+    coros = [pc.close() for pc in pcs]
+    await asyncio.gather(*coros)
+    pcs.clear()
+    logger.success("Shut down gracefully!")
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description="WebRTC audio / data-channels demo"
+    )
+    parser.add_argument("--cert-file", help="SSL certificate file (for HTTPS)")
+    parser.add_argument("--key-file", help="SSL key file (for HTTPS)")
+    parser.add_argument(
+        "--host", default="127.0.0.1", help="Host for HTTP server (default: 127.0.0.1)"
+    )
+    parser.add_argument(
+        "--port", type=int, default=5000, help="Port for HTTP server (default: 5000)"
+    )
+    args = parser.parse_args()
+
+    if args.cert_file:
+        ssl_context = ssl.SSLContext()
+        ssl_context.load_cert_chain(args.cert_file, args.key_file)
+    else:
+        ssl_context = None
+
+    app = web.Application()
+    app.on_shutdown.append(on_shutdown)
+    app.router.add_get("/", index)
+    app.router.add_get("/client.js", javascript)
+    app.router.add_post("/offer", offer)
+    web.run_app(
+        app, access_log=None, host=args.host, port=args.port, ssl_context=ssl_context
+    )

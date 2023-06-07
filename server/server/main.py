@@ -4,25 +4,18 @@ import asyncio
 import json
 import os
 import ssl
-import uuid
-
-# mine
-import functools
 
 from aiohttp import web
 from aiortc import MediaStreamTrack, RTCPeerConnection, RTCSessionDescription
 from aiortc.contrib.media import MediaBlackhole, MediaPlayer, MediaRecorder, MediaRelay
-
-# mine
 from loguru import logger
 
-# mine
-from server import util, audio
-
-util.setup_loguru()
+from server import util, audio, chat
 
 ROOT = os.path.dirname(__file__)
 pcs = set()  # peer connections
+
+util.setup_loguru()
 
 async def index(request):
     """ HTTP endpoint for index.html """
@@ -35,16 +28,7 @@ async def javascript(request):
     content = open(os.path.join(ROOT, "client.js"), "r").read()
     return web.Response(content_type="application/javascript", text=content)
 
-def async_with_pcid(f):
-    """ Decorator for contextualizing the logger with a PeerConnection uid. """
-    @functools.wraps(f)
-    async def wrapped(*a, **k):
-        pcid = uuid.uuid4()
-        with logger.contextualize(PeerConnection=str(pcid)):
-            return await f(*a, **k)
-    return wrapped
-
-@async_with_pcid
+@util.async_with_pcid
 async def offer(request):
     """ In WebRTC, there's an initial offer->answer exchange that negotiates the connection parameters.
     This endpoint accepts an offer request from a client and returns an answer with the SDP (session description protocol).
@@ -59,7 +43,7 @@ async def offer(request):
     logger.info(f"Created peer connection and offer for remote: {request.remote}")
     logger.trace(f"offer: {offer}")
 
-    detector = audio.UtteranceDetector()
+    chatter = chat.Chatter()
 
     @pc.on("datachannel")
     def on_datachannel(channel):
@@ -68,13 +52,11 @@ async def offer(request):
             def on_message(message):
                 if isinstance(message, str) and message.startswith("ping"):
                     channel.send("pong" + message[4:])
-
         elif channel.label == 'utterance':
             @channel.on("message")
             def on_message(message):
+                logger.debug(f"utterance channel got message: {message}")
                 # TODO respond with utterance status updates
-                if isinstance(message, str) and message.startswith("ping"):
-                    channel.send("pong" + message[4:])
         else:
             raise ValueError(f"Got unknown channel: {channel.label}")
 
@@ -91,17 +73,17 @@ async def offer(request):
 
         if track.kind != 'audio':
             raise TypeError(f"Track kind not supported, expected 'audio', got: '{track.kind}'")
-        detector.setTrack(track)
+        chatter.setTrack(track)
 
         @track.on("ended")
-        async def on_ended():
+        async def on_ended():  # e.g. user disconnects audio
             logger.info(f"Track {track.kind} ended")
-            await detector.stop()
+            await chatter.stop()
 
     await pc.setRemoteDescription(offer)
 
     # on_track should have been called by this point, so start should be ok
-    await detector.start()
+    await chatter.start()
 
     answer = await pc.createAnswer()
     await pc.setLocalDescription(answer)

@@ -7,7 +7,7 @@ import pyttsx3
 from loguru import logger
 
 from moshi import think
-from moshi.base import Message, Role
+from moshi.msg import Message, Role
 
 N_COMPLETIONS = os.getenv("MOSHI_LANGUAGE_DETECT_COMPLETIONS", 3)
 

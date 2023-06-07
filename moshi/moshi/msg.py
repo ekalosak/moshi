@@ -1,4 +1,4 @@
-""" This module provides base types used in various app functions. """
+""" This module provides message types. """
 from dataclasses import dataclass
 from enum import Enum
 

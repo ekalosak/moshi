@@ -1,4 +1,4 @@
-""" This module implements the core Chatter class that glues speech recognition, text to speech, and chat completion
+""" This module implements the core CliChatter class that glues speech recognition, text to speech, and chat completion
 capabilities together. """
 import itertools
 import os
@@ -18,7 +18,7 @@ assert MAX_CHAT_LOOPS >= 0
 
 logger.success("loaded")
 
-class Chatter:
+class CliChatter:
     """Main class for this app."""
 
     @util.timed

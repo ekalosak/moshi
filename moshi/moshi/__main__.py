@@ -5,7 +5,7 @@ from moshi import chat
 
 logger.info("Loading MoshiMoshi...")
 logger.debug("creating chatbot...")
-chatbot = chat.Chatter()
+chatbot = chat.CliChatter()
 logger.debug(f"chatbot: {chatbot}")
 logger.success("MoshiMoshi loaded!")
 logger.info("Starting MoshiMoshi...")

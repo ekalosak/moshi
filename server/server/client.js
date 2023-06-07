@@ -3,7 +3,9 @@
 var dataChannelLog = document.getElementById('data-channel'),
     iceConnectionLog = document.getElementById('ice-connection-state'),
     iceGatheringLog = document.getElementById('ice-gathering-state'),
-    signalingLog = document.getElementById('signaling-state');
+    signalingLog = document.getElementById('signaling-state'),
+    utteranceDetected = document.getElementById('utterance-detected'),
+    utteranceTranscript = document.getElementById('utterance-transcript');
 
 // peer connection
 var pc = null;
@@ -42,6 +44,12 @@ function createPeerConnection() {
     pc.addEventListener('track', function(evt) {
         document.getElementById('audio').srcObject = evt.streams[0];
     });
+
+    // add utterance status feedback
+    pc.addEventListener('utterancedetection', function(evt) {
+        console.log('utterancedetection evt: ' + evt);
+        utteranceDetected.textContent += ' -> ' + evt;
+    }, false);
 
     return pc;
 }
@@ -113,7 +121,7 @@ function start() {
     if (document.getElementById('use-datachannel').checked) {
         var parameters = JSON.parse(document.getElementById('datachannel-parameters').value);
 
-        dc = pc.createDataChannel('chat', parameters);
+        dc = pc.createDataChannel('keepalive', parameters);
         dc.onclose = function() {
             clearInterval(dcInterval);
             dataChannelLog.textContent += '- close\n';

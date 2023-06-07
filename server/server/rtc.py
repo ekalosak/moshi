@@ -63,10 +63,20 @@ async def offer(request):
 
     @pc.on("datachannel")
     def on_datachannel(channel):
-        @channel.on("message")
-        def on_message(message):
-            if isinstance(message, str) and message.startswith("ping"):
-                channel.send("pong" + message[4:])
+        if channel.label == 'keepalive':
+            @channel.on("message")
+            def on_message(message):
+                if isinstance(message, str) and message.startswith("ping"):
+                    channel.send("pong" + message[4:])
+
+        elif channel.label == 'utterance':
+            @channel.on("message")
+            def on_message(message):
+                # TODO respond with utterance status updates
+                if isinstance(message, str) and message.startswith("ping"):
+                    channel.send("pong" + message[4:])
+        else:
+            raise ValueError(f"Got unknown channel: {channel.label}")
 
     @pc.on("connectionstatechange")
     async def on_connectionstatechange():
@@ -106,10 +116,12 @@ async def offer(request):
 
 
 async def on_shutdown(app):
+    logger.info(f"Shutting down {len(pcs)} PeerConnections...")
     # close peer connections
     coros = [pc.close() for pc in pcs]
     await asyncio.gather(*coros)
     pcs.clear()
+    logger.success("Shut down gracefully!")
 
 
 if __name__ == "__main__":

@@ -97,7 +97,6 @@ class UtteranceDetector:
             self.__utterance_started(background_energy),
             timeout=self.__config.utterance_start_timeout_seconds
         )
-        logger.info("Utterance started!")
         frame = await self.__track.recv()
         logger.debug(f"frame: {frame}")
         fifo = AudioFifo()
@@ -160,10 +159,11 @@ class UtteranceDetector:
             total_waiting_seconds += frame_time
 
     async def get_utterance(self):
-        await asyncio.wait_for(
-            self.__utterance_detected.wait(),
-            self.__config.utterance_timeout_seconds
-        )
+        if self.__utterance is None:
+            await asyncio.wait_for(
+                self.__utterance_detected.wait(),
+                self.__config.utterance_timeout_seconds
+            )
         utterance_time = get_frame_seconds(self.__utterance)
         logger.info(f"Got utterance: {utterance_time:.3f} sec")
         return self.__utterance

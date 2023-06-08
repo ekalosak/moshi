@@ -88,7 +88,6 @@ class UtteranceDetector:
     async def __dump_frame(self):
         """ Dump a single frame. Requires __utterance_lock. """
         async with self.__utterance_lock:
-            logger.debug("Got lock")
             await self.__track.recv()
             logger.debug("Frame dumped")
 

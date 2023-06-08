@@ -1,7 +1,9 @@
+import asyncio
 from pathlib import Path
 
 from aiortc.contrib import media
 from aiortc import MediaStreamTrack
+from aiortc.mediastreams import MediaStreamError
 import av
 from av import AudioFrame, AudioFifo
 import pytest
@@ -42,3 +44,38 @@ def utterance_audio_track(utterance_wav_file) -> MediaStreamTrack:
     player = media.MediaPlayer(file=str(utterance_wav_file))
     yield player.audio
     player._stop(player.audio)
+
+@pytest.fixture
+def Sink() -> 'Sink':
+    class Sink:
+        """ When provided with a track, the sink will consume from it into a fifo buffer. """
+        def __init__(self, track):
+            self.__track = track
+            self.__task = None
+            self.fifo = AudioFifo()
+            self.stream_ended = asyncio.Event()
+
+        async def start(self):
+            if self.__task is None:
+                self.__task = asyncio.create_task(
+                    self._mainloop(),
+                    name="Test Sink class main loop task",
+                )
+
+        async def stop(self):
+            self.__task.cancel(f"{self.__class__.__name__}.stop() called")
+            self.__task = None
+
+        async def _mainloop(self):
+            self.stream_ended.clear()
+            while True:
+                try:
+                    frame = await self.__track.recv()
+                except MediaStreamError:
+                    break
+                try:
+                    self.fifo.write(frame)  # this is the sink
+                except ValueError as e:
+                    raise
+            self.stream_ended.set()
+    return Sink

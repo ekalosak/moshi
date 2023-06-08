@@ -88,7 +88,7 @@ async def offer(request):
     answer = await pc.createAnswer()
     await pc.setLocalDescription(answer)
 
-    logger.trace(f"answer: {answer}")
+    logger.debug(f"answer: {answer}")
     return web.Response(
         content_type="application/json",
         text=json.dumps(

@@ -28,10 +28,12 @@ class WebRTCChatter(Chatter):
         self.__task = None
 
     async def start(self):
-        if self.__task is None:
+        if self.__task is not None:
+            logger.debug("Task already started, no-op")
             return
+        logger.debug("Starting detector...")
         await self.detector.start()
-        await self.responder.start()
+        logger.debug("Detector started!")
         self.__task = asyncio.create_task(
             self._run(),
             name="Main chat task"
@@ -64,6 +66,7 @@ class WebRTCChatter(Chatter):
     async def _main(self):
         """ Run one loop of the main program. """
         # TODO chat response and speech synthesis and language detection in between these two:
+        # TODO when you do this, make sure to adapt the test_chatter_happy_path so it monkeypatches the openai
         ut: AudioFrame = await self.detector.get_utterance()
         await asyncio.sleep(1)
         await self.responder.send_utterance(ut)

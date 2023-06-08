@@ -8,7 +8,7 @@ import pytest
 from server.audio import responder, util
 
 class Sink:
-    """ When provided with a track, the sink will consume from it. """
+    """ When provided with a track, the sink will consume from it into a fifo buffer. """
     def __init__(self, track):
         self.__track = track
         self.__task = None
@@ -33,9 +33,8 @@ class Sink:
                 frame = await self.__track.recv()
             except MediaStreamError:
                 break
-            frame.pts = 0
             try:
-                self.fifo.write(frame)
+                self.fifo.write(frame)  # this is the sink
             except ValueError as e:
                 raise
         self.stream_ended.set()

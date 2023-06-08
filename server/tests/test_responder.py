@@ -58,7 +58,9 @@ async def test_sink(short_audio_track):
 @pytest.mark.asyncio
 async def test_responder_track(short_audio_frame):
     """ Write audio and ensure that the audio is played, takes aprox expected amount of time, and that the played audio
-    contains the expected audio data. """
+    contains the expected audio data.
+    This test exercises the ResponsePlayerStream, it does not exercise the ResponsePlayer.
+    """
     empty_seconds = 1.5  # let the ResponsePlayerStream play <empty_seconds> of silence
     audible_seconds = util.get_frame_seconds(short_audio_frame)
     total_expected_sec = empty_seconds + audible_seconds
@@ -83,3 +85,19 @@ async def test_responder_track(short_audio_frame):
     proportion_speech = (arr != 0).sum() / arr.shape[1]
     expected_proportion_speech = audible_seconds / total_expected_sec
     assert expected_proportion_speech - .1 <= proportion_speech <= expected_proportion_speech
+
+@pytest.mark.asyncio
+async def test_responder(short_audio_frame):
+    """ Check that the ResponsePlayer writes audio to the Sink when it receives the audio and silence while it waits. """
+    empty_seconds = 1.
+    audible_seconds = util.get_frame_seconds(short_audio_frame)
+    total_seconds = empty_seconds + audible_seconds
+    player = responder.ResponsePlayer()
+    sink = Sink(player.audio)
+    await sink.start()  # starts pulling silence (and audio when available) from player stream
+    await asyncio.sleep(empty_seconds)
+    await player.send_utterance(short_audio_frame)
+    await sink.stop()
+    frame = sink.fifo.read()
+    frame_time = util.get_frame_seconds(frame)
+    assert total_seconds <= frame_time <= total_seconds + .2

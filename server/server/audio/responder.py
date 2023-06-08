@@ -64,15 +64,15 @@ class ResponsePlayer:
     def audio(self):
         return self.__track
 
-    async def send_utterance(self, af: AudioFrame):
+    async def send_utterance(self, frame: AudioFrame):
         """ Flush the audio frame to the track and send it real-time then return.
         It's important that it be realtime because we need to be relatively on time for switching from listening to
         thinking and speaking.
         """
-        self.__track.write_audio(af)
-        frame_time = util.get_frame_seconds(af)
+        self.__track.write_audio(frame)
+        frame_time = util.get_frame_seconds(frame)
         timeout = frame_time + 1.
-        print(f'responder frame_time={frame_time}, timeout={timeout}')
+        logger.debug(f'responder frame_time={frame_time:.3f}, timeout={timeout:.3f}')
         try:
             await asyncio.wait_for(
                 self.__sent.wait(),

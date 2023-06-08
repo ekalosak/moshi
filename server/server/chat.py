@@ -38,7 +38,7 @@ class WebRTCChatter(Chatter):
         )
 
     async def stop(self):
-        await self.__task.cancel()
+        self.__task.cancel(f"{self.__class__.__name__}.stop() called")
         self.__task = None
         await asyncio.gather(
             self.detector.stop(),

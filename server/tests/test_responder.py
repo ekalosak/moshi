@@ -25,17 +25,24 @@ class Sink:
             print(f'sink task: {self.__task}')
 
     async def stop(self):
-        await self.__task.cancel()
+        self.__task.cancel(f"{self.__class__.__name__}.stop() called")
         self.__task = None
 
     async def _mainloop(self):
         print('starting sink _mainloop')
+        self.stream_ended.clear()
         while True:
             try:
                 frame = await self.__track.recv()
             except MediaStreamError:
                 break
-            self.fifo.write(frame)
+            print(frame)
+            frame.pts = 0
+            try:
+                self.fifo.write(frame)
+            except ValueError as e:
+                print(f"_mainloop error: {e}")
+                raise
         self.stream_ended.set()
 
 @pytest.mark.asyncio
@@ -48,6 +55,7 @@ async def test_sink(short_audio_track):
         sink.stream_ended.wait(),
         timeout = 2.5,  # substantially longer than the short_wav
     )
+    await sink.stop()
     frame = sink.fifo.read()
     frame_time = util.get_frame_seconds(frame)
     assert 1. <= frame_time <= 2., "the test.wav is 1.24 sec iirc"
@@ -56,13 +64,15 @@ async def test_sink(short_audio_track):
 async def test_responder_track(short_audio_frame):
     """ Write audio and ensure that the audio is played, takes aprox expected amount of time, and that the played audio
     contains the expected audio data. """
-    fifo = AudioFifo()
+    empty_seconds = 1.5  # let the ResponsePlayerStream play <empty_seconds> of silence
+    audible_seconds = util.get_frame_seconds(short_audio_frame)
     sent = asyncio.Event()
     track = responder.ResponsePlayerStream(sent)
     sink = Sink(track)
     print(f"Created Sink: {sink}")
     await sink.start()
     print(f"Started sink")
+    await asyncio.sleep(empty_seconds)
     track.write_audio(short_audio_frame)
     print("Wrote audio to track")
     frame_time = util.get_frame_seconds(short_audio_frame)
@@ -73,5 +83,7 @@ async def test_responder_track(short_audio_frame):
         timeout
     )
     await sink.stop()
-    breakpoint()
-    a
+    frame = sink.fifo.read()
+    frame_time = util.get_frame_seconds(frame)
+    total_expected_sec = empty_seconds + audible_seconds
+    assert total_expected_sec - .5 <= frame_time <= total_expected_sec + .5

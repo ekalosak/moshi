@@ -25,7 +25,11 @@ def get_frame_seconds(af: AudioFrame) -> float:
     logger.trace(f"frame seconds: {seconds}")
     return seconds
 
-def empty_frame(length=128, format='s16', layout='stereo') -> AudioFrame:
+def get_frame_start_time(frame) -> float:
+    """ Get the clock time (relative to the start of the stream) at which the frame should start """
+    return frame.pts * frame.samples / frame.rate
+
+def empty_frame(length=128, format='s16', layout='stereo', sample_rate=44100, pts=None) -> AudioFrame:
     fmt = AudioFormat(format)
     lay = AudioLayout(layout)
     size = (len(lay.channels), length)
@@ -33,6 +37,8 @@ def empty_frame(length=128, format='s16', layout='stereo') -> AudioFrame:
     if not fmt.is_planar:
         samples = samples.reshape(1, -1)
     frame = AudioFrame.from_ndarray(samples, format=format, layout=layout)
+    frame.sample_rate = sample_rate
+    frame.pts = pts
     return frame
 
 def ensure_size(af: AudioFrame, size: int) -> AudioFrame:

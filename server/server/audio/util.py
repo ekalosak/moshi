@@ -32,5 +32,4 @@ def empty_frame(size=(1, 1024)) -> AudioFrame:
 
 def ensure_size(af: AudioFrame, size: int) -> AudioFrame:
     """ Add silence to frames that are too short to make sure they're length == size. """
-    breakpoint()
-    a
+    raise NotImplementedError

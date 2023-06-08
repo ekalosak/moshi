@@ -66,7 +66,7 @@ class WebRTCChatter(Chatter):
         # TODO chat response and speech synthesis and language detection in between these two:
         ut: AudioFrame = await self.detector.get_utterance()
         await asyncio.sleep(1)
-        await self.responder.send_utterance_audio(ut)
+        await self.responder.send_utterance(ut)
         await asyncio.sleep(1)
         # TODO use self._ methods rather than detector and responder directly; once this simplified demo works
 

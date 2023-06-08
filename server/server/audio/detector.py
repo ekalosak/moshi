@@ -28,12 +28,12 @@ class UtteranceDetector:
     """ An audio media sink that detects utterances.
     """
     def __init__(self, config=ListeningConfig()):
-        logger.info(f"Using config: {self.config}")
         self.__track = None
         self.__task = None
         self.__config = config
         self.__utterance: AudioFrame | None = None
-        self.__utterance_lock = asyncio.Lock()
+        self.__utterance_lock = asyncio.Lock()  # used to switch between dumping frames from the track and listening to them
+        logger.info(f"Using config: {self.__config}")
 
     async def start(self):
         """ Start detecting speech. """
@@ -79,7 +79,8 @@ class UtteranceDetector:
             try:
                 await asyncio.wait_for(self.__dump_frame(), timeout=FRAME_DUMP_TIMEOUT)
             except asyncio.TimeoutError:
-                logger.debug(f"Timed out waiting to dump a frame, FRAME_DUMP_TIMEOUT: {FRAME_DUMP_TIMEOUT}")
+                logger.debug("Timed out waiting to dump a frame, indicating that nothing is coming over the wire OR"
+                    f" that the utterance detection is ongoing, FRAME_DUMP_TIMEOUT: {FRAME_DUMP_TIMEOUT}")
             except MediaStreamError:
                 logger.error("MediaStreamError")
                 raise
@@ -97,15 +98,15 @@ class UtteranceDetector:
         track's frames are not dumped but instead are available to __utterance_detected and the coroutines it awaits on
         down. """
         async with self.__utterance_lock:
-            loger.debug("Got lock")
+            logger.debug("Got lock")
             try:
                 await asyncio.wait_for(
-                    self.__utterance_detected(),
+                    self.__detect_utterance(),
                     self.__config.utterance_timeout_seconds
                 )
             except asyncio.TimeoutError as e:
                 logger.error(f"Timed out waiting for an utterance to be detected: {e}")
-        utterance_time_length = util.get_frame_seconds(self.__utterance)
+        utterance_time = util.get_frame_seconds(self.__utterance)
         logger.info(f"Detected utterance that is {utterance_time:.3f} sec long")
         return self.__utterance
 
@@ -130,12 +131,8 @@ class UtteranceDetector:
         silence_broken_time = 0.
         total_utterance_sec = 0.
         while silence_time_sec < self.__config.utterance_end_silence_seconds:
-            try:
-                frame = await self.__track.recv()
-            except MediaStreamError:
-                logger.error("Encountered MediaStreamError")
-                raise
-            frame.pts = None  # required for fifo.write()
+            frame = await self.__track.recv()
+            frame.pts = None  # required for fifo.write(), not sending over network so OK
             fifo.write(frame)
             frame_energy = util.get_frame_energy(frame)
             frame_time = util.get_frame_seconds(frame)
@@ -150,7 +147,6 @@ class UtteranceDetector:
             total_utterance_sec += frame_time
         logger.info(f"Utterance stopped after {total_utterance_sec:.3f} seconds")
         self.__utterance: AudioFrame = fifo.read()
-        self.__utterance_detected.set()
 
     async def __measure_background_audio_energy(self) -> float:
         """ For some small time, measure the ambient noise and return the noise energy level. """

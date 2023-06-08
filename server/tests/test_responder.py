@@ -17,16 +17,19 @@ class Sink:
 
     async def start(self):
         if self.__task is None:
-            self.__task = await asyncio.create_task(
+            print('no sink task, starting one')
+            self.__task = asyncio.create_task(
                 self._mainloop(),
                 name="Test Sink class main loop task",
             )
+            print(f'sink task: {self.__task}')
 
     async def stop(self):
         await self.__task.cancel()
         self.__task = None
 
     async def _mainloop(self):
+        print('starting sink _mainloop')
         while True:
             try:
                 frame = await self.__track.recv()
@@ -43,11 +46,11 @@ async def test_sink(short_audio_track):
     await sink.start()
     await asyncio.wait_for(
         sink.stream_ended.wait(),
-        timeout = 5.,  # substantially longer than the short_wav
+        timeout = 2.5,  # substantially longer than the short_wav
     )
     frame = sink.fifo.read()
     frame_time = util.get_frame_seconds(frame)
-    assert 1. <= frame_time <= 2.
+    assert 1. <= frame_time <= 2., "the test.wav is 1.24 sec iirc"
 
 @pytest.mark.asyncio
 async def test_responder_track(short_audio_frame):
@@ -57,11 +60,11 @@ async def test_responder_track(short_audio_frame):
     sent = asyncio.Event()
     track = responder.ResponsePlayerStream(sent)
     sink = Sink(track)
-    sink_task = await asyncio.create_task(
-        sink.start(),
-        name="Test sink audio task: test_responder_track",
-    )
+    print(f"Created Sink: {sink}")
+    await sink.start()
+    print(f"Started sink")
     track.write_audio(short_audio_frame)
+    print("Wrote audio to track")
     frame_time = util.get_frame_seconds(short_audio_frame)
     timeout = frame_time + 1.
     print(f"frame_time = {frame_time}, timeout = {timeout}")

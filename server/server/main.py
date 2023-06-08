@@ -43,7 +43,7 @@ async def offer(request):
     logger.info(f"Created peer connection and offer for remote: {request.remote}")
     logger.trace(f"offer: {offer}")
 
-    chatter = chat.Chatter()
+    chatter = chat.WebRTCChatter()
 
     @pc.on("datachannel")
     def on_datachannel(channel):
@@ -53,10 +53,7 @@ async def offer(request):
                 if isinstance(message, str) and message.startswith("ping"):
                     channel.send("pong" + message[4:])
         elif channel.label == 'utterance':
-            @channel.on("message")
-            def on_message(message):
-                logger.debug(f"utterance channel got message: {message}")
-                # TODO respond with utterance status updates
+            chatter.set_utterance_channel(channel)
         else:
             raise ValueError(f"Got unknown channel: {channel.label}")
 
@@ -70,16 +67,19 @@ async def offer(request):
     @pc.on("track")
     def on_track(track):
         logger.info(f"Track {track.kind} received")
-
         if track.kind != 'audio':
             raise TypeError(f"Track kind not supported, expected 'audio', got: '{track.kind}'")
-        chatter.setTrack(track)
+
+        # This is how input and output are connected to the chatter
+        chatter.detector.setTrack(track)  # must be called before start()
+        pc.addTrack(chatter.responder.audio)
 
         @track.on("ended")
         async def on_ended():  # e.g. user disconnects audio
             logger.info(f"Track {track.kind} ended")
             await chatter.stop()
 
+    # on_track gets called when the remote description is set, I think
     await pc.setRemoteDescription(offer)
 
     # on_track should have been called by this point, so start should be ok
@@ -108,7 +108,7 @@ async def on_shutdown(app):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="WebRTC audio / data-channels demo"
+        description="Moshi web app"
     )
     parser.add_argument("--cert-file", help="SSL certificate file (for HTTPS)")
     parser.add_argument("--key-file", help="SSL key file (for HTTPS)")

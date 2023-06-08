@@ -1,7 +1,12 @@
 """ This module provide audio processing utilities. """
+from aiortc.mediastreams import MediaStreamTrack
 from av import AudioFrame
 from loguru import logger
 import numpy as np
+
+def _track_str(track: MediaStreamTrack) -> str:
+    """ Tidy repr of a track. """
+    return f"{track.readyState}:{track.kind}:{track.id}"
 
 def get_frame_energy(af: AudioFrame) -> float:
     """ Calculate the RMS energy of an audio frame. """

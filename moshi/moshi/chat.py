@@ -1,5 +1,6 @@
 """ This module implements the core CliChatter class that glues speech recognition, text to speech, and chat completion
 capabilities together. """
+from abc import ABC
 import itertools
 import os
 from pprint import pformat
@@ -7,7 +8,7 @@ from pprint import pformat
 import pyfiglet
 from loguru import logger
 
-from moshi import lang, listen, speak, think, util
+from moshi import lang, listen, speak, think
 from moshi import Message, Role
 
 logger.level("INSTRUCTION", no=38, color="<light-yellow><bold>")
@@ -18,53 +19,20 @@ assert MAX_CHAT_LOOPS >= 0
 
 logger.success("loaded")
 
-class CliChatter:
-    """Main class for this app."""
+def _init_messages() -> list[Message]:
+    messages = [
+        Message(
+            Role.SYS,
+            "You are a conversational partner for helping language learners practice spoken language.",
+        ),
+        Message(
+            Role.SYS,
+            "Do not provide a translation. Respond in the language the user speaks.",
+        )
+    ]
+    return messages
 
-    @util.timed
-    def __init__(self):
-        self.messages = [
-            Message(
-                Role.SYS,
-                "You are a conversational partner for helping language learners practice spoken language.",
-            ),
-            Message(
-                Role.SYS,
-                "Do not provide a translation. Respond in the language the user speaks.",
-            )
-        ]
-        self.language = None
-
-    @util.timed
-    def _get_user_speech(self):
-        """Get and transcribe the user's audible speech."""
-        logger.log("INSTRUCTION", "SPEAK NOW")
-        user_dialogue = listen.dialogue_from_mic()
-        message = Message(Role.USR, user_dialogue)
-        logger.debug(message)
-        self.messages.append(message)
-
-    @util.timed
-    def _get_assistant_response(self):
-        """Get the chat response from the LLM."""
-        assistant_dialogue = think.completion_from_assistant(self.messages)
-        message = Message(Role.AST, assistant_dialogue)
-        logger.debug(message)
-        self.messages.append(message)
-
-    @util.timed
-    def _say_assistant_response(self):
-        """Play the assistant response text as audible language."""
-        speak.say(self.assistant_utterance, self.language)
-
-    @util.timed
-    def _detect_language(self):
-        """Detect the language the user is speaking."""
-        if self.language:
-            logger.debug(f"Language already detected: {self.language}")
-            return
-        self.language = lang.recognize_language(self.user_utterance)
-        logger.info(f"Language detected: {self.language}")
+class Chatter(ABC):
 
     @property
     def user_utterance(self) -> str:
@@ -88,6 +56,41 @@ class CliChatter:
             "SPLASH",
             "\n" + pyfiglet.Figlet(font="roman").renderText(text),
         )
+
+
+class CliChatter(Chatter):
+    """Main class for this app."""
+
+    def __init__(self):
+        self.messages = _init_messages()
+        self.language = None
+
+    def _get_user_speech(self):
+        """Get and transcribe the user's audible speech."""
+        logger.log("INSTRUCTION", "SPEAK NOW")
+        user_dialogue = listen.dialogue_from_mic()
+        message = Message(Role.USR, user_dialogue)
+        logger.debug(message)
+        self.messages.append(message)
+
+    def _get_assistant_response(self):
+        """Get the chat response from the LLM."""
+        assistant_dialogue = think.completion_from_assistant(self.messages)
+        message = Message(Role.AST, assistant_dialogue)
+        logger.debug(message)
+        self.messages.append(message)
+
+    def _say_assistant_response(self):
+        """Play the assistant response text as audible language."""
+        speak.say(self.assistant_utterance, self.language)
+
+    def _detect_language(self):
+        """Detect the language the user is speaking."""
+        if self.language:
+            logger.debug(f"Language already detected: {self.language}")
+            return
+        self.language = lang.recognize_language(self.user_utterance)
+        logger.info(f"Language detected: {self.language}")
 
     def _main(self):
         """ Do one iteration of the main chat functionality.

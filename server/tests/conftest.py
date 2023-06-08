@@ -1,8 +1,9 @@
 from pathlib import Path
 
-import pytest
 from aiortc.contrib import media
-from aiortc import mediastreams
+from aiortc import MediaStreamTrack
+from pyav import AudioFrame
+import pytest
 
 RESOURCEDIR = Path(__file__).parent / 'resources'
 
@@ -18,9 +19,14 @@ def utterance_wav_file() -> Path:
 def short_wav_file() -> Path:
     return RESOURCEDIR / 'test_one_word.wav'
 
+@pytest.fixture
+def short_audio_frame(short_wav_file) -> AudioFrame:
+    with av.open(short_wav_file) as container:
+        for frame in container.decode():
+            return frame
 
 @pytest.fixture
-def audio_track(utterance_wav_file) -> mediastreams.MediaStreamTrack:
+def utterance_audio_track(utterance_wav_file) -> MediaStreamTrack:
     """ A track that plays an utterance. """
     player = media.MediaPlayer(file=str(utterance_wav_file))
     yield player.audio

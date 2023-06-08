@@ -24,3 +24,13 @@ def get_frame_seconds(af: AudioFrame) -> float:
     seconds = af.samples / af.rate
     logger.trace(f"frame seconds: {seconds}")
     return seconds
+
+def empty_frame(size=(1, 1024)) -> AudioFrame:
+    samples = np.zeros(size, dtype=np.int16)
+    frame = AudioFrame.from_ndarray(samples, format='fltp')
+    return frame
+
+def ensure_size(af: AudioFrame, size: int) -> AudioFrame:
+    """ Add silence to frames that are too short to make sure they're length == size. """
+    breakpoint()
+    a

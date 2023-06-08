@@ -17,31 +17,26 @@ class Sink:
 
     async def start(self):
         if self.__task is None:
-            print('no sink task, starting one')
             self.__task = asyncio.create_task(
                 self._mainloop(),
                 name="Test Sink class main loop task",
             )
-            print(f'sink task: {self.__task}')
 
     async def stop(self):
         self.__task.cancel(f"{self.__class__.__name__}.stop() called")
         self.__task = None
 
     async def _mainloop(self):
-        print('starting sink _mainloop')
         self.stream_ended.clear()
         while True:
             try:
                 frame = await self.__track.recv()
             except MediaStreamError:
                 break
-            print(frame)
             frame.pts = 0
             try:
                 self.fifo.write(frame)
             except ValueError as e:
-                print(f"_mainloop error: {e}")
                 raise
         self.stream_ended.set()
 
@@ -66,18 +61,15 @@ async def test_responder_track(short_audio_frame):
     contains the expected audio data. """
     empty_seconds = 1.5  # let the ResponsePlayerStream play <empty_seconds> of silence
     audible_seconds = util.get_frame_seconds(short_audio_frame)
+    total_expected_sec = empty_seconds + audible_seconds
     sent = asyncio.Event()
     track = responder.ResponsePlayerStream(sent)
     sink = Sink(track)
-    print(f"Created Sink: {sink}")
     await sink.start()
-    print(f"Started sink")
-    await asyncio.sleep(empty_seconds)
+    await asyncio.sleep(empty_seconds)  # ResponsePlayerStream should write empty_seconds of silence
     track.write_audio(short_audio_frame)
-    print("Wrote audio to track")
     frame_time = util.get_frame_seconds(short_audio_frame)
     timeout = frame_time + 1.
-    print(f"frame_time = {frame_time}, timeout = {timeout}")
     await asyncio.wait_for(
         sent.wait(),
         timeout
@@ -85,5 +77,9 @@ async def test_responder_track(short_audio_frame):
     await sink.stop()
     frame = sink.fifo.read()
     frame_time = util.get_frame_seconds(frame)
-    total_expected_sec = empty_seconds + audible_seconds
-    assert total_expected_sec - .5 <= frame_time <= total_expected_sec + .5
+    # the extra on top of total_expected_sec accounts for the default 100ms playback throttle plus some compute time
+    assert total_expected_sec <= frame_time <= total_expected_sec + .2
+    arr = frame.to_ndarray()
+    proportion_speech = (arr != 0).sum() / arr.shape[1]
+    expected_proportion_speech = audible_seconds / total_expected_sec
+    assert expected_proportion_speech - .1 <= proportion_speech <= expected_proportion_speech

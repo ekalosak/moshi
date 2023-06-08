@@ -38,8 +38,6 @@ class ResponsePlayerStream(MediaStreamTrack):
         frame.pts = self.__pts
         self.__pts += 1
         await self.__throttle_playback(frame)
-        # print(f'frame: {frame}')
-        # await asyncio.sleep(0.)  # gives other awaitables (esp those waiting on self.sent) a chance on the event loop
         return frame
 
     async def __throttle_playback(self, frame: AudioFrame, max_buf_sec=.1):

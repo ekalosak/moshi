@@ -1,6 +1,6 @@
 """ This module provide audio processing utilities. """
 from aiortc.mediastreams import MediaStreamTrack
-from av import AudioFrame
+from av import AudioFrame, AudioLayout, AudioFormat
 from loguru import logger
 import numpy as np
 
@@ -25,9 +25,14 @@ def get_frame_seconds(af: AudioFrame) -> float:
     logger.trace(f"frame seconds: {seconds}")
     return seconds
 
-def empty_frame(size=(1, 1024)) -> AudioFrame:
+def empty_frame(length=128, format='s16', layout='stereo') -> AudioFrame:
+    fmt = AudioFormat(format)
+    lay = AudioLayout(layout)
+    size = (len(lay.channels), length)
     samples = np.zeros(size, dtype=np.int16)
-    frame = AudioFrame.from_ndarray(samples, format='fltp')
+    if not fmt.is_planar:
+        samples = samples.reshape(1, -1)
+    frame = AudioFrame.from_ndarray(samples, format=format, layout=layout)
     return frame
 
 def ensure_size(af: AudioFrame, size: int) -> AudioFrame:

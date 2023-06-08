@@ -2,7 +2,8 @@ from pathlib import Path
 
 from aiortc.contrib import media
 from aiortc import MediaStreamTrack
-from av import AudioFrame
+import av
+from av import AudioFrame, AudioFifo
 import pytest
 
 RESOURCEDIR = Path(__file__).parent / 'resources'
@@ -23,7 +24,7 @@ def short_wav_file() -> Path:
 def short_audio_frame(short_wav_file) -> AudioFrame:
     """ Returns a single frame containing the data from a wav file. """
     fifo = AudioFifo()
-    with av.open(short_wav_file) as container:
+    with av.open(str(short_wav_file)) as container:
         for frame in container.decode():
             fifo.write(frame)
     return fifo.read()

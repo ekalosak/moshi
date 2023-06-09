@@ -20,7 +20,7 @@ class WebRTCChatter(Chatter):
     def __init__(self):
         self.detector = audio.UtteranceDetector()  # get_utterance: track -> AudioFrame
         self.responder = audio.ResponsePlayer()  # play_response: AudioFrame -> track
-        self.__messages = _init_messages()
+        self.messages = _init_messages()
         self.__language = None
         self.__user_audio = None
         self.__user_text = None
@@ -84,14 +84,14 @@ class WebRTCChatter(Chatter):
         self.__user_text = await listen.transcribe_audio(self.__user_audio)
         message = Message(Role.USR, self.__user_text)
         logger.debug(message)
-        self.__messages.append(message)
+        self.messages.append(message)
 
     async def _get_assistant_response_text(self):
         """ From the AI assistant, get a text chat response to the user utterance text. """
-        self.__assistant_text = await think.completion_from_assistant(self.__messages)
+        self.__assistant_text = await think.completion_from_assistant(self.messages)
         message = Message(Role.AST, self.__assistant_text)
         logger.debug(message)
-        self.__messages.append(message)
+        self.messages.append(message)
 
     async def _say_assistant_response_audio(self):
         """ Using the AI assistant's text response, synthesize speech and send the audio over the track to the client speaker. """

@@ -32,6 +32,7 @@ dependencies = [
 tests = [
   'pytest',
   'pytest-asyncio',
+  'scipy',
 ]
 dev = [
   'black',

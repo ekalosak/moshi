@@ -1,5 +1,6 @@
 """ This module implements a Chatter for use in the WebRTC server. """
 import asyncio
+import itertools
 import os
 
 from loguru import logger
@@ -42,10 +43,7 @@ class WebRTCChatter(Chatter):
     async def stop(self):
         self.__task.cancel(f"{self.__class__.__name__}.stop() called")
         self.__task = None
-        await asyncio.gather(
-            self.detector.stop(),
-            self.responder.stop(),
-        )
+        await self.detector.stop()
 
     async def _run(self):
         """ Run the main program loop. """

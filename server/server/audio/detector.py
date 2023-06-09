@@ -12,8 +12,6 @@ from loguru import logger
 from server.audio import util
 from server.audio.util import _track_str
 
-FRAME_DUMP_TIMEOUT = 1.
-
 @dataclass
 class ListeningConfig:
     ambient_noise_measurement_seconds: float=.5  # how long to measure ambient noise for the background audio energy
@@ -33,7 +31,7 @@ class UtteranceDetector:
         self.__config = config
         self.__utterance: AudioFrame | None = None
         self.__utterance_lock = asyncio.Lock()  # used to switch between dumping frames from the track and listening to them
-        logger.info(f"Using config: {self.__config}")
+        logger.debug(f"Using config: {self.__config}")
 
     async def start(self):
         """ Start detecting speech. """
@@ -77,27 +75,28 @@ class UtteranceDetector:
         e.g. synthesized speech feedback. """
         while True:
             try:
-                await asyncio.wait_for(self.__dump_frame(), timeout=FRAME_DUMP_TIMEOUT)
+                await asyncio.wait_for(
+                    self.__dump_frame(),
+                    timeout=self.__config.utterance_timeout_seconds
+                )
             except asyncio.TimeoutError:
-                logger.debug("Timed out waiting to dump a frame, indicating that nothing is coming over the wire OR"
-                    f" that the utterance detection is ongoing, FRAME_DUMP_TIMEOUT: {FRAME_DUMP_TIMEOUT}")
+                logger.error(f"Timed out waiting to dump a frame after {self.__config.utterance_timeout_seconds} sec.")
             except MediaStreamError:
-                logger.error("MediaStreamError")
+                logger.error("MediaStreamError - source track is empty")
                 raise
 
     async def __dump_frame(self):
         """ Dump a single frame. Requires __utterance_lock. """
         async with self.__utterance_lock:
             await self.__track.recv()
-            logger.debug("Frame dumped")
 
     async def get_utterance(self) -> AudioFrame:
         """ Listen to the audio track and clip out an audio frame with an utterance. Sets __utterance. Requires
         __utterance_lock. By awaiting this coroutine, the main frame dump task is interrupted by lock acquisition so the
         track's frames are not dumped but instead are available to __utterance_detected and the coroutines it awaits on
         down. """
+        logger.info("Detecting utterance...")
         async with self.__utterance_lock:
-            logger.debug("Got lock")
             try:
                 await asyncio.wait_for(
                     self.__detect_utterance(),
@@ -119,8 +118,8 @@ class UtteranceDetector:
               .wav input)
         """
         background_energy = await self.__measure_background_audio_energy()
-        logger.info(f"Detected background_energy: {background_energy:.5f}")
-        logger.info("Waiting for utterance to start...")
+        logger.debug(f"Detected background_energy: {background_energy:.5f}")
+        logger.debug("Waiting for utterance to start...")
         await asyncio.wait_for(
             self.__utterance_started(background_energy),
             timeout=self.__config.utterance_start_timeout_seconds
@@ -144,7 +143,7 @@ class UtteranceDetector:
                     silence_time_sec = 0.
             logger.trace(f"silence_time_sec: {silence_time_sec}")
             total_utterance_sec += frame_time
-        logger.info(f"Utterance stopped after {total_utterance_sec:.3f} seconds")
+        logger.debug(f"Utterance stopped after {total_utterance_sec:.3f} seconds")
         self.__utterance: AudioFrame = fifo.read()
 
     async def __measure_background_audio_energy(self) -> float:
@@ -175,6 +174,6 @@ class UtteranceDetector:
             else:
                 sustained_speech_seconds = 0.
             if sustained_speech_seconds > self.__config.utterance_start_speaking_seconds:
-                logger.info(f"Utterance started after {total_waiting_seconds:.3f} seconds")
+                logger.debug(f"Utterance started after {total_waiting_seconds:.3f} seconds")
                 return
             total_waiting_seconds += frame_time

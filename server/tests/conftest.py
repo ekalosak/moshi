@@ -41,7 +41,10 @@ def short_audio_track(short_wav_file) -> MediaStreamTrack:
 @pytest.fixture
 def utterance_audio_track(utterance_wav_file) -> MediaStreamTrack:
     """ A track that plays an utterance. """
-    player = media.MediaPlayer(file=str(utterance_wav_file))
+    player = media.MediaPlayer(
+        file=str(utterance_wav_file),
+        loop=True,
+    )
     yield player.audio
     player._stop(player.audio)
 

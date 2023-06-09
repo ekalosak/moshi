@@ -8,7 +8,7 @@ import pytest
 from server.audio import responder, util
 
 @pytest.mark.asyncio
-async def test_responder_track(short_audio_frame):
+async def test_responder_track(short_audio_frame, Sink):
     """ Write audio and ensure that the audio is played, takes aprox expected amount of time, and that the played audio
     contains the expected audio data.
     This test exercises the ResponsePlayerStream, it does not exercise the ResponsePlayer.
@@ -39,7 +39,7 @@ async def test_responder_track(short_audio_frame):
     assert expected_proportion_speech - .1 <= proportion_speech <= expected_proportion_speech
 
 @pytest.mark.asyncio
-async def test_responder(short_audio_frame):
+async def test_responder(short_audio_frame, Sink):
     """ Check that the ResponsePlayer writes audio to the Sink when it receives the audio and silence while it waits. """
     empty_seconds = 1.
     audible_seconds = util.get_frame_seconds(short_audio_frame)

@@ -4,6 +4,7 @@ import os
 import time
 
 from aiortc import MediaStreamTrack
+from aiortc.mediastreams import MediaStreamError
 from av import AudioFrame, AudioFifo
 from loguru import logger
 
@@ -28,6 +29,7 @@ class ResponsePlayerStream(MediaStreamTrack):
             self.__start_time = time.monotonic()
         frame = self.__fifo.read(FRAME_SIZE, partial=False)
         if frame is None:
+            logger.debug("empty frame")
             self.__fifo.read(partial=True)  # drop any partial fragment
             frame = util.empty_frame(
                 length=FRAME_SIZE,
@@ -35,6 +37,8 @@ class ResponsePlayerStream(MediaStreamTrack):
                 pts=None,
             )
             self.__sent.set()  # frame is none means whatever audio was written is flushed
+        else:
+            logger.debug("non-empty frame")
         frame.pts = self.__pts
         self.__pts += 1
         await self.__throttle_playback(frame)
@@ -50,8 +54,10 @@ class ResponsePlayerStream(MediaStreamTrack):
         await asyncio.sleep(delay)
 
     def write_audio(self, af: AudioFrame):
+        logger.debug("Writing audio to fifo...")
         self.__fifo.write(af)
         self.__sent.clear()
+        logger.debug(f"Audio written: {af}")
 
 class ResponsePlayer:
     """ When audio is set, it is sent over the track. """
@@ -69,17 +75,21 @@ class ResponsePlayer:
         It's important that it be realtime because we need to be relatively on time for switching from listening to
         thinking and speaking.
         """
+        logger.info("Sending utterance...")
         self.__track.write_audio(frame)
         frame_time = util.get_frame_seconds(frame)
         timeout = frame_time + 1.
-        logger.debug(f'responder frame_time={frame_time:.3f}, timeout={timeout:.3f}')
+        logger.debug(f'frame_time={frame_time:.3f}, timeout={timeout:.3f}')
         try:
+            logger.debug(f"Awaiting __sent.wait() event from {util._track_str(self.__track)} upon clearing fifo...")
             await asyncio.wait_for(
                 self.__sent.wait(),
                 timeout = timeout,
             )
+            logger.debug("Track's fifo is cleared.")
         except asyncio.TimeoutError:
             logger.debug(f"Timed out waiting for audio to be played, frame_time={frame_time} timeout={timeout}")
         except MediaStreamError:
             logger.error("MediaStreamError")
             raise
+        logger.info("Utterance sent!")

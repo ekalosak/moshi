@@ -49,6 +49,7 @@ class ResponsePlayerStream(MediaStreamTrack):
         self.__pts += 1
         await self.__throttle_playback(frame)
         logger.trace(f"returning frame: {frame}")
+        logger.trace(f"frame energy: {util.get_frame_energy(frame)}")
         return frame
 
     @logger.catch
@@ -67,14 +68,16 @@ class ResponsePlayerStream(MediaStreamTrack):
     @logger.catch
     def write_audio(self, frame: AudioFrame):
         logger.debug(f"Writing audio to fifo: {frame}")
-        if self.__resampler is None:
-            self.__init_resampler()  # Fifo must have had a frame written by this point to establish format
-        frames = self.__resampler.resample(frame)
-        assert len(frames) == 1
-        for frame_ in frames:
-            self.__fifo.write(frame_)
+        # if self.__resampler is None:
+        #     self.__init_resampler()  # Fifo must have had a frame written by this point to establish format
+        # frames = self.__resampler.resample(frame)
+        # assert len(frames) == 1
+        # for frame_ in frames:
+        #     self.__fifo.write(frame_)
+        self.__fifo.write(frame)
         self.__sent.clear()
-        logger.debug(f"Audio written, example: {frame_}")
+        logger.debug(f"Audio written, example: {frame}")
+        # logger.debug(f"Audio written, example: {frame_}")
 
     @logger.catch
     def __init_resampler(self):

@@ -42,6 +42,7 @@ function createPeerConnection() {
 
     // connect audio
     pc.addEventListener('track', function(evt) {
+        console.log('evt.streams.length: ' + evt.streams.length);
         document.getElementById('audio').srcObject = evt.streams[0];
     });
 

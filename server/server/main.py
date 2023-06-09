@@ -35,15 +35,16 @@ async def offer(request):
     Moreover, it sets up the PeerConnection (pc) and the event listeners on the connection.
     """
     params = await request.json()
-    logger.trace(f"request params: {params}")
+    logger.debug(f"request params: {params}")
     offer = RTCSessionDescription(sdp=params["sdp"], type=params["type"])
 
     pc = RTCPeerConnection()
     pcs.add(pc)
     logger.info(f"Created peer connection and offer for remote: {request.remote}")
-    logger.trace(f"offer: {offer}")
+    logger.debug(f"offer: {offer}")
 
     chatter = chat.WebRTCChatter()
+    player = MediaPlayer(ROOT + "/../tests/resources/test_phrase_8sec_spoken_13sec_total.wav")
 
     @pc.on("datachannel")
     def on_datachannel(channel):
@@ -72,12 +73,18 @@ async def offer(request):
 
         # This is how input and output are connected to the chatter
         chatter.detector.setTrack(track)  # must be called before start()
-        pc.addTrack(chatter.responder.audio)
+        pc.addTrack(player.audio)
+        # pc.addTrack(chatter.responder.audio)
 
         @track.on("ended")
         async def on_ended():  # e.g. user disconnects audio
-            logger.info(f"Track {track.kind} ended")
             await chatter.stop()
+            logger.info(f"Track {track.kind} ended")
+
+    # DEBUG
+    for i in range(5):
+        frame = await player.audio.recv()
+        logger.debug(f'player frame: {frame}')
 
     # on_track gets called when the remote description is set, I think
     await pc.setRemoteDescription(offer)
@@ -86,9 +93,9 @@ async def offer(request):
     await chatter.start()
 
     answer = await pc.createAnswer()
+    logger.debug(f"answer: {answer}")
     await pc.setLocalDescription(answer)
 
-    logger.debug(f"answer: {answer}")
     return web.Response(
         content_type="application/json",
         text=json.dumps(

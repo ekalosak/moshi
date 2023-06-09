@@ -14,7 +14,7 @@ from server.audio.util import _track_str
 
 @dataclass
 class ListeningConfig:
-    ambient_noise_measurement_seconds: float=.5  # how long to measure ambient noise for the background audio energy
+    ambient_noise_measurement_seconds: float=1.5  # how long to measure ambient noise for the background audio energy
     silence_detection_ignore_spike_seconds: float=0.05  # until silence is broken for this long, it still counts as contiguous silence
     utterance_end_silence_seconds: float=1.5  # must be silent for this long after an utterance for detection to terminate
     utterance_length_min_seconds: float=.8  # must speak for this long before detection can occur

@@ -9,10 +9,8 @@ from av import AudioFrame, AudioFifo, AudioResampler
 from loguru import logger
 
 from server.audio import util
+from server import SAMPLE_RATE, AUDIO_FORMAT, AUDIO_LAYOUT
 
-SAMPLE_RATE = int(os.getenv("MOSHISAMPLERATE", 44100))
-AUDIO_FORMAT = os.getenv("MOSHIAUDIOFORMAT", 's16')
-AUDIO_LAYOUT = os.getenv("MOSHIAUDIOFORMAT", 'mono')
 FRAME_SIZE = int(os.getenv("MOSHIFRAMESIZE", 960))
 assert FRAME_SIZE >= 128 and FRAME_SIZE <= 4096
 

@@ -11,11 +11,9 @@ from av import AudioFrame, AudioFifo
 from loguru import logger
 import pytest
 
-RESOURCEDIR = Path(__file__).parent / 'resources'
+from server import SAMPLE_RATE, AUDIO_FORMAT, AUDIO_LAYOUT
 
-SAMPLE_RATE = int(os.getenv("MOSHISAMPLERATE", 44100))
-AUDIO_FORMAT = os.getenv("MOSHIAUDIOFORMAT", 's16')
-AUDIO_LAYOUT = os.getenv("MOSHIAUDIOFORMAT", 'mono')
+RESOURCEDIR = Path(__file__).parent / 'resources'
 
 @pytest.fixture(autouse=True)
 def _print_blank_line():

@@ -6,9 +6,7 @@ from av import AudioFrame, AudioLayout, AudioFormat
 from loguru import logger
 import numpy as np
 
-SAMPLE_RATE = int(os.getenv("MOSHISAMPLERATE", 44100))
-AUDIO_FORMAT = os.getenv("MOSHIAUDIOFORMAT", 's16')
-AUDIO_LAYOUT = os.getenv("MOSHIAUDIOFORMAT", 'mono')
+from server import SAMPLE_RATE, AUDIO_FORMAT, AUDIO_LAYOUT
 
 def _track_str(track: MediaStreamTrack) -> str:
     """ Tidy repr of a track. """

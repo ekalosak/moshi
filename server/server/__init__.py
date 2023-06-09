@@ -5,3 +5,8 @@ package for use in other Python projects.
 
 In short, this is a Flask app - see https://flask.palletsprojects.com/en/2.3.x/ for more information.
 """
+import os
+
+SAMPLE_RATE = int(os.getenv("MOSHISAMPLERATE", 48000))
+AUDIO_FORMAT = os.getenv("MOSHIAUDIOFORMAT", 's16')
+AUDIO_LAYOUT = os.getenv("MOSHIAUDIOFORMAT", 'stereo')

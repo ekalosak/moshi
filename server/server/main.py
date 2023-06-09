@@ -97,7 +97,7 @@ async def offer(request):
         ),
     )
 
-
+@logger.catch
 async def on_shutdown(app):
     logger.info(f"Shutting down {len(pcs)} PeerConnections...")
     # close peer connections
@@ -106,6 +106,10 @@ async def on_shutdown(app):
     pcs.clear()
     logger.success("Shut down gracefully!")
 
+@logger.catch
+async def on_startup(app):
+    loop = asyncio.get_event_loop()
+    loop.set_exception_handler(util.aio_exception_handler)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
@@ -129,6 +133,7 @@ if __name__ == "__main__":
 
     app = web.Application()
     app.on_shutdown.append(on_shutdown)
+    app.on_startup.append(on_startup)
     app.router.add_get("/", index)
     app.router.add_get("/client.js", javascript)
     app.router.add_post("/offer", offer)

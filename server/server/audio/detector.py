@@ -31,8 +31,10 @@ class UtteranceDetector:
         self.__config = config
         self.__utterance: AudioFrame | None = None
         self.__utterance_lock = asyncio.Lock()  # used to switch between dumping frames from the track and listening to them
+        self.__background_energy = None
         logger.debug(f"Using config: {self.__config}")
 
+    @logger.catch
     async def start(self):
         """ Start detecting speech. """
         if self.__track is None:
@@ -42,6 +44,7 @@ class UtteranceDetector:
             name=f"Main utterance detection frame dump task from track: {_track_str(self.__track)}"
         )
 
+    @logger.catch
     async def stop(self):
         """ Cancel the background task and free up the track. """
         if self.__task is not None:
@@ -49,6 +52,7 @@ class UtteranceDetector:
         self.__task = None
         self.__track = None
 
+    @logger.catch
     def setTrack(self, track: MediaStreamTrack):
         """ Add a track to the class after initialization. Allows for initialization of the object before receiving a
         WebRTC offer, but can be forgotten by user - causing, in all likelihood, await self.start() to fail.
@@ -69,6 +73,7 @@ class UtteranceDetector:
             raise ValueError(f"Track already set: {_track_str(self.__track)}")
         self.__track = track
 
+    # @logger.catch
     async def __dump_frames(self):
         """ While the detector is not actively listening, e.g. during response and computation, it must dump the audio
         frames from the track to remain 'real-time'. Otherwise those audio frames would back up and we'd be processing
@@ -85,11 +90,16 @@ class UtteranceDetector:
                 logger.error("MediaStreamError - source track is empty")
                 raise
 
+    # @logger.catch
     async def __dump_frame(self):
         """ Dump a single frame. Requires __utterance_lock. """
         async with self.__utterance_lock:
-            await self.__track.recv()
+            if self.__track is not None:
+                await self.__track.recv()
+            else:
+                raise ValueError("Track not set!")
 
+    @logger.catch
     async def get_utterance(self) -> AudioFrame:
         """ Listen to the audio track and clip out an audio frame with an utterance. Sets __utterance. Requires
         __utterance_lock. By awaiting this coroutine, the main frame dump task is interrupted by lock acquisition so the
@@ -108,6 +118,7 @@ class UtteranceDetector:
         logger.info(f"Detected utterance that is {utterance_time:.3f} sec long")
         return self.__utterance
 
+    @logger.catch
     async def __detect_utterance(self):
         """ Detect natural language speech from an audio track.
         This method sets the self.__utterance containing the entire utterance with surrounding silence removed.
@@ -117,11 +128,11 @@ class UtteranceDetector:
             - aiortc.MediaStreamError if the track finishes before the utterance is detected (usually for
               .wav input)
         """
-        background_energy = await self.__measure_background_audio_energy()
-        logger.debug(f"Detected background_energy: {background_energy:.5f}")
+        self.__background_energy = await self.__measure_background_audio_energy()
+        logger.debug(f"Detected background_energy: {self.__background_energy:.5f}")
         logger.debug("Waiting for utterance to start...")
         await asyncio.wait_for(
-            self.__utterance_started(background_energy),
+            self.__utterance_started(),
             timeout=self.__config.utterance_start_timeout_seconds
         )
         fifo = AudioFifo()
@@ -134,7 +145,7 @@ class UtteranceDetector:
             fifo.write(frame)
             frame_energy = util.get_frame_energy(frame)
             frame_time = util.get_frame_seconds(frame)
-            if frame_energy < background_energy:
+            if frame_energy < self.__background_energy:
                 silence_time_sec += frame_time
                 silence_broken_time = 0.
             else:
@@ -146,6 +157,7 @@ class UtteranceDetector:
         logger.debug(f"Utterance stopped after {total_utterance_sec:.3f} seconds")
         self.__utterance: AudioFrame = fifo.read()
 
+    @logger.catch
     async def __measure_background_audio_energy(self) -> float:
         """ For some small time, measure the ambient noise and return the noise energy level. """
         fifo = AudioFifo()
@@ -156,11 +168,14 @@ class UtteranceDetector:
             fifo.write(frame)
         ambient_noise_frame: AudioFrame = fifo.read()
         ambient_noise_energy: float = util.get_frame_energy(ambient_noise_frame)
+        ambient_noise_energy = max(ambient_noise_energy, 30.)  # heuristic
         return ambient_noise_energy
 
-    async def __utterance_started(self, background_energy: float):
+    @logger.catch
+    async def __utterance_started(self):
         """ Hold off until audio energy is high enough for long enough. """
         # all time is mesured relative to the track's audio frames, not wall clock time.
+        assert isinstance(self.__background_energy, float)
         sustained_speech_seconds = 0.
         total_waiting_seconds = 0.
         while True:
@@ -169,7 +184,7 @@ class UtteranceDetector:
             frame_time = util.get_frame_seconds(frame)
             logger.trace(f"sustained_speech_seconds: {sustained_speech_seconds}")
             logger.trace(f"total_waiting_seconds: {total_waiting_seconds}")
-            if frame_energy > background_energy:
+            if frame_energy > self.__background_energy:
                 sustained_speech_seconds += frame_time
             else:
                 sustained_speech_seconds = 0.

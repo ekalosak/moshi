@@ -28,6 +28,7 @@ class WebRTCChatter(Chatter):
         self.__assistant_text = None
         self.__task = None
 
+    @logger.catch
     async def start(self):
         if self.__task is not None:
             logger.debug("Task already started, no-op")
@@ -36,16 +37,19 @@ class WebRTCChatter(Chatter):
         await self.detector.start()
         logger.debug("Detector started!")
         self.__task = asyncio.create_task(
-            self._run(),
+            self.__run(),
             name="Main chat task"
         )
 
+    @logger.catch
     async def stop(self):
-        self.__task.cancel(f"{self.__class__.__name__}.stop() called")
-        self.__task = None
         await self.detector.stop()
+        self.__task.cancel(f"{self.__class__.__name__}.stop() called")
+        # await asyncio.wait([self.__task])
+        self.__task = None
 
-    async def _run(self):
+    # @logger.catch
+    async def __run(self):
         """ Run the main program loop. """
         self._splash("moshi")
         for i in itertools.count():
@@ -61,7 +65,8 @@ class WebRTCChatter(Chatter):
         # self._report()
         self._splash("bye")
 
-    async def _main(self):
+    # @logger.catch
+    async def __main(self):
         """ Run one loop of the main program. """
         # TODO chat response and speech synthesis and language detection in between these two:
         # TODO when you do this, make sure to adapt the test_chatter_happy_path so it monkeypatches the openai
@@ -76,16 +81,19 @@ class WebRTCChatter(Chatter):
             raise ValueError(f"Already have an utterance channel: {self.__channel.label}:{self.__channel.id}")
         self.__channel = channel
 
+    @logger.catch
     async def _get_user_utterance_audio(self):
         """ From the audio track, get an AudioFrame utterance from the client microphone. """
         self.__user_audio = await self.detector.get_utterance()
 
+    @logger.catch
     async def _transcribe_user_utterance_audio_to_text(self):
         self.__user_text = await listen.transcribe_audio(self.__user_audio)
         message = Message(Role.USR, self.__user_text)
         logger.debug(message)
         self.messages.append(message)
 
+    @logger.catch
     async def _get_assistant_response_text(self):
         """ From the AI assistant, get a text chat response to the user utterance text. """
         self.__assistant_text = await think.completion_from_assistant(self.messages)
@@ -93,11 +101,13 @@ class WebRTCChatter(Chatter):
         logger.debug(message)
         self.messages.append(message)
 
+    @logger.catch
     async def _say_assistant_response_audio(self):
         """ Using the AI assistant's text response, synthesize speech and send the audio over the track to the client speaker. """
         self.__assistant_audio = await speech.synthesize(self.__assistant_text)
         await self.responder.send_audio(self.__assistant_audio)
 
+    @logger.catch
     async def _detect_language(self):
         """ Using the user's utterance text, determine the language they're speaking. """
         if self.language:

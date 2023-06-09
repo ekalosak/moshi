@@ -46,7 +46,7 @@ class ResponsePlayerStream(MediaStreamTrack):
         else:
             logger.trace("non-empty frame")
         frame.pts = self.__pts
-        self.__pts += 1
+        self.__pts += frame.samples
         await self.__throttle_playback(frame)
         logger.trace(f"returning frame: {frame}")
         logger.trace(f"frame energy: {util.get_frame_energy(frame)}")
@@ -62,7 +62,7 @@ class ResponsePlayerStream(MediaStreamTrack):
         frame_start_time = self.__start_time + util.get_frame_start_time(frame)
         delay = frame_start_time - (current_time + max_buf_sec)
         delay = max(0., delay)
-        logger.trace(f"Throttling playback, sleeping for delay={delay:.3f} sec")
+        logger.debug(f"Throttling playback, sleeping for delay={delay:.3f} sec")
         await asyncio.sleep(delay)
 
     @logger.catch

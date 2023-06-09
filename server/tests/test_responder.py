@@ -39,6 +39,27 @@ async def test_responder_track(short_audio_frame, Sink):
     assert expected_proportion_speech - .1 <= proportion_speech <= expected_proportion_speech
 
 @pytest.mark.asyncio
+async def test_responder_track_pts(short_audio_frame):
+    sent = asyncio.Event()
+    track = responder.ResponsePlayerStream(sent)
+    frames = []
+    pts = 0
+    for i in range(5):
+        frame = await track.recv()
+        print(f'got frame: {frame}')
+        assert frame.pts == pts, "pts not incrementing correctly"
+        frames.append(frame)
+        pts += frame.samples
+    track.write_audio(short_audio_frame)
+    for i in range(5):
+        frame = await track.recv()
+        print(f'got frame: {frame}')
+        assert util.get_frame_energy(frame) > 0., "silent frame after writing"
+        assert frame.pts == pts
+        frames.append(frame)
+        pts += frame.samples
+
+@pytest.mark.asyncio
 async def test_responder(short_audio_frame, Sink):
     """ Check that the ResponsePlayer writes audio to the Sink when it receives the audio and silence while it waits. """
     empty_seconds = 1.

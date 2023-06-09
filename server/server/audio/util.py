@@ -31,7 +31,7 @@ def get_frame_seconds(af: AudioFrame) -> float:
 
 def get_frame_start_time(frame) -> float:
     """ Get the clock time (relative to the start of the stream) at which the frame should start """
-    return frame.pts * frame.samples / frame.rate
+    return frame.pts / frame.rate
 
 def empty_frame(length=128, format=AUDIO_FORMAT, layout=AUDIO_LAYOUT, rate=SAMPLE_RATE, pts=None) -> AudioFrame:
     fmt = AudioFormat(format)

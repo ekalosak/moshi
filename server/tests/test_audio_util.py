@@ -14,3 +14,12 @@ def test_empty_frame():
     efa = ef.to_ndarray()
     assert (efa == 0).all()
     assert efa.shape == (1, length)
+
+@pytest.mark.asyncio
+async def test_get_frame_start_time(short_audio_track):
+    t0 = 0
+    for i in range(5):
+        frame = await short_audio_track.recv()
+        frame_start_time = util.get_frame_start_time(frame)
+        assert t0 == frame_start_time
+        t0 += frame.samples / frame.rate

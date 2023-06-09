@@ -44,7 +44,7 @@ async def offer(request):
     logger.debug(f"offer: {offer}")
 
     chatter = chat.WebRTCChatter()
-    player = MediaPlayer(ROOT + "/../tests/resources/test_phrase_8sec_spoken_13sec_total.wav")
+    # player = MediaPlayer(ROOT + "/../tests/resources/test_phrase_8sec_spoken_13sec_total.wav")
 
     @pc.on("datachannel")
     def on_datachannel(channel):
@@ -73,18 +73,12 @@ async def offer(request):
 
         # This is how input and output are connected to the chatter
         chatter.detector.setTrack(track)  # must be called before start()
-        pc.addTrack(player.audio)
-        # pc.addTrack(chatter.responder.audio)
+        pc.addTrack(chatter.responder.audio)
 
         @track.on("ended")
         async def on_ended():  # e.g. user disconnects audio
             await chatter.stop()
             logger.info(f"Track {track.kind} ended")
-
-    # DEBUG
-    for i in range(5):
-        frame = await player.audio.recv()
-        logger.debug(f'player frame: {frame}')
 
     # on_track gets called when the remote description is set, I think
     await pc.setRemoteDescription(offer)

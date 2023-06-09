@@ -62,7 +62,7 @@ class ResponsePlayerStream(MediaStreamTrack):
         frame_start_time = self.__start_time + util.get_frame_start_time(frame)
         delay = frame_start_time - (current_time + max_buf_sec)
         delay = max(0., delay)
-        logger.debug(f"Throttling playback, sleeping for delay={delay:.3f} sec")
+        logger.trace(f"Throttling playback, sleeping for delay={delay:.3f} sec")
         await asyncio.sleep(delay)
 
     @logger.catch

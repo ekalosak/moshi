@@ -26,5 +26,4 @@ async def test_chatter_happy_path(utterance_audio_track, Sink):
     print(f'chatter and sink started, sleeping {sleep}')
     await asyncio.sleep(sleep) # sec
     await asyncio.gather(chatter.stop(), sink.stop())
-    breakpoint()
     assert 0, "check the contents of sink are what we expect"

@@ -1,8 +1,14 @@
 """ This module provide audio processing utilities. """
+import os
+
 from aiortc.mediastreams import MediaStreamTrack
 from av import AudioFrame, AudioLayout, AudioFormat
 from loguru import logger
 import numpy as np
+
+SAMPLE_RATE = int(os.getenv("MOSHISAMPLERATE", 44100))
+AUDIO_FORMAT = os.getenv("MOSHIAUDIOFORMAT", 's16')
+AUDIO_LAYOUT = os.getenv("MOSHIAUDIOFORMAT", 'mono')
 
 def _track_str(track: MediaStreamTrack) -> str:
     """ Tidy repr of a track. """
@@ -29,7 +35,7 @@ def get_frame_start_time(frame) -> float:
     """ Get the clock time (relative to the start of the stream) at which the frame should start """
     return frame.pts * frame.samples / frame.rate
 
-def empty_frame(length=128, format='s16', layout='stereo', sample_rate=44100, pts=None) -> AudioFrame:
+def empty_frame(length=128, format=AUDIO_FORMAT, layout=AUDIO_LAYOUT, rate=SAMPLE_RATE, pts=None) -> AudioFrame:
     fmt = AudioFormat(format)
     lay = AudioLayout(layout)
     size = (len(lay.channels), length)
@@ -37,7 +43,7 @@ def empty_frame(length=128, format='s16', layout='stereo', sample_rate=44100, pt
     if not fmt.is_planar:
         samples = samples.reshape(1, -1)
     frame = AudioFrame.from_ndarray(samples, format=format, layout=layout)
-    frame.sample_rate = sample_rate
+    frame.rate = rate
     frame.pts = pts
     return frame
 

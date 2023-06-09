@@ -5,12 +5,14 @@ import time
 
 from aiortc import MediaStreamTrack
 from aiortc.mediastreams import MediaStreamError
-from av import AudioFrame, AudioFifo
+from av import AudioFrame, AudioFifo, AudioResampler
 from loguru import logger
 
 from server.audio import util
 
 SAMPLE_RATE = int(os.getenv("MOSHISAMPLERATE", 44100))
+AUDIO_FORMAT = os.getenv("MOSHIAUDIOFORMAT", 's16')
+AUDIO_LAYOUT = os.getenv("MOSHIAUDIOFORMAT", 'mono')
 FRAME_SIZE = int(os.getenv("MOSHIFRAMESIZE", 960))
 assert FRAME_SIZE >= 128 and FRAME_SIZE <= 4096
 
@@ -22,42 +24,67 @@ class ResponsePlayerStream(MediaStreamTrack):
         self.__sent = sent
         self.__start_time = None
         self.__pts = 0
+        self.__resampler = AudioResampler(
+            format=AUDIO_FORMAT,
+            layout=AUDIO_LAYOUT,
+            rate=SAMPLE_RATE,
+        )
 
+    @logger.catch
     async def recv(self) -> AudioFrame:
         """ Return audio from the fifo if it exists, otherwise return silence. """
-        if self.__start_time is None:
-            self.__start_time = time.monotonic()
         frame = self.__fifo.read(FRAME_SIZE, partial=False)
         if frame is None:
-            logger.debug("empty frame")
+            logger.trace("empty frame")
             self.__fifo.read(partial=True)  # drop any partial fragment
             frame = util.empty_frame(
                 length=FRAME_SIZE,
-                sample_rate=SAMPLE_RATE,
+                rate=SAMPLE_RATE,
+                format=AUDIO_FORMAT,
+                layout=AUDIO_LAYOUT,
                 pts=None,
             )
             self.__sent.set()  # frame is none means whatever audio was written is flushed
         else:
-            logger.debug("non-empty frame")
+            logger.trace("non-empty frame")
         frame.pts = self.__pts
         self.__pts += 1
         await self.__throttle_playback(frame)
+        logger.trace(f"returning frame: {frame}")
         return frame
 
+    @logger.catch
     async def __throttle_playback(self, frame: AudioFrame, max_buf_sec=.1):
         """ Ensure client buffer isn't overfull by sleeping until max_buf_sec before the frame should be played relative
         to the start of the stream. """
+        if self.__start_time is None:
+            self.__start_time = time.monotonic()
         current_time = time.monotonic()
         frame_start_time = self.__start_time + util.get_frame_start_time(frame)
         delay = frame_start_time - (current_time + max_buf_sec)
         delay = max(0., delay)
+        logger.trace(f"Throttling playback, sleeping for delay={delay:.3f} sec")
         await asyncio.sleep(delay)
 
-    def write_audio(self, af: AudioFrame):
-        logger.debug("Writing audio to fifo...")
-        self.__fifo.write(af)
+    @logger.catch
+    def write_audio(self, frame: AudioFrame):
+        logger.debug(f"Writing audio to fifo: {frame}")
+        if self.__resampler is None:
+            self.__init_resampler()  # Fifo must have had a frame written by this point to establish format
+        frames = self.__resampler.resample(frame)
+        assert len(frames) == 1
+        for frame_ in frames:
+            self.__fifo.write(frame_)
         self.__sent.clear()
-        logger.debug(f"Audio written: {af}")
+        logger.debug(f"Audio written, example: {frame_}")
+
+    @logger.catch
+    def __init_resampler(self):
+        self.__resampler = AudioResampler(
+            format=AUDIO_FORMAT,
+            layout=AUDIO_LAYOUT,
+            rate=SAMPLE_RATE,
+        )
 
 class ResponsePlayer:
     """ When audio is set, it is sent over the track. """
@@ -70,6 +97,7 @@ class ResponsePlayer:
     def audio(self):
         return self.__track
 
+    @logger.catch
     async def send_utterance(self, frame: AudioFrame):
         """ Flush the audio frame to the track and send it real-time then return.
         It's important that it be realtime because we need to be relatively on time for switching from listening to
@@ -78,7 +106,7 @@ class ResponsePlayer:
         logger.info("Sending utterance...")
         self.__track.write_audio(frame)
         frame_time = util.get_frame_seconds(frame)
-        timeout = frame_time + 1.
+        timeout = frame_time + 5.
         logger.debug(f'frame_time={frame_time:.3f}, timeout={timeout:.3f}')
         try:
             logger.debug(f"Awaiting __sent.wait() event from {util._track_str(self.__track)} upon clearing fifo...")
@@ -89,6 +117,7 @@ class ResponsePlayer:
             logger.debug("Track's fifo is cleared.")
         except asyncio.TimeoutError:
             logger.debug(f"Timed out waiting for audio to be played, frame_time={frame_time} timeout={timeout}")
+            raise
         except MediaStreamError:
             logger.error("MediaStreamError")
             raise

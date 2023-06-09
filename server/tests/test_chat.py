@@ -16,7 +16,7 @@ async def test_chatter_happy_path(utterance_audio_track, Sink):
     tracks set up in the WebRTC framework.
     """
     # TODO when WebRTCChatter._main starts using openai, monkeypatch those out
-    sleep = 15.   # utterance time (12 sec total w/ silence iirc)+ plenty of silence
+    sleep = 30.  # 15. for the 12. of the utterance detection + overhead; 15. for the 8. of playback + overhead;
     print('initializing chatter and sink (as dummy client); source is utterance_audio_track')
     chatter = chat.WebRTCChatter()
     chatter.detector.setTrack(utterance_audio_track)
@@ -26,5 +26,5 @@ async def test_chatter_happy_path(utterance_audio_track, Sink):
     print(f'chatter and sink started, sleeping {sleep}')
     await asyncio.sleep(sleep) # sec
     await asyncio.gather(chatter.stop(), sink.stop())
-    # breakpoint()
-    # assert 0, "check the contents of sink are what we expect"
+    breakpoint()
+    assert 0, "check the contents of sink are what we expect"

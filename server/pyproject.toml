@@ -1,6 +1,6 @@
 [project]
 name = "moshi-server"
-version = "23.5.2"
+version = "23.6.0"
 description = "Web browser user interface for Moshi."
 readme = "README.md"
 requires-python = ">=3.7"

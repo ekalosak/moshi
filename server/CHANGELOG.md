@@ -1,5 +1,5 @@
-# 23.5.2 WIP
-Adapting moshi.chatter into server
+# 23.6.0
+WebRTCChatter appears working in smoke-tests (detecting utterance from track, replaying back, handling tracks)
 
 # 23.5.1
 Tried a ton of garbage with sockets

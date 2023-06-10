@@ -7,7 +7,7 @@ from aiortc.contrib import media
 from aiortc import MediaStreamTrack
 from aiortc.mediastreams import MediaStreamError
 import av
-from av import AudioFrame, AudioFifo
+from av import AudioFrame, AudioFifo, AudioResampler
 from loguru import logger
 import pytest
 
@@ -34,7 +34,9 @@ def short_audio_frame(short_wav_file) -> AudioFrame:
     with av.open(str(short_wav_file)) as container:
         for frame in container.decode():
             fifo.write(frame)
-    return fifo.read()
+    frame = fifo.read()
+    frame = AudioResampler(rate=SAMPLE_RATE).resample(frame)[0]
+    return frame
 
 @pytest.fixture
 def short_audio_track(short_wav_file) -> MediaStreamTrack:

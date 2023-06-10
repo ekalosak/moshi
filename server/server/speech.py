@@ -29,7 +29,7 @@ def _load_wav_to_buffer(fp: str) -> AudioFifo:
         container.close()
     return fifo
 
-def say(utterance: str, language: Language = Language.EN_US) -> AudioFrame:
+def synthesize_language(utterance: str, language: Language = Language.EN_US) -> AudioFrame:
     logger.debug(f"Producing utterance: {textwrap.shorten(utterance, 64)}")
     _change_language(language)
     # import os

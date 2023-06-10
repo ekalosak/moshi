@@ -21,11 +21,7 @@ class WebRTCChatter(Chatter):
         self.detector = audio.UtteranceDetector()  # get_utterance: track -> AudioFrame
         self.responder = audio.ResponsePlayer()  # play_response: AudioFrame -> track
         self.messages = _init_messages()
-        self.__language = None
-        self.__user_audio = None
-        self.__user_text = None
-        self.__assistant_audio = None
-        self.__assistant_text = None
+        self.language = None
         self.__task = None
 
     @logger.catch
@@ -45,7 +41,6 @@ class WebRTCChatter(Chatter):
     async def stop(self):
         await self.detector.stop()
         self.__task.cancel(f"{self.__class__.__name__}.stop() called")
-        # await asyncio.wait([self.__task])
         self.__task = None
 
     @logger.catch
@@ -62,56 +57,36 @@ class WebRTCChatter(Chatter):
             except KeyboardInterrupt as e:
                 logger.debug(f"Got quit signal, exiting gracefully: {e}")
                 break
-        # self._report()
         self._splash("bye")
 
-    # @logger.catch
     async def __main(self):
         """ Run one loop of the main program. """
         # TODO chat response and speech synthesis and language detection in between these two:
         # TODO when you do this, make sure to adapt the test_chatter_happy_path so it monkeypatches the openai
-        ut: AudioFrame = await self.detector.get_utterance()
-        await asyncio.sleep(1)
-        await self.responder.send_utterance(ut)
-        await asyncio.sleep(1)
-        # TODO use self._ methods rather than detector and responder directly; once this simplified demo works
+        logger.debug(f"Detecting user utterance...")
+        usr_audio: AudioFrame = await self.detector.get_utterance()
+        await self.__detect_language(usr_audio)
+        await self.__transcribe_audio(usr_audio)
+        logger.debug(f"Responding to user text: {message}")
+        ast_txt: str = await think.respond(self.messages)
+        ast_audio: AudioFrame = await speech.synthesize_language(ast_txt)
+        await self.responder.send_utterance(ast_audio)
 
     def set_utterance_channel(self, channel):
         if self.__channel is not None:
             raise ValueError(f"Already have an utterance channel: {self.__channel.label}:{self.__channel.id}")
         self.__channel = channel
 
-    @logger.catch
-    async def _get_user_utterance_audio(self):
-        """ From the audio track, get an AudioFrame utterance from the client microphone. """
-        self.__user_audio = await self.detector.get_utterance()
-
-    @logger.catch
-    async def _transcribe_user_utterance_audio_to_text(self):
-        self.__user_text = await listen.transcribe_audio(self.__user_audio)
-        message = Message(Role.USR, self.__user_text)
-        logger.debug(message)
+    async def __transcribe_audio(audio, role=Role.USR):
+        logger.debug(f"Transcribing {str(role)} audio: {usr_audio}")
+        usr_txt: str = await speech.transcribe(audio)
+        message = Message(Role.USR, usr_txt)
         self.messages.append(message)
 
-    @logger.catch
-    async def _get_assistant_response_text(self):
-        """ From the AI assistant, get a text chat response to the user utterance text. """
-        self.__assistant_text = await think.completion_from_assistant(self.messages)
-        message = Message(Role.AST, self.__assistant_text)
-        logger.debug(message)
-        self.messages.append(message)
-
-    @logger.catch
-    async def _say_assistant_response_audio(self):
-        """ Using the AI assistant's text response, synthesize speech and send the audio over the track to the client speaker. """
-        self.__assistant_audio = await speech.synthesize(self.__assistant_text)
-        await self.responder.send_audio(self.__assistant_audio)
-
-    @logger.catch
-    async def _detect_language(self):
+    async def __detect_language(self: audio, AudioFrame):
         """ Using the user's utterance text, determine the language they're speaking. """
         if self.language:
             logger.debug(f"Language already detected: {self.language}")
             return
-        self.language = await lang.recognize_language(self.__user_text)
+        self.language = await lang.recognize_language(audio)
         logger.info(f"Language detected: {self.language}")

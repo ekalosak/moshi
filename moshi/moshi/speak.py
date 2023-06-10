@@ -4,9 +4,9 @@ import textwrap
 import pyttsx3
 from loguru import logger
 
-from moshi import util
 from moshi.lang import Language
 
+logger.debug("Loading speech synthesis drivers...")
 engine = pyttsx3.init()
 
 logger.success("loaded")
@@ -35,7 +35,6 @@ def _change_language(language: Language):
     engine.setProperty("voice", voice.id)
 
 
-@util.timed
 def say(utterance: str, language: Language = Language.EN_US):
     """Convert an utterance of natural language into audio and play the audio. This is a blocking call."""
     logger.debug(f"utterance: {textwrap.shorten(utterance, 64)}")

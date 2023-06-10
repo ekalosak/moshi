@@ -1,0 +1,94 @@
+/* Mobile Styles */
+
+/* Reset default styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* Set a base font size and line height */
+body {
+  font-family: Arial, sans-serif;
+  font-size: 16px;
+  color: #bbb;
+  line-height: 1.5;
+  background-color: #333; /* Dark grey background color */
+}
+
+/* Add some spacing and center content */
+.top-container {
+  padding: 20px;
+  text-align: center;
+}
+
+.main-container {
+  padding: 20px;
+  text-align: center;
+}
+
+/* Style headings */
+h1 {
+  font-size: 32px;
+  margin-bottom: 10px;
+}
+
+h2 {
+  font-size: 24px;
+  margin-bottom: 10px;
+}
+
+h2 {
+  font-size: 20px;
+  margin-bottom: 10px;
+}
+
+/* Style paragraphs */
+p {
+  margin-bottom: 20px;
+}
+
+/* Style buttons */
+button {
+  display: inline-block;
+  padding: 5px 50px;
+  background-color: #56a7b1;
+  color: #333;
+  text-decoration: none;
+  border-radius: 10px;
+  transition: background-color 0.3s ease;
+  font-size: 20px;
+}
+
+button:hover {
+  background-color: #f45c06;
+}
+
+/* Tablet and Desktop Styles */
+
+@media (min-width: 768px) {
+  /* Increase font size for larger screens */
+  body {
+    font-size: 18px;
+  }
+
+  /* Increase container width and center align */
+  .container {
+    width: 80%;
+    margin: 0 auto;
+  }
+}
+
+/* Larger Desktop Styles */
+
+@media (min-width: 1200px) {
+  /* Increase font size for larger screens */
+  body {
+    font-size: 20px;
+  }
+
+  /* Adjust container width */
+  .container {
+    width: 60%;
+  }
+}

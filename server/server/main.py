@@ -23,6 +23,16 @@ async def index(request):
     content = open(os.path.join(ROOT, "index.html"), "r").read()
     return web.Response(content_type="text/html", text=content)
 
+async def favicon(request):
+    """ HTTP endpoint for the favicon """
+    fp = os.path.join(ROOT, "favicon.ico")
+    return web.FileResponse(fp)
+
+async def css(request):
+    """ HTTP endpoint for style.css """
+    content = open(os.path.join(ROOT, "css/style.css"), "r").read()
+    return web.Response(content_type="text/css", text=content)
+
 async def javascript(request):
     """ HTTP endpoint for client.js """
     content = open(os.path.join(ROOT, "client.js"), "r").read()
@@ -135,7 +145,9 @@ if __name__ == "__main__":
     app.on_shutdown.append(on_shutdown)
     app.on_startup.append(on_startup)
     app.router.add_get("/", index)
+    app.router.add_get("/favicon.ico", favicon)
     app.router.add_get("/client.js", javascript)
+    app.router.add_get("/style.css", css)
     app.router.add_post("/offer", offer)
     web.run_app(
         app, access_log=None, host=args.host, port=args.port, ssl_context=ssl_context

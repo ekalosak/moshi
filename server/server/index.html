@@ -3,16 +3,9 @@
 <head>
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Audio demo</title>
-    <!-- <link rel="stylesheet" href="style.css" /> -->
+    <title>~ Moshi ~</title>
+    <link rel="stylesheet" href="/style.css">
     <style>
-      button {
-          padding: 8px 16px;
-      }
-      pre {
-          overflow-x: hidden;
-          overflow-y: auto;
-      }
       #nerd-stuff {
         display: none;
       }
@@ -20,10 +13,28 @@
 </head>
 <body>
 
+<div class="top-container">
 <h1>Moshi</h1>
 <p>
-  Moshi is a language tutor - click start, wait for the signal, and just start speaking in some language. <br/>
-  For example, when you get the signal, say: "Hola, mi nombre es Jeff", then wait for Moshi to respond.
+  Moshi is a language speaking tutor.
+</p>
+</div>
+
+<div class="container">
+<h2>Instructions</h2>
+<ol>
+  <li>Click the Start button,</li>
+  <li>Wait for the signal,</li>
+  <li>Start speaking in some language.</li>
+</ol>
+<br>
+<p>
+  For example, when you get the signal, say: "Hola, mi nombre es Jeff".<br>
+  Then, wait for Moshi to respond - and continue your conversation!
+</p>
+<p>
+  Odds are your language is supported.<br>
+  If not, please mail <tt>moshi.feedback@gmail.com</tt>.<br>
 </p>
 
 <p>
@@ -31,6 +42,7 @@
   <button id="stop" style="display: none" onclick="stop()">Stop</button>
 </p>
 
+<h2>Audio status</h2>
 <p>
   <audio id="audio" autoplay controls></audio>
 </p>
@@ -45,12 +57,13 @@
 Moshi version <tt>alpha-23.6.1</tt><br>
 © 2023 Eric Kalosa-Kenyon. All rights reserved.
 </p>
-<h2>Nerd stuff</h2>
-<h3>Troubleshooting</h3>
+<h1>Nerd stuff</h1>
+<h2>Troubleshooting</h2>
 <ul>
   <li>Your microphone and speaker must be enabled - press "Allow" when your web browser asks for permission.</li>
 </ul>
 
+<br>
 <button id="showNerdStuff">Show diagnostics</button>
 
 <div id="nerd-stuff">
@@ -119,5 +132,6 @@ initially) to the Moshi server - mostly about the WebRTC middleman server (an IC
 
 <script src="client.js"></script>
 
+</div>  <!-- container div -->
 </body>
 </html>

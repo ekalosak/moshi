@@ -138,11 +138,13 @@ class UtteranceDetector:
             self.__background_energy = await self.__measure_background_audio_energy()
         logger.debug(f"Detected background_energy: {self.__background_energy:.5f}")
         logger.debug("Waiting for utterance to start...")
-        await asyncio.wait_for(
+        fifo = AudioFifo()
+        first_frame = await asyncio.wait_for(
             self.__utterance_started(),
             timeout=self.__config.utterance_start_timeout_seconds
         )
-        fifo = AudioFifo()
+        first_frame.pts = None
+        fifo.write(first_frame)
         silence_time_sec = 0.
         silence_broken_time = 0.
         total_utterance_sec = 0.
@@ -180,12 +182,13 @@ class UtteranceDetector:
         return ambient_noise_energy
 
     @logger.catch
-    async def __utterance_started(self):
+    async def __utterance_started(self) -> AudioFrame:
         """ Hold off until audio energy is high enough for long enough. """
         # all time is mesured relative to the track's audio frames, not wall clock time.
         assert isinstance(self.__background_energy, float)
         sustained_speech_seconds = 0.
         total_waiting_seconds = 0.
+        fifo = AudioFifo()
         while True:
             frame = await self.__track.recv()
             frame_energy = util.get_frame_energy(frame)
@@ -194,9 +197,13 @@ class UtteranceDetector:
             logger.trace(f"total_waiting_seconds: {total_waiting_seconds}")
             if frame_energy > self.__background_energy:
                 sustained_speech_seconds += frame_time
+                frame.pts = None
+                fifo.write(frame)
             else:
                 sustained_speech_seconds = 0.
+                fifo.read()
             if sustained_speech_seconds > self.__config.utterance_start_speaking_seconds:
                 logger.debug(f"Utterance started after {total_waiting_seconds:.3f} seconds")
-                return
+                break
             total_waiting_seconds += frame_time
+        return fifo.read()

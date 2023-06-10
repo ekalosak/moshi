@@ -20,22 +20,22 @@ util.setup_loguru()
 async def index(request):
     """ HTTP endpoint for index.html """
     logger.info(request)
-    content = open(os.path.join(ROOT, "index.html"), "r").read()
+    content = open(os.path.join(ROOT, "web/index.html"), "r").read()
     return web.Response(content_type="text/html", text=content)
 
 async def favicon(request):
     """ HTTP endpoint for the favicon """
-    fp = os.path.join(ROOT, "favicon.ico")
+    fp = os.path.join(ROOT, "web/favicon.ico")
     return web.FileResponse(fp)
 
 async def css(request):
     """ HTTP endpoint for style.css """
-    content = open(os.path.join(ROOT, "css/style.css"), "r").read()
+    content = open(os.path.join(ROOT, "web/style.css"), "r").read()
     return web.Response(content_type="text/css", text=content)
 
 async def javascript(request):
     """ HTTP endpoint for client.js """
-    content = open(os.path.join(ROOT, "client.js"), "r").read()
+    content = open(os.path.join(ROOT, "web/client.js"), "r").read()
     return web.Response(content_type="application/javascript", text=content)
 
 @util.async_with_pcid

@@ -53,37 +53,40 @@
 </p>
 
 <hr>
+<br>
 <p>
 Moshi version <tt>alpha-23.6.1</tt><br>
 © 2023 Eric Kalosa-Kenyon. All rights reserved.
+<hr>
 </p>
-<h2>Nerd stuff</h2>
-<h3>Troubleshooting</h3>
+<h2>Troubleshooting</h2>
 <ul>
   <li>Your microphone and speaker must be enabled - press "Allow" when your web browser asks for permission.</li>
 </ul>
 
-<br>
-<button id="showNerdStuff">Show diagnostics</button>
+<p>
+  <h2>Diagnostics</h2>
+  <button id="showNerdStuff">Show diagnostics</button>
+</p>
 
 <div id="nerd-stuff">
-<h3>Diagnostics</h3>
 <p>
 The following sections are exposed in this alpha release for diagnostic purposes (and for nosy nerds).
 You don't need to touch anything here, and if you don't know what you're doing, you shouldn't.
 </p>
 
-<h2>Ping-pong</h2>
+<h3>Ping-pong</h3>
 <p>
 The following text shows your ping, which tells you the speed of your connection over the Internet to the Moshi server.
 It won't show anything until you click start, and after that it should show ping pong until you click stop.
 </p>
 <pre id="data-channel" style="height: 200px;"></pre>
 
-<h2>WebRTC Connection Options</h2>
+<h3>WebRTC Connection Options</h3>
 <p>
 Don't mess with these unless you know what you're doing.
 </p>
+<p>
 <div class="option">
     <input id="use-datachannel" checked="checked" type="checkbox"/>
     <label for="use-datachannel">Use datachannel</label>
@@ -107,8 +110,9 @@ Don't mess with these unless you know what you're doing.
     <input id="use-stun" type="checkbox"/>
     <label for="use-stun">Use STUN server</label>
 </div>
+</p>
 
-<h2>WebRTC Connection State</h2>
+<h3>WebRTC Connection State</h3>
 <p>
 These elements will populate with the status of your connection to the Moshi server.
 </p>
@@ -122,12 +126,14 @@ These elements will populate with the status of your connection to the Moshi ser
     Signaling state: <span id="signaling-state"></span>
 </p>
 
-<h2>WebRTC Connection Description (SDP)</h2>
-<p>The session description protocol tells you details about the connection that is established (or being established,
+<h3>WebRTC Connection Description (SDP)</h3>
+<p>
+The session description protocol tells you details about the connection that is established (or being established,
 initially) to the Moshi server - mostly about the WebRTC middleman server (an ICE or STUN server provided by Google).
-<h3>Offer</h3>
+</p>
+<h4>Offer</h4>
 <pre id="offer-sdp"></pre>
-<h3>Answer</h3>
+<h4>Answer</h4>
 <pre id="answer-sdp"></pre>
 
 

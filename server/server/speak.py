@@ -1,7 +1,10 @@
 import asyncio
 import tempfile
+import textwrap
 
+import av
 from av import AudioFrame, AudioFifo
+from loguru import logger
 
 from moshi.speak import (
     NoVoiceError,
@@ -12,8 +15,9 @@ from moshi.speak import (
 from moshi.lang import Language
 
 def _speech_to_wav_file(utterance, fp: str):
-    asyncio.to_thread(engine.save_to_file, utterance, fp)
-    asyncio.to_thread(engine.runAndWait)
+    engine.setProperty('output_format', 'wav')
+    engine.save_to_file(utterance, fp)
+    engine.runAndWait()
 
 def _load_wav_to_buffer(fp: str) -> AudioFifo:
     try:
@@ -28,6 +32,8 @@ def _load_wav_to_buffer(fp: str) -> AudioFifo:
 def say(utterance: str, language: Language = Language.EN_US) -> AudioFrame:
     logger.debug(f"Producing utterance: {textwrap.shorten(utterance, 64)}")
     _change_language(language)
+    # import os
+    # fp = os.path.join(os.getcwd(), "test.wav")
     _, fp = tempfile.mkstemp(suffix='.wav')
     logger.debug("Starting speech synthesis...")
     _speech_to_wav_file(utterance, fp)

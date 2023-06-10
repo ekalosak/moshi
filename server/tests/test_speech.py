@@ -2,9 +2,10 @@
 from av import AudioFrame
 
 from server.audio.util import get_frame_seconds
+from server import speak
 
-def test_speech():
-    frame = speech.say("Hello, world")
+def test_speech_synthesis():
+    frame = speak.say("Hello, world")
     print(f'frame: {frame}')
     assert isinstance(frame, AudioFrame)
     frame_sec = get_frame_seconds(frame)

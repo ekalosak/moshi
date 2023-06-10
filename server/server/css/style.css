@@ -24,7 +24,7 @@ body {
 
 .main-container {
   padding: 20px;
-  text-align: center;
+  text-align: left;
 }
 
 /* Style headings */
@@ -38,7 +38,7 @@ h2 {
   margin-bottom: 10px;
 }
 
-h2 {
+h3 {
   font-size: 20px;
   margin-bottom: 10px;
 }
@@ -46,6 +46,10 @@ h2 {
 /* Style paragraphs */
 p {
   margin-bottom: 20px;
+}
+
+ol {
+  padding-left: 40px; /* Adjust the padding as needed */
 }
 
 /* Style buttons */
@@ -73,7 +77,7 @@ button:hover {
   }
 
   /* Increase container width and center align */
-  .container {
+  .main-container {
     width: 80%;
     margin: 0 auto;
   }
@@ -88,7 +92,7 @@ button:hover {
   }
 
   /* Adjust container width */
-  .container {
+  .main-container {
     width: 60%;
   }
 }

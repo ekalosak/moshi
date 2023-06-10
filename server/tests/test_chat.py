@@ -29,7 +29,9 @@ async def test_chatter_happy_path(utterance_audio_track, Sink):
     await asyncio.gather(chatter.start(), sink.start())
     print(f'chatter and sink started, sleeping {sleep}')
     await asyncio.sleep(sleep) # sec
+    print('stopping chatter and sink')
     await asyncio.gather(chatter.stop(), sink.stop())
+    print('stopped!')
     utframe = chatter.detector._UtteranceDetector__utterance
     ut_sec = util.get_frame_seconds(utframe)
     assert 7.75 <= ut_sec <= 8.25, "Utterance detection degraded"  # 8.06 sec nominally

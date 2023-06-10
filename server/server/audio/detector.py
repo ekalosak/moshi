@@ -128,7 +128,9 @@ class UtteranceDetector:
             - aiortc.MediaStreamError if the track finishes before the utterance is detected (usually for
               .wav input)
         """
-        self.__background_energy = await self.__measure_background_audio_energy()
+        logger.debug("Detecting background energy...")
+        if self.__background_energy is None:
+            self.__background_energy = await self.__measure_background_audio_energy()
         logger.debug(f"Detected background_energy: {self.__background_energy:.5f}")
         logger.debug("Waiting for utterance to start...")
         await asyncio.wait_for(
@@ -165,6 +167,7 @@ class UtteranceDetector:
         while time_elapsed_sec < self.__config.ambient_noise_measurement_seconds:
             frame = await self.__track.recv()
             time_elapsed_sec += util.get_frame_seconds(frame)
+            frame.pts = None  # or the fifo will complain, we aren't scheduling frames from this fifo so pts=None is OK
             fifo.write(frame)
         ambient_noise_frame: AudioFrame = fifo.read()
         ambient_noise_energy: float = util.get_frame_energy(ambient_noise_frame)

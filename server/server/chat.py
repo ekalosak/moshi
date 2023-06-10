@@ -48,7 +48,7 @@ class WebRTCChatter(Chatter):
         # await asyncio.wait([self.__task])
         self.__task = None
 
-    # @logger.catch
+    @logger.catch
     async def __run(self):
         """ Run the main program loop. """
         self._splash("moshi")
@@ -58,7 +58,7 @@ class WebRTCChatter(Chatter):
                 break
             logger.debug(f"Starting loop number: i={i}")
             try:
-                await self._main()
+                await self.__main()
             except KeyboardInterrupt as e:
                 logger.debug(f"Got quit signal, exiting gracefully: {e}")
                 break

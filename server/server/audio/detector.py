@@ -47,10 +47,14 @@ class UtteranceDetector:
     @logger.catch
     async def stop(self):
         """ Cancel the background task and free up the track. """
-        if self.__task is not None:
-            self.__task.cancel()
+        if self.__task is None:
+            return
+        self.__task.cancel()
+        try:
+            await self.__task  # this should sleep until the __task is cancelled
+        except asyncio.CancelledError:
+            pass
         self.__task = None
-        self.__track = None
 
     @logger.catch
     def setTrack(self, track: MediaStreamTrack):
@@ -70,7 +74,8 @@ class UtteranceDetector:
         if track.readyState != 'live':
             raise ValueError(f"Non-live tracks not supported, got track: {_track_str(track)}")
         if self.__track is not None:
-            raise ValueError(f"Track already set: {_track_str(self.__track)}")
+            logger.warning(f"Track already set: {_track_str(self.__track)}")
+            # raise ValueError(f"Track already set: {_track_str(self.__track)}")
         self.__track = track
 
     # @logger.catch

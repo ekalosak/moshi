@@ -67,21 +67,16 @@ class ResponsePlayerStream(MediaStreamTrack):
 
     @logger.catch
     def write_audio(self, frame: AudioFrame):
+        logger.debug(f"Got frame to write to fifo: {frame}")
+        frame.pts = self.__fifo.samples_written
         logger.debug(f"Writing audio to fifo: {frame}")
-        # if self.__resampler is None:
-        #     self.__init_resampler()  # Fifo must have had a frame written by this point to establish format
-        # frames = self.__resampler.resample(frame)
-        # assert len(frames) == 1
-        # for frame_ in frames:
-        #     self.__fifo.write(frame_)
         self.__fifo.write(frame)
         self.__sent.clear()
         logger.debug(f"Audio written, example: {frame}")
-        # logger.debug(f"Audio written, example: {frame_}")
 
     @logger.catch
-    def __init_resampler(self):
-        self.__resampler = AudioResampler(
+    def __make_resampler(self):
+        return AudioResampler(
             format=AUDIO_FORMAT,
             layout=AUDIO_LAYOUT,
             rate=SAMPLE_RATE,

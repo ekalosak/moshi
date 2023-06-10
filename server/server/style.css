@@ -1,0 +1,12 @@
+button {
+    padding: 8px 16px;
+}
+
+pre {
+    overflow-x: hidden;
+    overflow-y: auto;
+}
+
+/* .option { */
+/*     margin-bottom: 8px; */
+/* } */

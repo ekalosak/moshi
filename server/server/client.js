@@ -1,6 +1,6 @@
 // https://github.com/aiortc/aiortc/blob/main/examples/server/client.js
 // get DOM elements
-var dataChannelLog = document.getElementById('data-channel'),
+var pingPongChannelLog = document.getElementById('ping-pong-channel'),
     iceConnectionLog = document.getElementById('ice-connection-state'),
     iceGatheringLog = document.getElementById('ice-gathering-state'),
     signalingLog = document.getElementById('signaling-state'),
@@ -125,22 +125,22 @@ function start() {
         dc = pc.createDataChannel('keepalive', parameters);
         dc.onclose = function() {
             clearInterval(dcInterval);
-            dataChannelLog.textContent += '- close\n';
+            pingPongChannelLog.textContent += '- close\n';
         };
         dc.onopen = function() {
-            dataChannelLog.textContent += '- open\n';
+            pingPongChannelLog.textContent += '- open\n';
             dcInterval = setInterval(function() {
                 var message = 'ping ' + current_stamp();
-                dataChannelLog.textContent += '> ' + message + '\n';
+                pingPongChannelLog.textContent += '> ' + message + '\n';
                 dc.send(message);
             }, 1000);
         };
         dc.onmessage = function(evt) {
-            dataChannelLog.textContent += '< ' + evt.data + '\n';
+            pingPongChannelLog.textContent += '< ' + evt.data + '\n';
 
             if (evt.data.substring(0, 4) === 'pong') {
                 var elapsed_ms = current_stamp() - parseInt(evt.data.substring(5), 10);
-                dataChannelLog.textContent += ' RTT ' + elapsed_ms + ' ms\n';
+                pingPongChannelLog.textContent += ' RTT ' + elapsed_ms + ' ms\n';
             }
         };
     }
@@ -191,6 +191,9 @@ function stop() {
     setTimeout(function() {
         pc.close();
     }, 500);
+
+    document.getElementById('start').style.display = 'inline-block';
+    document.getElementById('start').textContent = 'Restart';
 }
 
 function sdpFilterCodec(kind, codec, realSdp) {
@@ -250,3 +253,17 @@ function sdpFilterCodec(kind, codec, realSdp) {
 function escapeRegExp(string) {
     return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // $& means the whole matched string
 }
+
+// show/hide nerd stuff
+var showNerdStuffButton = document.getElementById('showNerdStuff');
+var showNerdStuffDiv = document.getElementById('nerd-stuff');
+
+showNerdStuffButton.addEventListener('click', function() {
+  if (showNerdStuffDiv.style.display === 'none') {
+    showNerdStuffDiv.style.display = 'block';
+    showNerdStuffButton.textContent = 'Hide diagnostics';
+  } else {
+    showNerdStuffDiv.style.display = 'none';
+    showNerdStuffButton.textContent = 'Show diagnostics';
+  }
+});

@@ -30,8 +30,8 @@ async def test_utterance_detector(utterance_audio_track):
     print('got_utterance! stopping...')
     await ud.stop()
     print('stopped!')
+    # fn = write_frame(utterance)
+    # print(f"wrote detected utterance to: {fn}")
     assert isinstance(utterance, AudioFrame)
     utterance_time = audio.get_frame_seconds(utterance)
     assert 8. <= utterance_time <= 9., f"{str(utterance_audio_track)} is nominally 8.56 seconds of speech"
-    fn = write_frame(utterance)
-    print(f"wrote detected utterance to: {fn}")

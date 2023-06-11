@@ -91,12 +91,13 @@ async def test_chatter_aiortc_components(utterance_audio_track, short_audio_fram
 @pytest.mark.openai
 async def test_chatter_happy_path(utterance_audio_track, Sink):
     """ Check the full integration. """
+    timeout = 20.
     chatter = chat.WebRTCChatter()
     chatter.detector.setTrack(utterance_audio_track)
     sink = Sink(chatter.responder.audio)
     await asyncio.gather(chatter.detector.start(), sink.start())
     try:
-        done, pending = await asyncio.wait([chatter._WebRTCChatter__main()], timeout=20.)
+        done, pending = await asyncio.wait([chatter._WebRTCChatter__main()], timeout=timeout)
     finally:
         await asyncio.gather(chatter.detector.stop(), sink.stop())
     if done:

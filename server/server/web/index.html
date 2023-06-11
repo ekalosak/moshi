@@ -9,6 +9,21 @@
       #nerd-stuff {
         display: none;
       }
+      .dancing-image {
+          position: relative;
+          animation: none;
+      }
+      .dancing-image:hover {
+          animation: dance 1s infinite;
+      }
+
+      @keyframes dance {
+          0% { transform: rotate(0deg); }
+          25% { transform: rotate(-10deg); }
+          50% { transform: rotate(10deg); }
+          75% { transform: rotate(-10deg); }
+          100% { transform: rotate(0deg); }
+      }
     </style>
 </head>
 <body>
@@ -19,7 +34,7 @@
 <p>
   Moshi is a language speaking tutor.
 </p>
-<img src="/favicon.ico" alt="Moshi" style="width: 32px;">
+<img src="/favicon.ico" alt="Moshi" style="width: 32px;" id="moshiIcon" class="dancing-image">
 
 </div>
 

@@ -45,6 +45,7 @@ def synthesize_language(utterance: str, language: Language = Language.EN_US) -> 
 async def transcribe(audio: AudioFrame) -> str:
     _, fp = tempfile.mkstemp(suffix='.wav')
     util.write_audio_frame_to_wav(audio, fp)
+    logger.debug(f'Transcribing audio from {fp}')
     with open(fp, 'rb') as f:
         # TODO timeout I suppose
         transcript = await asyncio.to_thread(
@@ -52,4 +53,5 @@ async def transcribe(audio: AudioFrame) -> str:
             OPENAI_TRANSCRIPTION_MODEL,
             f,
         )
-    return transcript
+    logger.debug(f"transcript={transcript}")
+    return transcript['text']

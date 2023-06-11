@@ -17,4 +17,5 @@ def test_speech_synthesis():
 @pytest.mark.openai
 async def test_transcribe(short_audio_frame):
     transcript = await speech.transcribe(short_audio_frame)
+    assert isinstance(transcript, str)
     assert transcript == "test"

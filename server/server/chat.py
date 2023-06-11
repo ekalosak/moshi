@@ -67,6 +67,7 @@ class WebRTCChatter(Chatter):
         logger.debug(f"Detecting user utterance...")
         usr_audio: AudioFrame = await self.detector.get_utterance()
         usr_text: str = await self.__transcribe_audio(usr_audio)
+        breakpoint()
         await self.__detect_language(usr_text)
         await self.__get_response()
         ast_audio = self.__synth_speech()
@@ -96,10 +97,11 @@ class WebRTCChatter(Chatter):
 
     async def __transcribe_audio(self, audio, role=Role.USR):
         logger.debug(f"Transcribing {str(role)} audio: {audio}")
-        usr_txt: str = await speech.transcribe(audio)
-        message = Message(Role.USR, usr_txt)
+        transcript: str = await speech.transcribe(audio)
+        logger.info(f"Transcribed {str(role)} utterance: {transcript}")
+        message = Message(Role.USR, transcript)
         self.messages.append(message)
-        return usr_txt
+        return transcript
 
     async def __detect_language(self: audio, AudioFrame):
         """ Using the user's utterance text, determine the language they're speaking. """

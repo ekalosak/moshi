@@ -8,7 +8,7 @@ from moshi import chat
 
 @pytest.fixture
 def chatter():
-    return chat.Chatter()
+    return chat.CliChatter()
 
 @pytest.fixture
 def audio_file():

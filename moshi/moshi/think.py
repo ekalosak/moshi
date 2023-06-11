@@ -101,10 +101,10 @@ def _completion(payload: CompletionPayload, n: int, model: Model, **kwargs) -> l
 
 def completion_from_assistant(
     messages: list[Message], n: int = 1, model=Model.TEXTDAVINCI002, **kwargs
-) -> str | list[str]:
+) -> list[str]:
     """Get the conversational response from the LLM.
     Args:
-        n: if > 1, returns a list of responses.
+        n: how many responses
         kwargs: passed directly to the OpenAI
     Details on args:
         https://platform.openai.com/docs/api-reference/chat/create
@@ -123,8 +123,4 @@ def completion_from_assistant(
         raise TypeError(f"Model not supported: {MODEL}")
     assert isinstance(msg_contents, list)
     assert all(isinstance(mc, str) for mc in msg_contents)
-    if n == 1:
-        assert len(msg_contents) == 1
-        return msg_contents[0]
-    else:
-        return msg_contents
+    return msg_contents

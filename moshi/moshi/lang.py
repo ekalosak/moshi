@@ -72,10 +72,8 @@ def recognize_language(utterance: str) -> Language:
         temperature=0.2,
         model=LANGUAGE_DETECT_MODEL,
     )
-    if N_COMPLETIONS == 1:
-        assistant_utterances = [assistant_utterances]
-    assert isinstance(assistant_utterances, list)
-    assert all(isinstance(au, str) for au in assistant_utterances)
+    assert isinstance(assistant_utterances, list), f"assistant_utterances must be list, got assistant_utterances={assistant_utterances}"
+    assert all(isinstance(au, str) for au in assistant_utterances), f"All ast uts must be str, got assistant_utterances={assistant_utterances}"
     for assistant_utterance in assistant_utterances:
         try:
             return _get_language_from_utterance(assistant_utterance)

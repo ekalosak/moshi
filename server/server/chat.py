@@ -2,6 +2,7 @@
 import asyncio
 import itertools
 import os
+import textwrap
 
 from av import AudioFrame
 from loguru import logger
@@ -62,44 +63,57 @@ class WebRTCChatter(Chatter):
 
     async def __main(self):
         """ Run one loop of the main program. """
-        # TODO chat response and speech synthesis and language detection in between these two:
-        # TODO when you do this, make sure to adapt the test_chatter_happy_path so it monkeypatches the openai
-        logger.debug(f"Detecting user utterance...")
-        usr_audio: AudioFrame = await self.detector.get_utterance()
+        usr_audio: AudioFrame = await self.__detect_user_utterance()
         usr_text: str = await self.__transcribe_audio(usr_audio)
         await self.__detect_language(usr_text)
         await self.__get_response()
         ast_audio = self.__synth_speech()
         await self.responder.send_utterance(ast_audio)
 
-    def set_utterance_channel(self, channel):
+    def set_transcript_channel(self, channel):
         if self.__channel is not None:
-            raise ValueError(f"Already have an utterance channel: {self.__channel.label}:{self.__channel.id}")
+            raise ValueError(f"Already have a transcript channel: {self.__channel.label}:{self.__channel.id}")
         self.__channel = channel
+
+    async def __detect_user_utterance(self) -> AudioFrame:
+        logger.debug(f"Detecting user utterance...")
+        usr_audio: AudioFrame = await self.detector.get_utterance()
+        logger.info(f"Detected user utterance: {usr_audio}")
+        return usr_audio
+
+    def __add_message(self, content:str, role:Role):
+        assert isinstance(content, str)
+        if not isinstance(role, Role):
+            role = Role(role)
+        msg = Message(role=role, content=content)
+        logger.debug(f"Adding message: {msg}")
+        self.messages.append(msg)
 
     def __synth_speech(self) -> AudioFrame:
         msg = self.messages[-1]
         logger.debug(f"Synthesizing to speech: {msg}")
         assert msg.role == Role.AST
         frame = speech.synthesize_language(msg.content)
-        logger.debug(f"Speech synthesized: {frame}")
+        logger.info(f"Speech synthesized: {frame}")
         return frame
 
     async def __get_response(self):
         logger.debug(f"Responding to user text: {self.messages[-1]}")
-        ast_txt: str = await asyncio.to_thread(
+        ast_txts: str = await asyncio.to_thread(
             think.completion_from_assistant,
             self.messages,
+            n=1,
         )
-        message = Message(Role.AST, ast_txt)
-        self.messages.append(message)
+        assert len(ast_txts) == 1
+        ast_txt = ast_txts[0]
+        logger.info(f"Got assistant response: {textwrap.shorten(ast_txt, 64)}")
+        self.__add_message(ast_txt, Role.AST)
 
     async def __transcribe_audio(self, audio, role=Role.USR):
         logger.debug(f"Transcribing {role.value} audio: {audio}")
         transcript: str = await speech.transcribe(audio)
-        logger.info(f"Transcribed {role.value} utterance: {transcript}")
-        message = Message(Role.USR, transcript)
-        self.messages.append(message)
+        logger.info(f"Transcribed {role.value} utterance: {textwrap.shorten(transcript, 64)}")
+        self.__add_message(transcript, Role.USR)
         return transcript
 
     async def __detect_language(self, text: str):

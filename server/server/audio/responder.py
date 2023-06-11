@@ -64,9 +64,8 @@ class ResponsePlayerStream(MediaStreamTrack):
     @logger.catch
     def write_audio(self, frame: AudioFrame):
         logger.debug(f"Got frame to write to fifo: {frame}")
-        if frame.rate == 22050:
-            breakpoint()
-            a=1
+        if frame.rate != SAMPLE_RATE:
+            logger.warning(f"Expected framerate of {SAMPLE_RATE}, got {frame}, the write to fifo will probably fail.")
         frame.pts = self.__fifo.samples_written
         logger.debug(f"Writing audio to fifo: {frame}")
         self.__fifo.write(frame)

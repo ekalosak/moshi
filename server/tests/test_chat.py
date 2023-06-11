@@ -105,5 +105,13 @@ async def test_chatter_happy_path(utterance_audio_track, Sink):
             e = task.exception()
             task.print_stack()
             assert 0, e
-    breakpoint()
-    a=1
+    else:
+        assert pending, f"Somehow asyncio.wait didn't provide done={done} nor pending={pending}"
+        task = pending.pop()
+        print(task)
+        task.cancel()
+        try:
+            await task
+        except asyncio.CancelledError:
+            print('task cancelled successfully, still a test failure though.')
+        raise asyncio.TimeoutError(f"The main task={task} timed out after timeout={timeout} seconds")

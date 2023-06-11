@@ -7,8 +7,18 @@ import pytest
 from server.audio.util import get_frame_seconds
 from server import speech
 
-def test_speech_synthesis():
-    frame = speech.synthesize_language("Hello, world")
+@pytest.mark.asyncio
+async def test_speech_synthesis():
+    print('calling speech.synthesize_language...')
+    try:
+        frame = await asyncio.wait_for(
+            speech.synthesize_language("Hello, world"),
+            timeout=2.
+        )
+    except asyncio.TimeoutError:
+        print("Sometimes the engine will hang..?")
+        raise
+    print('speech.synthesize_language returned!')
     print(f'frame: {frame}')
     assert isinstance(frame, AudioFrame)
     frame_sec = get_frame_seconds(frame)

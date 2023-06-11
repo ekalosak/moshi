@@ -19,12 +19,16 @@ from server.audio import util
 
 def _speech_to_wav_file(utterance, fp: str):
     engine.setProperty('output_format', 'wav')
+    logger.debug("speech engine output set to wav")
     engine.save_to_file(utterance, fp)
+    logger.debug("speech engine save_to_file enqueued")
     engine.runAndWait()
+    logger.debug("engine returned")
 
 def synthesize_language(utterance: str, language: Language = Language.EN_US) -> AudioFrame:
     logger.debug(f"Producing utterance: {textwrap.shorten(utterance, 64)}")
     _change_language(language)
+    logger.debug(f"Changed to language: {language}")
     # import os
     # fp = os.path.join(os.getcwd(), "test.wav")
     _, fp = tempfile.mkstemp(suffix='.wav')

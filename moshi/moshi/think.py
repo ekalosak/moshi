@@ -9,33 +9,12 @@ from typing import NewType
 import openai
 from loguru import logger
 
-from moshi.msg import Message
+from moshi import Model, ModelType, Message
 
 
-class ModelType(str, Enum):
-    """The two model types used by this app.
-    Source:
-        - https://platform.openai.com/docs/api-reference/models
-    """
-
-    COMP = "completion"
-    CHAT = "chat_completion"
-
-
-class Model(str, Enum):
-    """The various models available."""
-
-    GPT35TURBO = "gpt-3.5-turbo"
-    GPT35TURBO0301 = "gpt-3.5-turbo-0301"
-    TEXTDAVINCI003 = "text-davinci-003"
-    TEXTDAVINCI002 = "text-davinci-002"
-    TEXTCURIE001 = "text-curie-001"
-    TEXTBABBAGE001 = "text-babbage-001"
-    TEXTADA001 = "text-ada-001"
-
-
+# Set the default model
 try:
-    _MODEL = os.getenv("OPENAI_MODEL", "gpt-3.5-turbo")
+    _MODEL = os.getenv("OPENAI_MODEL", "text-davinci-002")
     MODEL = Model(_MODEL)
 except ValueError:
     logger.error(f"Invalid OPENAI_MODEL={_MODEL} please select one of: {[m.value for m in Model]}")
@@ -87,11 +66,12 @@ def _completion_payload_from_messages(messages: list[Message]) -> CompletionPayl
     return payload
 
 
-def _chat_completion(payload: ChatCompletionPayload, n: int, **kwargs) -> list[str]:
+def _chat_completion(payload: ChatCompletionPayload, n: int, model: Model, **kwargs) -> list[str]:
     """ Get the message """
     msg_contents = []
+    assert _get_type_of_model(model) == ModelType.CHAT
     response = openai.ChatCompletion.create(
-        model=MODEL,
+        model=model,
         messages=payload,
         n=n,
         **kwargs,
@@ -103,10 +83,11 @@ def _chat_completion(payload: ChatCompletionPayload, n: int, **kwargs) -> list[s
         msg_contents.append(choice.message.content)
     return msg_contents
 
-def _completion(payload: CompletionPayload, n: int, **kwargs) -> list[str]:
+def _completion(payload: CompletionPayload, n: int, model: Model, **kwargs) -> list[str]:
+    assert _get_type_of_model(model) == ModelType.COMP
     msg_contents = []
     response = openai.Completion.create(
-        model=MODEL,
+        model=model,
         prompt=payload,
         n=n,
         **kwargs,
@@ -119,7 +100,7 @@ def _completion(payload: CompletionPayload, n: int, **kwargs) -> list[str]:
     return msg_contents
 
 def completion_from_assistant(
-    messages: list[Message], n: int = 1, **kwargs
+    messages: list[Message], n: int = 1, model=Model.TEXTDAVINCI002, **kwargs
 ) -> str | list[str]:
     """Get the conversational response from the LLM.
     Args:
@@ -132,12 +113,12 @@ def completion_from_assistant(
     if n > 5:
         logger.warning(f"Generating many responses at once can be costly: n={n}")
     msg_contents = []
-    if _get_type_of_model(MODEL) == ModelType.CHAT:
+    if _get_type_of_model(model) == ModelType.CHAT:
         payload = _chat_completion_payload_from_messages(messages)
-        msg_contents = _chat_completion(payload, n, **kwargs)
-    elif _get_type_of_model(MODEL) == ModelType.COMP:
+        msg_contents = _chat_completion(payload, n, model, **kwargs)
+    elif _get_type_of_model(model) == ModelType.COMP:
         payload = _completion_payload_from_messages(messages)
-        msg_contents = _completion(payload, n, **kwargs)
+        msg_contents = _completion(payload, n, model, **kwargs)
     else:
         raise TypeError(f"Model not supported: {MODEL}")
     assert isinstance(msg_contents, list)

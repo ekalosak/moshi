@@ -6,11 +6,13 @@ from enum import Enum
 import pyttsx3
 from loguru import logger
 
-from moshi import think
-from moshi.msg import Message, Role
+from moshi import think, Message, Role, Model
 
-N_COMPLETIONS = os.getenv("MOSHI_LANGUAGE_DETECT_COMPLETIONS", 3)
+N_COMPLETIONS = os.getenv("MOSHI_LANGUAGE_DETECT_COMPLETIONS", 1)
+LANGUAGE_DETECT_MODEL = Model(os.getenv("MOSHI_LANGUAGE_DETECT_MODEL", "text-davinci-002"))
+logger.info(f"Using N_COMPLETIONS={N_COMPLETIONS} for language detection with LANGUAGE_DETECT_MODEL={LANGUAGE_DETECT_MODEL}")
 
+logger.debug('Loading speech engine...')
 engine = pyttsx3.init()
 
 def _language_dict() -> dict[str, str]:
@@ -20,7 +22,7 @@ def _language_dict() -> dict[str, str]:
             langd[lang.replace("-", "_").upper()] = lang
     return langd
 
-
+logger.debug("Determining supported speech languages...")
 Language = Enum("Language", _language_dict())
 Language.__eq__ = lambda x, y: x.value[:2] == y.value[:2]
 logger.info(f"Supported languages: {set(lang.value[:2] for lang in Language)}")
@@ -68,7 +70,11 @@ def recognize_language(utterance: str) -> Language:
         max_tokens=16,
         presence_penalty=-2,
         temperature=0.2,
+        model=LANGUAGE_DETECT_MODEL,
     )
+    if N_COMPLETIONS == 1:
+        assistant_utterances = [assistant_utterances]
+    assert isinstance(assistant_utterances, list)
     assert all(isinstance(au, str) for au in assistant_utterances)
     for assistant_utterance in assistant_utterances:
         try:

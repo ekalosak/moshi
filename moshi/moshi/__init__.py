@@ -1,4 +1,3 @@
-from .msg import Message, Role
+from .base import Message, Role, Model, ModelType
 from .lang import Language
-from .think import Model, ModelType
 from .chat import Chatter, CliChatter

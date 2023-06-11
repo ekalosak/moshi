@@ -17,7 +17,7 @@ async def dummy(*a,**k):
     await asyncio.sleep(0.)
 
 def dummy_response(*a,**k):
-    return "ast test"
+    return ["ast test"]
 
 def dummy_speech(frame):
     def _dummy_speech():

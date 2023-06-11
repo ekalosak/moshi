@@ -28,7 +28,9 @@ def test_recognize_language():
     "sentence,language,model",
     [
         pytest.param(
-            "This is an English sentence.", Language.EN_US, Model.TEXTDAVINCI002, id="English"
+            ("This should start the phrase because I'm speaking continuously for more than a couple seconds, though "
+                "your mileage may vary.")
+            , Language.EN_US, Model.TEXTDAVINCI002, id="English"
         ),
         pytest.param(
             "Jé ne parle pás Francais.", Language.FR_CA, Model.TEXTDAVINCI002, id="French"

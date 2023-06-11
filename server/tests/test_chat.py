@@ -115,3 +115,5 @@ async def test_chatter_happy_path(utterance_audio_track, Sink):
         except asyncio.CancelledError:
             print('task cancelled successfully, still a test failure though.')
         raise asyncio.TimeoutError(f"The main task={task} timed out after timeout={timeout} seconds")
+    assert chatter.messages[-2].role == Role.USR
+    assert chatter.messages[-1].role == Role.AST

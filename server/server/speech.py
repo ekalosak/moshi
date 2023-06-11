@@ -1,4 +1,5 @@
 import asyncio
+import signal
 import tempfile
 import textwrap
 
@@ -14,18 +15,24 @@ from moshi.speak import (
     _change_language,
 )
 from moshi.lang import Language
-from server import OPENAI_TRANSCRIPTION_MODEL
+from server import OPENAI_TRANSCRIPTION_MODEL, TimeoutError
 from server.audio import util
+from server.base import timeout_handler
 
-def _speech_to_wav_file(utterance, fp: str):
-    engine.setProperty('output_format', 'wav')
-    logger.debug("speech engine output set to wav")
+engine.setProperty('output_format', 'wav')
+logger.debug("speech engine output set to wav")
+
+def _speech_to_wav_file(utterance, fp: str, timeout: int=1):
+    """ Raises: TimeoutError """
     engine.save_to_file(utterance, fp)
     logger.debug("speech engine save_to_file enqueued")
+    signal.signal(signal.SIGALRM, timeout_handler)
+    signal.alarm(timeout)  # timeout must be int
     engine.runAndWait()
+    signal.alarm(0)
     logger.debug("engine returned")
 
-def synthesize_language(utterance: str, language: Language = Language.EN_US) -> AudioFrame:
+def synthesize_language(utterance: str, language: Language = Language.EN_US, timeout=1) -> AudioFrame:
     logger.debug(f"Producing utterance: {textwrap.shorten(utterance, 64)}")
     _change_language(language)
     logger.debug(f"Changed to language: {language}")
@@ -33,7 +40,7 @@ def synthesize_language(utterance: str, language: Language = Language.EN_US) -> 
     # fp = os.path.join(os.getcwd(), "test.wav")
     _, fp = tempfile.mkstemp(suffix='.wav')
     logger.debug("Starting speech synthesis...")
-    _speech_to_wav_file(utterance, fp)
+    _speech_to_wav_file(utterance, fp, timeout)
     logger.debug(f"Speech synthesized to {fp}")
     fifo = util.load_wav_to_buffer(fp)
     logger.debug(f"Loaded synth speech to buffer: {fifo}")

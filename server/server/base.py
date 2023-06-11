@@ -16,3 +16,12 @@ class Chatter:
     async def _get_assistant_response(self):
         """ From the AI assistant, get a response to the user utterance. """
         ...
+
+
+class TimeoutError(Exception):
+    ...
+
+def timeout_handler(signum, frame):
+    print(f"signum={signum}")
+    print(f"frame={frame}")
+    raise TimeoutError("Function timed out!")

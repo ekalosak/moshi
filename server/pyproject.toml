@@ -1,6 +1,6 @@
 [project]
 name = "moshi-server"
-version = "23.6.1"
+version = "23.6.2"
 description = "Web browser user interface for Moshi."
 readme = "README.md"
 requires-python = ">=3.7"
@@ -51,4 +51,5 @@ packages = ["server"]
 markers = [
   "speak: marks tests as requiring access to a speaker",
   "slow: marks tests as requiring more than a second or two to run",
+  "openai: marks tests as requiring access to the _paid_ OpenAI models API",
 ]

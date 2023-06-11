@@ -93,7 +93,7 @@ class WebRTCChatter(Chatter):
         msg = self.messages[-1]
         logger.debug(f"Synthesizing to speech: {msg}")
         assert msg.role == Role.AST
-        frame = speech.synthesize_language(msg.content)
+        frame = speech.synthesize_language(msg.content, self.language)
         logger.info(f"Speech synthesized: {frame}")
         return frame
 

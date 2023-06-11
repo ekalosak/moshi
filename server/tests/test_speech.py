@@ -6,34 +6,26 @@ from av import AudioFrame
 import pytest
 
 from server.audio.util import get_frame_seconds
-from server import speech
-
-class TimeoutError(Exception):
-    ...
-
-def timeout_handler(signum, frame):
-    print(f"signum={signum}")
-    print(f"frame={frame}")
-    raise TimeoutError("Function timed out!")
+from server import speech, TimeoutError
 
 @pytest.mark.asyncio
 async def test_speech_synthesis():
     timeout = 2
-    signal.signal(signal.SIGALRM, timeout_handler)
-    signal.alarm(timeout)  # timeout must be int
-    print('calling speech.synthesize_language...')
-    try:
-        frame = speech.synthesize_language("Hello, world")
-        signal.alarm(0)
-    except TimeoutError:
-        print("Sometimes the engine will hang..?")
-        raise
-    print('speech.synthesize_language returned!')
-    print(f'frame: {frame}')
-    assert isinstance(frame, AudioFrame)
-    frame_sec = get_frame_seconds(frame)
-    print(f'frame_sec: {frame_sec}')
-    assert .5 < frame_sec < 2.5
+    for i in range(5):
+        print(f"Starting synthesis i={i}")
+        print('calling speech.synthesize_language...')
+        try:
+            frame = speech.synthesize_language("Hello, world", timeout=timeout)
+        except TimeoutError:
+            print("Sometimes the engine will hang..?")
+            raise
+        print('speech.synthesize_language returned!')
+        print(f'frame: {frame}')
+        assert isinstance(frame, AudioFrame)
+        frame_sec = get_frame_seconds(frame)
+        print(f'frame_sec: {frame_sec}')
+        assert .5 < frame_sec < 2.5
+        print(f"Done! with synthesis i={i}")
 
 @pytest.mark.asyncio
 @pytest.mark.openai

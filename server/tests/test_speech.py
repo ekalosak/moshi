@@ -1,4 +1,6 @@
 """ Test that the speech module produces synthesized language in av.AudioFrame format. """
+import asyncio
+
 from av import AudioFrame
 import pytest
 
@@ -16,6 +18,9 @@ def test_speech_synthesis():
 @pytest.mark.asyncio
 @pytest.mark.openai
 async def test_transcribe(short_audio_frame):
-    transcript = await speech.transcribe(short_audio_frame)
+    transcript = await asyncio.wait_for(
+        speech.transcribe(short_audio_frame),
+        timeout=10.
+    )
     assert isinstance(transcript, str)
     assert transcript == "test"

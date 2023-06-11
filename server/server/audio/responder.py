@@ -14,6 +14,7 @@ from server import SAMPLE_RATE, AUDIO_FORMAT, AUDIO_LAYOUT
 FRAME_SIZE = int(os.getenv("MOSHIFRAMESIZE", 960))
 assert FRAME_SIZE >= 128 and FRAME_SIZE <= 4096
 
+
 class ResponsePlayerStream(MediaStreamTrack):
     kind = 'audio'
     def __init__(self, sent: asyncio.Event):
@@ -22,11 +23,6 @@ class ResponsePlayerStream(MediaStreamTrack):
         self.__sent = sent
         self.__start_time = None
         self.__pts = 0
-        self.__resampler = AudioResampler(
-            format=AUDIO_FORMAT,
-            layout=AUDIO_LAYOUT,
-            rate=SAMPLE_RATE,
-        )
 
     @logger.catch
     async def recv(self) -> AudioFrame:
@@ -68,19 +64,14 @@ class ResponsePlayerStream(MediaStreamTrack):
     @logger.catch
     def write_audio(self, frame: AudioFrame):
         logger.debug(f"Got frame to write to fifo: {frame}")
+        if frame.rate == 22050:
+            breakpoint()
+            a=1
         frame.pts = self.__fifo.samples_written
         logger.debug(f"Writing audio to fifo: {frame}")
         self.__fifo.write(frame)
         self.__sent.clear()
         logger.debug(f"Audio written, example: {frame}")
-
-    @logger.catch
-    def __make_resampler(self):
-        return AudioResampler(
-            format=AUDIO_FORMAT,
-            layout=AUDIO_LAYOUT,
-            rate=SAMPLE_RATE,
-        )
 
 class ResponsePlayer:
     """ When audio is set, it is sent over the track. """
@@ -100,6 +91,7 @@ class ResponsePlayer:
         thinking and speaking.
         """
         logger.info("Sending utterance...")
+        assert frame.rate == SAMPLE_RATE
         self.__track.write_audio(frame)
         frame_time = util.get_frame_seconds(frame)
         timeout = frame_time + 5.

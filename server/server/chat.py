@@ -3,10 +3,11 @@ import asyncio
 import itertools
 import os
 
+from av import AudioFrame
 from loguru import logger
 
-from server import audio
-from moshi import Role, Message
+from server import audio, speech
+from moshi import Role, Message, lang, think
 from moshi.chat import Chatter, _init_messages
 
 MAX_LOOPS = int(os.getenv('MOSHIMAXLOOPS', 10))
@@ -65,11 +66,10 @@ class WebRTCChatter(Chatter):
         # TODO when you do this, make sure to adapt the test_chatter_happy_path so it monkeypatches the openai
         logger.debug(f"Detecting user utterance...")
         usr_audio: AudioFrame = await self.detector.get_utterance()
-        await self.__detect_language(usr_audio)
-        await self.__transcribe_audio(usr_audio)
-        logger.debug(f"Responding to user text: {message}")
-        ast_txt: str = await think.respond(self.messages)
-        ast_audio: AudioFrame = await speech.synthesize_language(ast_txt)
+        usr_text: str = await self.__transcribe_audio(usr_audio)
+        await self.__detect_language(usr_text)
+        await self.__get_response()
+        ast_audio = self.__synth_speech()
         await self.responder.send_utterance(ast_audio)
 
     def set_utterance_channel(self, channel):
@@ -77,11 +77,29 @@ class WebRTCChatter(Chatter):
             raise ValueError(f"Already have an utterance channel: {self.__channel.label}:{self.__channel.id}")
         self.__channel = channel
 
-    async def __transcribe_audio(audio, role=Role.USR):
-        logger.debug(f"Transcribing {str(role)} audio: {usr_audio}")
+    def __synth_speech(self) -> AudioFrame:
+        msg = self.messages[-1]
+        logger.debug(f"Synthesizing to speech: {msg}")
+        assert msg.role == Role.AST
+        frame = speech.synthesize_language(msg.content)
+        logger.debug(f"Speech synthesized: {frame}")
+        return frame
+
+    async def __get_response(self):
+        logger.debug(f"Responding to user text: {self.messages[-1]}")
+        ast_txt: str = await asyncio.to_thread(
+            think.completion_from_assistant,
+            self.messages,
+        )
+        message = Message(Role.AST, ast_txt)
+        self.messages.append(message)
+
+    async def __transcribe_audio(self, audio, role=Role.USR):
+        logger.debug(f"Transcribing {str(role)} audio: {audio}")
         usr_txt: str = await speech.transcribe(audio)
         message = Message(Role.USR, usr_txt)
         self.messages.append(message)
+        return usr_txt
 
     async def __detect_language(self: audio, AudioFrame):
         """ Using the user's utterance text, determine the language they're speaking. """

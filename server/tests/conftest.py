@@ -1,5 +1,6 @@
 import asyncio
 import itertools
+import logging
 import os
 from pathlib import Path
 
@@ -14,6 +15,7 @@ import pytest
 from server import SAMPLE_RATE, AUDIO_FORMAT, AUDIO_LAYOUT
 
 RESOURCEDIR = Path(__file__).parent / 'resources'
+logging.getLogger("asyncio").setLevel(logging.CRITICAL)
 
 @pytest.fixture(autouse=True)
 def _print_blank_line():

@@ -4,6 +4,7 @@ import textwrap
 
 import av
 from av import AudioFrame, AudioFifo
+import openai
 from loguru import logger
 
 from moshi.speak import (
@@ -13,21 +14,13 @@ from moshi.speak import (
     _change_language,
 )
 from moshi.lang import Language
+from server import OPENAI_TRANSCRIPTION_MODEL
+from server.audio import util
 
 def _speech_to_wav_file(utterance, fp: str):
     engine.setProperty('output_format', 'wav')
     engine.save_to_file(utterance, fp)
     engine.runAndWait()
-
-def _load_wav_to_buffer(fp: str) -> AudioFifo:
-    try:
-        container = av.open(fp, 'r')
-        fifo = AudioFifo()
-        for frame in container.decode(audio=0):
-            fifo.write(frame)
-    finally:
-        container.close()
-    return fifo
 
 def synthesize_language(utterance: str, language: Language = Language.EN_US) -> AudioFrame:
     logger.debug(f"Producing utterance: {textwrap.shorten(utterance, 64)}")
@@ -38,8 +31,25 @@ def synthesize_language(utterance: str, language: Language = Language.EN_US) -> 
     logger.debug("Starting speech synthesis...")
     _speech_to_wav_file(utterance, fp)
     logger.debug(f"Speech synthesized to {fp}")
-    fifo = _load_wav_to_buffer(fp)
+    fifo = util.load_wav_to_buffer(fp)
     logger.debug(f"Loaded synth speech to buffer: {fifo}")
     frame = fifo.read()
+    logger.debug(f"Resampling {frame}")
+    res = util.make_resampler()
+    frames = res.resample(frame)
+    assert len(frames) == 1
+    frame = frames[0]
     logger.debug(f"Returning {frame}")
     return frame
+
+async def transcribe(audio: AudioFrame) -> str:
+    _, fp = tempfile.mkstemp(suffix='.wav')
+    util.write_audio_frame_to_wav(audio, fp)
+    with open(fp, 'rb') as f:
+        # TODO timeout I suppose
+        transcript = await asyncio.to_thread(
+            openai.Audio.transcribe,
+            OPENAI_TRANSCRIPTION_MODEL,
+            f,
+        )
+    return transcript

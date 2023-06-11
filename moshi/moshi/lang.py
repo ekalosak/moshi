@@ -50,6 +50,7 @@ def recognize_language(utterance: str) -> Language:
     """Get the language code corresponding to the language detected in the utterance.
     Raises LanguageNotFoundError if it can't detect the language.
     """
+    assert isinstance(utterance, str)
     all_lang_codes = ", ".join(str(lang.value) for lang in Language)
     modified_utterance = f"What is the language code for this utterance: '{utterance}'?"
     messages = [

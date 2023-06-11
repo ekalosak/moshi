@@ -1,5 +1,6 @@
 """ Test that the speech module produces synthesized language in av.AudioFrame format. """
 import asyncio
+import signal
 
 from av import AudioFrame
 import pytest
@@ -7,15 +8,24 @@ import pytest
 from server.audio.util import get_frame_seconds
 from server import speech
 
+class TimeoutError(Exception):
+    ...
+
+def timeout_handler(signum, frame):
+    print(f"signum={signum}")
+    print(f"frame={frame}")
+    raise TimeoutError("Function timed out!")
+
 @pytest.mark.asyncio
 async def test_speech_synthesis():
+    timeout = 2
+    signal.signal(signal.SIGALRM, timeout_handler)
+    signal.alarm(timeout)  # timeout must be int
     print('calling speech.synthesize_language...')
     try:
-        frame = await asyncio.wait_for(
-            speech.synthesize_language("Hello, world"),
-            timeout=2.
-        )
-    except asyncio.TimeoutError:
+        frame = speech.synthesize_language("Hello, world")
+        signal.alarm(0)
+    except TimeoutError:
         print("Sometimes the engine will hang..?")
         raise
     print('speech.synthesize_language returned!')

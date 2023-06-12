@@ -8,7 +8,7 @@ from av import AudioFrame, AudioLayout, AudioFormat, AudioResampler, AudioFifo
 from loguru import logger
 import numpy as np
 
-from server import SAMPLE_RATE, AUDIO_FORMAT, AUDIO_LAYOUT
+from moshi import SAMPLE_RATE, AUDIO_FORMAT, AUDIO_LAYOUT
 
 def track_str(track: MediaStreamTrack) -> str:
     """ Tidy repr of a track. """

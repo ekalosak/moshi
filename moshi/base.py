@@ -4,7 +4,7 @@ from enum import Enum
 
 from loguru import logger
 
-logger.success("loaded")
+logger.success("Loaded!")
 
 
 class Role(str, Enum):

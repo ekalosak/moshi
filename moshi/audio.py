@@ -10,6 +10,8 @@ import numpy as np
 
 from moshi import SAMPLE_RATE, AUDIO_FORMAT, AUDIO_LAYOUT
 
+logger.success("Loaded!")
+
 def track_str(track: MediaStreamTrack) -> str:
     """ Tidy repr of a track. """
     return f"{track.readyState}:{track.kind}:{track.id}"

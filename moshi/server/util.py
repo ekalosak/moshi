@@ -12,6 +12,8 @@ def setup_loguru():
     logger.remove()
     logger.add(sink=sys.stderr, format=LOG_FORMAT, colorize=True)
     logger.add("logs/server.log", rotation="10 MB")
+    logger.level("INSTRUCTION", no=38, color="<light-yellow><bold>")
+    logger.level("SPLASH", no=39, color="<light-magenta><bold>")
 
 def async_with_pcid(f):
     """ Decorator for contextualizing the logger with a PeerConnection uid. """

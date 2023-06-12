@@ -14,6 +14,19 @@ from moshi.chat import Chatter, _init_messages
 MAX_LOOPS = int(os.getenv('MOSHIMAXLOOPS', 10))
 assert MAX_LOOPS >= 0
 
+def _init_messages() -> list[Message]:
+    messages = [
+        Message(
+            Role.SYS,
+            "You are a conversational partner for helping language learners practice spoken language.",
+        ),
+        Message(
+            Role.SYS,
+            "Do not provide a translation. Respond in the language the user speaks.",
+        )
+    ]
+    return messages
+
 class WebRTCChatter(Chatter):
     """ This class does two important things:
     1. Coordinates the detector and responder, and
@@ -44,6 +57,29 @@ class WebRTCChatter(Chatter):
         await self.detector.stop()
         self.__task.cancel(f"{self.__class__.__name__}.stop() called")
         self.__task = None
+
+    @property
+    def user_utterance(self) -> str:
+        """The latest user utterance."""
+        logger.trace("\n" + pformat(self.messages))
+        for msg in self.messages[::-1]:
+            if msg.role == Role.USR:
+                return msg.content
+        raise ValueError("No user utterances in self.messages")
+
+    @property
+    def assistant_utterance(self) -> str:
+        """The latest assistant utterance."""
+        for msg in self.messages[::-1]:
+            if msg.role == Role.AST:
+                return msg.content
+        raise ValueError("No assistant utterances in self.messages")
+
+    def _splash(self, text: str):
+        logger.log(
+            "SPLASH",
+            "\n" + pyfiglet.Figlet(font="roman").renderText(text),
+        )
 
     @logger.catch
     async def __run(self):

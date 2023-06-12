@@ -11,6 +11,8 @@ from loguru import logger
 
 from moshi import audio
 
+logger.success("Loaded!")
+
 @dataclass
 class ListeningConfig:
     ambient_noise_measurement_seconds: float=1.5  # how long to measure ambient noise for the background audio energy

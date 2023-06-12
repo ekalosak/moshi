@@ -1,19 +1,15 @@
 """ This module provides the ResponsePlayer class that plays audio responses to the remote client speakers. """
 import asyncio
-import os
 import time
 
 from aiortc import MediaStreamTrack
 from aiortc.mediastreams import MediaStreamError
-from av import AudioFrame, AudioFifo, AudioResampler
+from av import AudioFrame, AudioFifo
 from loguru import logger
 
-from server.audio import util
-from server import SAMPLE_RATE, AUDIO_FORMAT, AUDIO_LAYOUT
+from moshi import audio, SAMPLE_RATE, AUDIO_FORMAT, AUDIO_LAYOUT
 
-FRAME_SIZE = int(os.getenv("MOSHIFRAMESIZE", 960))
-assert FRAME_SIZE >= 128 and FRAME_SIZE <= 4096
-
+logger.success("Loaded!")
 
 class ResponsePlayerStream(MediaStreamTrack):
     kind = 'audio'
@@ -31,7 +27,7 @@ class ResponsePlayerStream(MediaStreamTrack):
         if frame is None:
             logger.trace("empty frame")
             self.__fifo.read(partial=True)  # drop any partial fragment
-            frame = util.empty_frame(
+            frame = audio.empty_frame(
                 length=FRAME_SIZE,
                 rate=SAMPLE_RATE,
                 format=AUDIO_FORMAT,
@@ -45,7 +41,7 @@ class ResponsePlayerStream(MediaStreamTrack):
         self.__pts += frame.samples
         await self.__throttle_playback(frame)
         logger.trace(f"returning frame: {frame}")
-        logger.trace(f"frame energy: {util.get_frame_energy(frame)}")
+        logger.trace(f"frame energy: {audio.get_frame_energy(frame)}")
         return frame
 
     @logger.catch
@@ -55,7 +51,7 @@ class ResponsePlayerStream(MediaStreamTrack):
         if self.__start_time is None:
             self.__start_time = time.monotonic()
         current_time = time.monotonic()
-        frame_start_time = self.__start_time + util.get_frame_start_time(frame)
+        frame_start_time = self.__start_time + audio.get_frame_start_time(frame)
         delay = frame_start_time - (current_time + max_buf_sec)
         delay = max(0., delay)
         logger.trace(f"Throttling playback, sleeping for delay={delay:.3f} sec")
@@ -77,7 +73,7 @@ class ResponsePlayer:
     def __init__(self):
         self.__sent = asyncio.Event()  # set when the track plays all audio
         self.__track = ResponsePlayerStream(self.__sent)
-        logger.info(f"Initialized player track: {util._track_str(self.__track)}")
+        logger.info(f"Initialized player track: {audio.track_str(self.__track)}")
 
     @property
     def audio(self):
@@ -92,18 +88,18 @@ class ResponsePlayer:
         logger.info("Sending utterance...")
         assert frame.rate == SAMPLE_RATE
         self.__track.write_audio(frame)
-        frame_time = util.get_frame_seconds(frame)
+        frame_time = audio.get_frame_seconds(frame)
         timeout = frame_time + 5.
         logger.debug(f'frame_time={frame_time:.3f}, timeout={timeout:.3f}')
         try:
-            logger.debug(f"Awaiting __sent.wait() event from {util._track_str(self.__track)} upon clearing fifo...")
+            logger.debug(f"Awaiting __sent.wait() event from {audio.track_str(self.__track)} upon clearing fifo...")
             await asyncio.wait_for(
                 self.__sent.wait(),
                 timeout = timeout,
             )
             logger.debug("Track's fifo is cleared.")
         except asyncio.TimeoutError:
-            logger.debug(f"Timed out waiting for audio to be played, frame_time={frame_time} timeout={timeout}")
+            logger.error(f"Timed out waiting for audio to be played, frame_time={frame_time} timeout={timeout}")
             raise
         except MediaStreamError:
             logger.error("MediaStreamError")

@@ -10,6 +10,8 @@ from moshi import GOOGLE_PROJECT
 
 gcreds = contextvars.ContextVar("gcreds")
 
+logger.success("Loaded!")
+
 async def authenticate():
     """ Ensure the gcreds context variable is set.
     Raises:

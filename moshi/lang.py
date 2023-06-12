@@ -4,8 +4,6 @@ import textwrap
 from google.cloud import translate
 from loguru import logger
 
-from moshi.exceptions import SetupError
-
 logger.success("Loaded!")
 
 gtransclient = contextvars.ContextVar("gtransclient")

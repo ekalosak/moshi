@@ -9,18 +9,9 @@ from typing import NewType
 import openai
 from loguru import logger
 
-from moshi import Model, ModelType, Message
+from moshi import Model, ModelType, Message, COMPLETION_MODEL
 
-
-# Set the default model
-try:
-    _MODEL = os.getenv("OPENAI_MODEL", "text-davinci-002")
-    MODEL = Model(_MODEL)
-except ValueError:
-    logger.error(f"Invalid OPENAI_MODEL={_MODEL} please select one of: {[m.value for m in Model]}")
-logger.info(f"Using model: {MODEL}")
-
-logger.success("loaded")
+logger.success("Loaded!")
 
 
 def _get_type_of_model(model: Model) -> ModelType:
@@ -66,6 +57,7 @@ def _completion_payload_from_messages(messages: list[Message]) -> CompletionPayl
     return payload
 
 
+# TODO async openai
 def _chat_completion(payload: ChatCompletionPayload, n: int, model: Model, **kwargs) -> list[str]:
     """ Get the message """
     msg_contents = []
@@ -83,6 +75,7 @@ def _chat_completion(payload: ChatCompletionPayload, n: int, model: Model, **kwa
         msg_contents.append(choice.message.content)
     return msg_contents
 
+# TODO async openai
 def _completion(payload: CompletionPayload, n: int, model: Model, **kwargs) -> list[str]:
     assert _get_type_of_model(model) == ModelType.COMP
     msg_contents = []
@@ -99,6 +92,7 @@ def _completion(payload: CompletionPayload, n: int, model: Model, **kwargs) -> l
         msg_contents.append(choice.text.strip())
     return msg_contents
 
+# TODO async
 def completion_from_assistant(
     messages: list[Message], n: int = 1, model=Model.TEXTDAVINCI002, **kwargs
 ) -> list[str]:

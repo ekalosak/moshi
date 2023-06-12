@@ -5,7 +5,6 @@ import uuid
 
 from loguru import logger
 from loguru._defaults import LOGURU_FORMAT
-import requests
 
 def setup_loguru():
     LOG_FORMAT = LOGURU_FORMAT + " | <g><d>{extra}</d></g>"

@@ -9,6 +9,8 @@ from loguru import logger
 
 from moshi import speech, lang, think, util, Message, ResponsePlayer, Role, UtteranceDetector, MAX_LOOPS
 
+logger.success("Loaded!")
+
 def _init_messages() -> list[Message]:
     messages = [
         Message(

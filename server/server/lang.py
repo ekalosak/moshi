@@ -1,4 +1,3 @@
-""" This module provides various language utilities. """
 import contextvars
 import textwrap
 
@@ -11,7 +10,7 @@ logger.success("Loaded!")
 
 gtransclient = contextvars.ContextVar("gtransclient")
 
-def _setup_client():
+def setup_client():
     """Set the gtransclient ContextVar."""
     try:
         gtransclient.get()
@@ -22,22 +21,23 @@ def _setup_client():
         gtransclient.set(translate_client)
         logger.info("Translation client initialized.")
 
-def get_client():
-    _setup_client()
+def get_client() -> 'Client':
+    setup_client()
     return gtransclient.get()
 
 async def get_voice(language: str) -> str:
     """Get a valid voice for the language."""
     translate_client = get_client()
-    response = await tran
-
+    response = await translate_client.list_voices(language_code=language)
+    voices = response.voices
+    logger.debug(f"Language {language} has {len(voices)} supported voices.")
+    breakpoint()
+    a=1
 
 async def detect_language(text: str) -> str:
     """Detects the text's language. Run setup_client first.
     Source:
         - https://cloud.google.com/translate/docs/basic/detecting-language#translate-detect-language-multiple-python
-    Raises:
-        - SetupError if gtransclient not yet set
     """
     translate_client = get_client()
     logger.debug(f"Detecting language for: {textwrap(text, 64)}")

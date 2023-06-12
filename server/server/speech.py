@@ -25,6 +25,10 @@ def setup_client()
         tts_client = texttospeech.TextToSpeechAsyncClient()
         logger.success("Loaded!")
 
+def get_client():
+    setup_client()
+    return gttsclient.get()
+
 async def synthesize_speech(text: str, language: 'Language', rate: int=24000) -> bytes:
     """ Synthesize speech to a bytestring. """
     synthesis_input = texttospeech.SynthesisInput(text=text)

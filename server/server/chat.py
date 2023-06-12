@@ -7,8 +7,8 @@ import textwrap
 from av import AudioFrame
 from loguru import logger
 
-from server import audio, speech
-from moshi import Role, Message, lang, think
+from server import audio, speech, lang
+from moshi import Role, Message, think
 from moshi.chat import Chatter, _init_messages
 
 MAX_LOOPS = int(os.getenv('MOSHIMAXLOOPS', 10))

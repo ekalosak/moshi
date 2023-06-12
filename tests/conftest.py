@@ -12,7 +12,7 @@ from av import AudioFrame, AudioFifo, AudioResampler
 from loguru import logger
 import pytest
 
-from server import SAMPLE_RATE, AUDIO_FORMAT, AUDIO_LAYOUT
+from moshi import SAMPLE_RATE, AUDIO_FORMAT, AUDIO_LAYOUT
 
 RESOURCEDIR = Path(__file__).parent / 'resources'
 logging.getLogger("asyncio").setLevel(logging.CRITICAL)

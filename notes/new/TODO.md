@@ -2,14 +2,14 @@
 No Jira so ... this!
 
 ## In progress
-ii. web A. adapt chatter
-    b. utterance text -> chat response text
+u. refactor A. kill cli
 
 ## Backlog
 i. core A. core functionality
 i. core B. cleanup
     a. cleanup responses from chat
     b. add env var control over all various models, timeouts, and token limits
+    c. lint
 ii. web A. adapt chatter
     c. chat response text -> chat audio
     d. chat audio -> client audio track
@@ -30,3 +30,6 @@ ii. web A. adapt chatter
 ## Done
 ii. web A. adapt chatter
     a. client web mic -> server audio track -> utterance audio frame extracted
+    b. utterance text -> chat response text
+    c. chat response text -> chat audio
+    d. chat audio -> client audio track

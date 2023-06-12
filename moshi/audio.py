@@ -8,7 +8,12 @@ from av import AudioFrame, AudioLayout, AudioFormat, AudioResampler, AudioFifo
 from loguru import logger
 import numpy as np
 
-from moshi import SAMPLE_RATE, AUDIO_FORMAT, AUDIO_LAYOUT
+SAMPLE_RATE = int(os.getenv("MOSHISAMPLERATE", 48000))
+AUDIO_FORMAT = os.getenv("MOSHIAUDIOFORMAT", 's16')
+AUDIO_LAYOUT = os.getenv("MOSHIAUDIOLAYOUT", 'stereo')
+logger.info(f"Using sample rate: {SAMPLE_RATE}")
+logger.info(f"Using audio format: {AUDIO_FORMAT}")
+logger.info(f"Using audio layout: {AUDIO_LAYOUT}")
 
 logger.success("Loaded!")
 

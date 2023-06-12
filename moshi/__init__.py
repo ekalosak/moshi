@@ -2,25 +2,17 @@ import os
 
 from loguru import logger
 
+from .audio import AUDIO_FORMAT, AUDIO_LAYOUT, SAMPLE_RATE
 from .base import Message, Model, ModelType, Role
-from .chat import WebRTCChatter
+from .core import WebRTCChatter
+from .gcloud import GOOGLE_PROJECT
 from .detector import UtteranceDetector
 from .responder import ResponsePlayer
 
 # Audio
-SAMPLE_RATE = int(os.getenv("MOSHISAMPLERATE", 48000))
-AUDIO_FORMAT = os.getenv("MOSHIAUDIOFORMAT", 's16')
-AUDIO_LAYOUT = os.getenv("MOSHIAUDIOLAYOUT", 'stereo')
 FRAME_SIZE = int(os.getenv("MOSHIFRAMESIZE", 960))
 assert FRAME_SIZE >= 128 and FRAME_SIZE <= 4096
-logger.info(f"Using sample rate: {SAMPLE_RATE}")
-logger.info(f"Using audio format: {AUDIO_FORMAT}")
-logger.info(f"Using audio layout: {AUDIO_LAYOUT}")
 logger.info(f"Using transport frame size: {FRAME_SIZE}")
-
-# Cloud
-GOOGLE_PROJECT = "moshi-001"
-logger.info(f"Using Google Cloud project: {GOOGLE_PROJECT}")
 
 # Mainloop
 MAX_LOOPS = int(os.getenv('MOSHIMAXLOOPS', 10))

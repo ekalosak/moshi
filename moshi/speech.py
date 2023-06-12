@@ -9,14 +9,11 @@ from google.cloud import texttospeech
 import openai
 from loguru import logger
 
-from moshi import gcloud
-from server import OPENAI_TRANSCRIPTION_MODEL
-from server.audio import util
-from server.exceptions import SetupError
+from moshi import audio, gcloud, OPENAI_TRANSCRIPTION_MODEL
 
 gttsclient = contextvars.ContextVar('gttsclient')
 
-def setup_client()
+def setup_client() -> None:
     try:
         gttsclient.get()
         logger.debug("Text to speech client already exists.")
@@ -25,12 +22,14 @@ def setup_client()
         tts_client = texttospeech.TextToSpeechAsyncClient()
         logger.success("Loaded!")
 
-def get_client():
+def get_client() -> 'Client':
     setup_client()
     return gttsclient.get()
 
 async def synthesize_speech(text: str, language: 'Language', rate: int=24000) -> bytes:
-    """ Synthesize speech to a bytestring. """
+    """ Synthesize speech to a bytestring in WAV (PCM_16) format.
+    Implemented with texttospeech.googleapis.com;
+    """
     synthesis_input = texttospeech.SynthesisInput(text=text)
     voice = texttospeech.VoiceSelectionParams(
         language_code=language,
@@ -50,9 +49,9 @@ async def synthesize_speech(text: str, language: 'Language', rate: int=24000) ->
     return response.audio_content
 
 
-async def transcribe(audio: AudioFrame) -> str:
+async def transcribe(audio_frame: AudioFrame) -> str:
     _, fp = tempfile.mkstemp(suffix='.wav')
-    util.write_audio_frame_to_wav(audio, fp)
+    audio.write_audio_frame_to_wav(audio_frame, fp)
     logger.debug(f'Transcribing audio from {fp}')
     with open(fp, 'rb') as f:
         # TODO timeout I suppose, also async openai

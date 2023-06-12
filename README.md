@@ -1,16 +1,7 @@
 # 🧑💬🤖 moshi
-Have a spoken conversation in another language, at your level.
-
-# Architecture
-- `core` the core functionality.
-- `server` the frontend and server that plug `moshi` into the browser.
-- `cli` want to use `moshi` without a browser?
+Moshi is a spoken language tutor.
 
 # Development
-
-## Development docs
-- `planning/` has some product content and design proposals.
-- [`DESIGN.md`](DESIGN.md) has the overall product design.
 
 ## Setup
 
@@ -44,16 +35,20 @@ This uses the `pyproject.toml`'s specified dependencies.
 
 For a development installation, use the `-e` flag:
 ```sh
-mkdir egg && \
+mkdir build && \
     pip install -e moshi[dev,test]
 ```
-Note that the `setup.cfg` puts the `.egg-info` into the local `./egg` directory; you have to create the `egg` dir first.
+Note that the `setup.cfg` puts the `.egg-info` into the local `./build` directory; you MUST create the `build` dir first.
 
 ## Docs
 ```
 (cd moshi/ && python -m pydoc -b)
 ```
 
+# Testing
+`pip install moshi[test]` and `pytest -m 'not openai and not gcloud and not slow'`
+
 # Usage
-Usage instructions for each constituent project are provided in the corresponding project subdirectory e.g.
-[`moshi/README.md`](moshi/README.md).
+```bash
+python moshi/main.py
+```

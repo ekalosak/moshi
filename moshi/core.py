@@ -7,12 +7,7 @@ import textwrap
 from av import AudioFrame
 from loguru import logger
 
-from server import audio, speech, lang
-from moshi import Role, Message, think
-from moshi.chat import Chatter, _init_messages
-
-MAX_LOOPS = int(os.getenv('MOSHIMAXLOOPS', 10))
-assert MAX_LOOPS >= 0
+from moshi import speech, lang, think, util, Message, ResponsePlayer, Role, UtteranceDetector, MAX_LOOPS
 
 def _init_messages() -> list[Message]:
     messages = [
@@ -33,8 +28,8 @@ class WebRTCChatter(Chatter):
     2. Adapts the moshi.CliChatter for use in the WebRTC server.
     """
     def __init__(self):
-        self.detector = audio.UtteranceDetector()  # get_utterance: track -> AudioFrame
-        self.responder = audio.ResponsePlayer()  # play_response: AudioFrame -> track
+        self.detector = UtteranceDetector()  # get_utterance: track -> AudioFrame
+        self.responder = ResponsePlayer()  # play_response: AudioFrame -> track
         self.messages = _init_messages()
         self.language = None
         self.__task = None
@@ -75,16 +70,10 @@ class WebRTCChatter(Chatter):
                 return msg.content
         raise ValueError("No assistant utterances in self.messages")
 
-    def _splash(self, text: str):
-        logger.log(
-            "SPLASH",
-            "\n" + pyfiglet.Figlet(font="roman").renderText(text),
-        )
-
     @logger.catch
     async def __run(self):
         """ Run the main program loop. """
-        self._splash("moshi")
+        util.splash("moshi")
         for i in itertools.count():
             if i == MAX_LOOPS and MAX_LOOPS != 0:
                 logger.info(f"Reached MAX_LOOPS: {MAX_LOOPS}, i={i}")
@@ -95,7 +84,7 @@ class WebRTCChatter(Chatter):
             except KeyboardInterrupt as e:
                 logger.debug(f"Got quit signal, exiting gracefully: {e}")
                 break
-        self._splash("bye")
+        util.splash("bye")
 
     async def __main(self):
         """ Run one loop of the main program. """

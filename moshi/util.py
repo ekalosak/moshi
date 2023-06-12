@@ -26,3 +26,9 @@ def async_with_pcid(f):
 
 def aio_exception_handler(loop: 'EventLoop', context: dict[str, ...]):
     logger.error(context)
+
+def splash(self, text: str):
+    logger.log(
+        "SPLASH",
+        "\n" + pyfiglet.Figlet(font="roman").renderText(text),
+    )

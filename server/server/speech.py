@@ -1,57 +1,50 @@
 import asyncio
-import signal
+import contextvars
 import tempfile
 import textwrap
 
 import av
 from av import AudioFrame, AudioFifo
+from google.cloud import texttospeech
 import openai
 from loguru import logger
 
-from moshi.speak import (
-    NoVoiceError,
-    engine,
-    _get_voice_for_language,
-    _change_language,
-)
-from moshi.lang import Language
-from server import OPENAI_TRANSCRIPTION_MODEL, TimeoutError
+from moshi import gcloud
+from server import OPENAI_TRANSCRIPTION_MODEL
 from server.audio import util
-from server.base import timeout_handler
+from server.exceptions import SetupError
 
-engine.setProperty('output_format', 'wav')
-logger.debug("speech engine output set to wav")
+gttsclient = contextvars.ContextVar('gttsclient')
 
-def _speech_to_wav_file(utterance, fp: str, timeout: int=1):
-    """ Raises: TimeoutError """
-    engine.save_to_file(utterance, fp)
-    logger.debug("speech engine save_to_file enqueued")
-    signal.signal(signal.SIGALRM, timeout_handler)
-    signal.alarm(timeout)  # timeout must be int
-    engine.runAndWait()
-    signal.alarm(0)
-    logger.debug("engine returned")
+def setup_client()
+    try:
+        gttsclient.get()
+        logger.debug("Text to speech client already exists.")
+    except LookupError as e:
+        logger.debug("Creating text to speech client...")
+        tts_client = texttospeech.TextToSpeechAsyncClient()
+        logger.success("Loaded!")
 
-def synthesize_language(utterance: str, language: Language = Language.EN_US, timeout=1) -> AudioFrame:
-    logger.debug(f"Producing utterance: {textwrap.shorten(utterance, 64)}")
-    _change_language(language)
-    logger.debug(f"Changed to language: {language}")
-    # import os
-    # fp = os.path.join(os.getcwd(), "test.wav")
-    _, fp = tempfile.mkstemp(suffix='.wav')
-    logger.debug("Starting speech synthesis...")
-    _speech_to_wav_file(utterance, fp, timeout)
-    logger.debug(f"Speech synthesized to {fp}")
-    fifo = util.load_wav_to_buffer(fp)
-    logger.debug(f"Loaded synth speech to buffer: {fifo}")
-    frame = fifo.read()
-    logger.debug(f"Resampling {frame}")
-    res = util.make_resampler()
-    frames = res.resample(frame)
-    assert len(frames) == 1
-    frame = frames[0]
-    logger.debug(f"Returning {frame}")
-    return frame
+async def synthesize_speech(text: str, language: 'Language', rate: int=24000) -> bytes:
+    """ Synthesize speech to a bytestring. """
+    synthesis_input = texttospeech.SynthesisInput(text=text)
+    voice = texttospeech.VoiceSelectionParams(
+        language_code=language,
+        ssml_gender=texttospeech.SsmlVoiceGender.NEUTRAL
+    )
+    audio_config = texttospeech.AudioConfig(
+        audio_encoding=texttospeech.AudioEncoding.LINEAR16,
+        sample_rate_hertz=rate,
+    )
+    logger.debug(f"Requesting speech synthesis: synthesis_input={synthesis_input}, voice={voice}, audio_config={audio_config}")
+    response = await client.synthesize_speech(
+        input=synthesis_input,
+        voice=voice,
+        audio_config=audio_config
+    )
+    logger.debug(f"Got response from texttospeech.synthesize_speech: {textwrap.shorten(response, 96)}")
+    return response.audio_content
+
 
 async def transcribe(audio: AudioFrame) -> str:
     _, fp = tempfile.mkstemp(suffix='.wav')

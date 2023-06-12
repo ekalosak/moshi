@@ -1,5 +1,6 @@
-# 25.5.4 WIP
+# 25.6.0 WIP
 - [P2] Rename to "moshi"
+- Move TTS from pyttsx3 or pyttsx4 -> texttospeech.googleapis.com
 
 # 23.5.3
 - full MVP implemented - the core chat loop "just works".

@@ -52,4 +52,5 @@ markers = [
   "speak: marks tests as requiring access to a speaker",
   "slow: marks tests as requiring more than a second or two to run",
   "openai: marks tests as requiring access to the _paid_ OpenAI models API",
+  "gcloud: marks tests as requiring access to the _paid_ Google Cloud APIs",
 ]

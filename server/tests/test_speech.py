@@ -1,31 +1,22 @@
 """ Test that the speech module produces synthesized language in av.AudioFrame format. """
 import asyncio
-import signal
+import tempfile
 
 from av import AudioFrame
 import pytest
 
-from server.audio.util import get_frame_seconds
-from server import speech, TimeoutError
+from server import gcloud, speech
+from server.audio import util
 
 @pytest.mark.asyncio
+@pytest.mark.gcloud
 async def test_speech_synthesis():
-    timeout = 2
-    for i in range(5):
-        print(f"Starting synthesis i={i}")
-        print('calling speech.synthesize_language...')
-        try:
-            frame = speech.synthesize_language("Hello, world", timeout=timeout)
-        except TimeoutError:
-            print("Sometimes the engine will hang..?")
-            raise
-        print('speech.synthesize_language returned!')
-        print(f'frame: {frame}')
-        assert isinstance(frame, AudioFrame)
-        frame_sec = get_frame_seconds(frame)
-        print(f'frame_sec: {frame_sec}')
-        assert .5 < frame_sec < 2.5
-        print(f"Done! with synthesis i={i}")
+    await gcloud.authenticate()
+    _, fp = tempfile.mkstemp(suffix='.wav')
+    text = "Hello World"
+    bytestring = await speech.synthesize_text(text)
+    util.save_bytes_to_wav_file(fp, bytestring)
+    print(f"Synthesized '{text}' to {fp}")
 
 @pytest.mark.asyncio
 @pytest.mark.openai
@@ -36,3 +27,22 @@ async def test_transcribe(short_audio_frame):
     )
     assert isinstance(transcript, str)
     assert transcript == "test"
+
+@pytest.mark.asyncio
+@pytest.mark.openai
+@pytest.mark.gcloud
+async def test_complementary_synthesis_and_transcription():
+    await gcloud.authenticate()
+    _, fp = tempfile.mkstemp(suffix='.wav')
+    text = "Hello World"
+    bytestring = await speech.synthesize_speech(
+        text=text,
+        language='en_US'
+    )
+    assert isinstance(transcript, bytes)
+    util.save_bytes_to_wav_file(fp, bytestring)
+    audio_frame = util.load_wav_to_audio_frame(fp)
+    assert isinstance(audio_frame, AudioFrame)
+    transcript = await speech.transcribe(audio_frame)
+    assert isinstance(transcript, str)
+    assert transcript == text

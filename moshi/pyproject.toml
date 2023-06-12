@@ -1,6 +1,6 @@
 [project]
 name = "moshi"
-version = "23.5.3"
+version = "23.6.0"
 description = "Have a conversation in a new language, at your level."
 readme = "README.md"
 requires-python = ">=3.7"
@@ -19,12 +19,12 @@ classifiers = [
   "Topic :: Education",
 ]
 dependencies = [
+  "google-cloud-translate",
+  "google-cloud-texttospeech",
   "loguru",
   "openai",
   "pyaudio",
   "pyfiglet",
-  "pyobjc==9.0.1",  # https://github.com/nateshmbhat/pyttsx3/issues/274#issuecomment-1544904124
-  "pyttsx3",
   "SpeechRecognition",
 ]
 

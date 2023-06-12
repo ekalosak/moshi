@@ -11,11 +11,10 @@ from aiortc.contrib.media import MediaBlackhole, MediaPlayer, MediaRecorder, Med
 from loguru import logger
 
 from server import util, audio, chat
+from moshi import gcloud
 
 ROOT = os.path.dirname(__file__)
 pcs = set()  # peer connections
-
-util.setup_loguru()
 
 async def index(request):
     """ HTTP endpoint for index.html """
@@ -118,8 +117,18 @@ async def on_shutdown(app):
 
 @logger.catch
 async def on_startup(app):
-    loop = asyncio.get_event_loop()
-    loop.set_exception_handler(util.aio_exception_handler)
+    """Setup the state monad."""
+    logger.debug("Setting up logging and error handler...")
+    util.setup_loguru()
+    asyncio.get_event_loop().set_exception_handler(util.aio_exception_handler)
+    logger.debug("Authenticating to Google Cloud...")
+    await gcloud.authenticate()
+    logger.info(f"Authenticated to Google Cloud.")
+    logger.debug("Creating API clients...")
+    lang.setup_client()
+    speech.setup_client()
+    logger.info("API clients created.")
+    logger.success("Set up!")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(

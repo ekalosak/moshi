@@ -18,8 +18,8 @@ class NoVoiceError(Exception):
     ...
 
 
-def _get_voice_for_language(language: Language) -> pyttsx3.voice.Voice:
-    """Get an appropriate pyttsx3 voice for the language.
+def _get_voice_for_language(language: Language) -> pyttsx4.voice.Voice:
+    """Get an appropriate pyttsx4 voice for the language.
     Raises NoVoiceError if no such voice can be found.
     """
     for voice in engine.getProperty("voices"):

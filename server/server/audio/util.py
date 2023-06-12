@@ -55,10 +55,6 @@ def empty_frame(length=128, format=AUDIO_FORMAT, layout=AUDIO_LAYOUT, rate=SAMPL
     frame.pts = pts
     return frame
 
-def ensure_size(af: AudioFrame, size: int) -> AudioFrame:
-    """ Add silence to frames that are too short to make sure they're length == size. """
-    raise NotImplementedError
-
 def write_audio_frame_to_wav(frame: AudioFrame, output_file):
     # Source: https://stackoverflow.com/a/56307655/5298555
     with av.open(output_file, 'w') as container:
@@ -77,4 +73,10 @@ def load_wav_to_buffer(fp: str) -> AudioFifo:
     return fifo
 
 def load_wav_to_audio_frame(fp: str) -> AudioFrame:
-    return load_wav_to_buffer(fp).read()
+    frame = load_wav_to_buffer(fp).read()
+    res = make_resampler()
+    return res.resample(frame)[0]
+
+def save_bytes_to_wav_file(filename: str, bytestring: bytes):
+    with open(filename, "wb") as f:
+        f.write(bytestring)

@@ -6,7 +6,7 @@ from google.auth import default
 from google.auth.transport.requests import Request
 from loguru import logger
 
-GOOGLE_PROJECT = "moshi-001"
+from moshi import GOOGLE_PROJECT
 
 gcreds = contextvars.ContextVar("gcreds")
 
@@ -18,6 +18,7 @@ async def authenticate():
     """
     try:
         credentials = gcreds.get()
+        logger.debug("gcreds already exist.")
     except LookupError:
         logger.debug("gcreds not yet created, initializing...")
         credentials, project_id = default()

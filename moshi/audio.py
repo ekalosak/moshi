@@ -10,7 +10,7 @@ import numpy as np
 
 from server import SAMPLE_RATE, AUDIO_FORMAT, AUDIO_LAYOUT
 
-def _track_str(track: MediaStreamTrack) -> str:
+def track_str(track: MediaStreamTrack) -> str:
     """ Tidy repr of a track. """
     return f"{track.readyState}:{track.kind}:{track.id}"
 

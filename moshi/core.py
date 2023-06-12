@@ -1,4 +1,4 @@
-""" This module implements a Chatter for use in the WebRTC server. """
+"""This module implements the core WebRTCChatter class for use in the WebRTC server."""
 import asyncio
 import itertools
 import os
@@ -28,7 +28,7 @@ def _init_messages() -> list[Message]:
     return messages
 
 class WebRTCChatter(Chatter):
-    """ This class does two important things:
+    """This class does two important things:
     1. Coordinates the detector and responder, and
     2. Adapts the moshi.CliChatter for use in the WebRTC server.
     """

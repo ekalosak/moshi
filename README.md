@@ -2,8 +2,9 @@
 Have a spoken conversation in another language, at your level.
 
 # Architecture
-- `moshi` the core functionality.
-- `ui` the frontend and server that plug `moshi` into the browser.
+- `core` the core functionality.
+- `server` the frontend and server that plug `moshi` into the browser.
+- `cli` want to use `moshi` without a browser?
 
 # Development
 

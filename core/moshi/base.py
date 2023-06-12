@@ -19,6 +19,7 @@ class Message:
     role: Role
     content: str
 
+# TODO Model(ABC, str, Enum), ChatModel(Model), CompletionModel(Model)
 class ModelType(str, Enum):
     """The two model types used by this app.
     Source:
@@ -28,7 +29,6 @@ class ModelType(str, Enum):
     COMP = "completion"
     CHAT = "chat_completion"
 
-# TODO Model(ABC, str, Enum), ChatModel(Model), CompletionModel(Model)
 class Model(str, Enum):
     """The various models available."""
 

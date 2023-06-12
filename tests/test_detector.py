@@ -2,13 +2,13 @@ import av
 from av import AudioFrame
 import pytest
 
-from server import audio
+from moshi import detector
 
 @pytest.mark.asyncio
 @pytest.mark.slow
 async def test_utterance_detector(utterance_audio_track):
     """ Test that the UtteranceDetector can detect an utterance of speech in an audio track containing speech. """
-    ud = audio.UtteranceDetector()
+    ud = detector.UtteranceDetector()
     print('created UtteranceDetector')
     ud.setTrack(utterance_audio_track)
     print('set track, starting...')
@@ -19,5 +19,5 @@ async def test_utterance_detector(utterance_audio_track):
     await ud.stop()
     print('stopped!')
     assert isinstance(utterance, AudioFrame)
-    utterance_time = audio.get_frame_seconds(utterance)
+    utterance_time = detector.get_frame_seconds(utterance)
     assert 8. <= utterance_time <= 9., f"{str(utterance_audio_track)} is nominally 8.56 seconds of speech"

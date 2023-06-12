@@ -2,7 +2,7 @@ import asyncio
 
 import pytest
 
-from server.audio import util
+from moshi import audio
 
 @pytest.mark.asyncio
 async def test_sink(short_audio_track, Sink):
@@ -16,5 +16,5 @@ async def test_sink(short_audio_track, Sink):
     )
     await sink.stop()
     frame = sink.fifo.read()
-    frame_time = util.get_frame_seconds(frame)
+    frame_time = audio.get_frame_seconds(frame)
     assert 1. <= frame_time <= 2., "the test.wav is 1.24 sec iirc"

@@ -5,8 +5,7 @@ import tempfile
 from av import AudioFrame
 import pytest
 
-from server import gcloud, speech
-from server.audio import util
+from moshi import audio, gcloud, speech
 
 @pytest.mark.asyncio
 @pytest.mark.gcloud
@@ -15,7 +14,7 @@ async def test_speech_synthesis():
     _, fp = tempfile.mkstemp(suffix='.wav')
     text = "Hello World"
     bytestring = await speech.synthesize_text(text)
-    util.save_bytes_to_wav_file(fp, bytestring)
+    audio.save_bytes_to_wav_file(fp, bytestring)
     print(f"Synthesized '{text}' to {fp}")
 
 @pytest.mark.asyncio
@@ -40,8 +39,8 @@ async def test_complementary_synthesis_and_transcription():
         language='en_US'
     )
     assert isinstance(transcript, bytes)
-    util.save_bytes_to_wav_file(fp, bytestring)
-    audio_frame = util.load_wav_to_audio_frame(fp)
+    audio.save_bytes_to_wav_file(fp, bytestring)
+    audio_frame = audio.load_wav_to_audio_frame(fp)
     assert isinstance(audio_frame, AudioFrame)
     transcript = await speech.transcribe(audio_frame)
     assert isinstance(transcript, str)

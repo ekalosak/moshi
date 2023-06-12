@@ -1,11 +1,13 @@
-from server import lang
+import pytest
+
+from moshi import lang
 
 def test_setup_client():
     lang.setup_client()
 
 @pytest.mark.asyncio
 @pytest.mark.gcloud
-@pytest.parametrize('langcode', ['en_US', 'jp', 'es_MX'])
+@pytest.mark.parametrize('langcode', ['en_US', 'jp', 'es_MX'])
 async def test_get_voice(langcode):
     voice = await get_voice(langcode)
     breakpoint()

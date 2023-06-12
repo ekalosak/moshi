@@ -5,7 +5,7 @@ import av
 from av import AudioFrame, AudioFifo
 import pytest
 
-from server.audio import responder, util
+from moshi import audio, responder
 
 @pytest.mark.asyncio
 async def test_responder_track(short_audio_frame, Sink):
@@ -14,7 +14,7 @@ async def test_responder_track(short_audio_frame, Sink):
     This test exercises the ResponsePlayerStream, it does not exercise the ResponsePlayer.
     """
     empty_seconds = 1.5  # let the ResponsePlayerStream play <empty_seconds> of silence
-    audible_seconds = util.get_frame_seconds(short_audio_frame)
+    audible_seconds = audio.get_frame_seconds(short_audio_frame)
     total_expected_sec = empty_seconds + audible_seconds
     sent = asyncio.Event()
     track = responder.ResponsePlayerStream(sent)
@@ -22,7 +22,7 @@ async def test_responder_track(short_audio_frame, Sink):
     await sink.start()
     await asyncio.sleep(empty_seconds)  # ResponsePlayerStream should write empty_seconds of silence
     track.write_audio(short_audio_frame)
-    frame_time = util.get_frame_seconds(short_audio_frame)
+    frame_time = audio.get_frame_seconds(short_audio_frame)
     timeout = frame_time + 1.
     await asyncio.wait_for(
         sent.wait(),
@@ -30,7 +30,7 @@ async def test_responder_track(short_audio_frame, Sink):
     )
     await sink.stop()
     frame = sink.fifo.read()
-    frame_time = util.get_frame_seconds(frame)
+    frame_time = audio.get_frame_seconds(frame)
     # the extra on top of total_expected_sec accounts for the default 100ms playback throttle plus some compute time
     assert total_expected_sec <= frame_time <= total_expected_sec + .2
     arr = frame.to_ndarray()
@@ -54,7 +54,7 @@ async def test_responder_track_pts(short_audio_frame):
     for i in range(5):
         frame = await track.recv()
         print(f'got frame: {frame}')
-        assert util.get_frame_energy(frame) > 0., "silent frame after writing"
+        assert audio.get_frame_energy(frame) > 0., "silent frame after writing"
         assert frame.pts == pts
         frames.append(frame)
         pts += frame.samples
@@ -63,7 +63,7 @@ async def test_responder_track_pts(short_audio_frame):
 async def test_responder(short_audio_frame, Sink):
     """ Check that the ResponsePlayer writes audio to the Sink when it receives the audio and silence while it waits. """
     empty_seconds = 1.
-    audible_seconds = util.get_frame_seconds(short_audio_frame)
+    audible_seconds = audio.get_frame_seconds(short_audio_frame)
     total_seconds = empty_seconds + audible_seconds
     player = responder.ResponsePlayer()
     sink = Sink(player.audio)
@@ -72,5 +72,5 @@ async def test_responder(short_audio_frame, Sink):
     await player.send_utterance(short_audio_frame)
     await sink.stop()
     frame = sink.fifo.read()
-    frame_time = util.get_frame_seconds(frame)
+    frame_time = audio.get_frame_seconds(frame)
     assert total_seconds <= frame_time <= total_seconds + .2

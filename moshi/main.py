@@ -1,4 +1,3 @@
-# https://github.com/aiortc/aiortc/blob/main/examples/server/server.py
 import argparse
 import asyncio
 import json
@@ -6,12 +5,10 @@ import os
 import ssl
 
 from aiohttp import web
-from aiortc import MediaStreamTrack, RTCPeerConnection, RTCSessionDescription
-from aiortc.contrib.media import MediaBlackhole, MediaPlayer, MediaRecorder, MediaRelay
+from aiortc import RTCPeerConnection, RTCSessionDescription
 from loguru import logger
 
-from server import util, audio, chat
-from moshi import gcloud
+from moshi import chat, gcloud, util
 
 ROOT = os.path.dirname(__file__)
 pcs = set()  # peer connections
@@ -53,7 +50,6 @@ async def offer(request):
     logger.debug(f"offer: {offer}")
 
     chatter = chat.WebRTCChatter()
-    # player = MediaPlayer(ROOT + "/../tests/resources/test_phrase_8sec_spoken_13sec_total.wav")
 
     @pc.on("datachannel")
     def on_datachannel(channel):

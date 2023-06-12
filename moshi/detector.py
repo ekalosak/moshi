@@ -9,8 +9,7 @@ from aiortc.mediastreams import MediaStreamError
 from av import AudioFrame, AudioFifo
 from loguru import logger
 
-from server.audio import util
-from server.audio.util import _track_str
+from moshi import audio
 
 @dataclass
 class ListeningConfig:
@@ -41,7 +40,7 @@ class UtteranceDetector:
             raise ValueError("Track not yet set, call `your_audio_listener.setTrack(your_track)` before starting listening.")
         self.__task = asyncio.create_task(
             self.__dump_frames(),
-            name=f"Main utterance detection frame dump task from track: {_track_str(self.__track)}"
+            name=f"Main utterance detection frame dump task from track: {audio.track_str(self.__track)}"
         )
 
     @logger.catch
@@ -70,12 +69,12 @@ class UtteranceDetector:
             - track: the MediaStreamTrack to read from / write to.
         """
         if track.kind != 'audio':
-            raise ValueError(f"Non-audio tracks not supported, got track: {_track_str(track)}")
+            raise ValueError(f"Non-audio tracks not supported, got track: {audio.track_str(track)}")
         if track.readyState != 'live':
-            raise ValueError(f"Non-live tracks not supported, got track: {_track_str(track)}")
+            raise ValueError(f"Non-live tracks not supported, got track: {audio.track_str(track)}")
         if self.__track is not None:
-            logger.warning(f"Track already set: {_track_str(self.__track)}")
-            # raise ValueError(f"Track already set: {_track_str(self.__track)}")
+            logger.warning(f"Track already set: {audio.track_str(self.__track)}")
+            # raise ValueError(f"Track already set: {audio.track_str(self.__track)}")
         self.__track = track
 
     # @logger.catch
@@ -119,7 +118,7 @@ class UtteranceDetector:
                 )
             except asyncio.TimeoutError as e:
                 logger.error(f"Timed out waiting for an utterance to be detected: {e}")
-        utterance_time = util.get_frame_seconds(self.__utterance)
+        utterance_time = audio.get_frame_seconds(self.__utterance)
         logger.info(f"Detected utterance that is {utterance_time:.3f} sec long")
         return self.__utterance
 
@@ -152,8 +151,8 @@ class UtteranceDetector:
             frame = await self.__track.recv()
             frame.pts = None  # required for fifo.write(), not sending over network so OK
             fifo.write(frame)
-            frame_energy = util.get_frame_energy(frame)
-            frame_time = util.get_frame_seconds(frame)
+            frame_energy = audio.get_frame_energy(frame)
+            frame_time = audio.get_frame_seconds(frame)
             if frame_energy < self.__background_energy:
                 silence_time_sec += frame_time
                 silence_broken_time = 0.
@@ -173,11 +172,11 @@ class UtteranceDetector:
         time_elapsed_sec = 0.
         while time_elapsed_sec < self.__config.ambient_noise_measurement_seconds:
             frame = await self.__track.recv()
-            time_elapsed_sec += util.get_frame_seconds(frame)
+            time_elapsed_sec += audio.get_frame_seconds(frame)
             frame.pts = None  # or the fifo will complain, we aren't scheduling frames from this fifo so pts=None is OK
             fifo.write(frame)
         ambient_noise_frame: AudioFrame = fifo.read()
-        ambient_noise_energy: float = util.get_frame_energy(ambient_noise_frame)
+        ambient_noise_energy: float = audio.get_frame_energy(ambient_noise_frame)
         ambient_noise_energy = max(ambient_noise_energy, 30.)  # heuristic
         return ambient_noise_energy
 
@@ -191,8 +190,8 @@ class UtteranceDetector:
         fifo = AudioFifo()
         while True:
             frame = await self.__track.recv()
-            frame_energy = util.get_frame_energy(frame)
-            frame_time = util.get_frame_seconds(frame)
+            frame_energy = audio.get_frame_energy(frame)
+            frame_time = audio.get_frame_seconds(frame)
             logger.trace(f"sustained_speech_seconds: {sustained_speech_seconds}")
             logger.trace(f"total_waiting_seconds: {total_waiting_seconds}")
             if frame_energy > self.__background_energy:

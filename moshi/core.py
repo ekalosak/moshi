@@ -7,7 +7,11 @@ import textwrap
 from av import AudioFrame
 from loguru import logger
 
-from moshi import speech, lang, think, util, Message, ResponsePlayer, Role, UtteranceDetector, MAX_LOOPS
+from moshi import speech, lang, think, responder, detector, util, Message, Role
+
+MAX_LOOPS = int(os.getenv('MOSHIMAXLOOPS', 10))
+assert MAX_LOOPS >= 0
+logger.info(f"Running main loop max times: {MAX_LOOPS}")
 
 logger.success("Loaded!")
 
@@ -24,14 +28,14 @@ def _init_messages() -> list[Message]:
     ]
     return messages
 
-class WebRTCChatter(Chatter):
+class WebRTCChatter:
     """This class does two important things:
     1. Coordinates the detector and responder, and
     2. Adapts the moshi.CliChatter for use in the WebRTC server.
     """
     def __init__(self):
-        self.detector = UtteranceDetector()  # get_utterance: track -> AudioFrame
-        self.responder = ResponsePlayer()  # play_response: AudioFrame -> track
+        self.detector = detector.UtteranceDetector()  # get_utterance: track -> AudioFrame
+        self.responder = responder.ResponsePlayer()  # play_response: AudioFrame -> track
         self.messages = _init_messages()
         self.language = None
         self.__task = None

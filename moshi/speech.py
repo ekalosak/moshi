@@ -1,5 +1,6 @@
 import asyncio
 import contextvars
+import os
 import tempfile
 import textwrap
 
@@ -9,7 +10,10 @@ from google.cloud import texttospeech
 import openai
 from loguru import logger
 
-from moshi import audio, gcloud, OPENAI_TRANSCRIPTION_MODEL
+from moshi import audio, gcloud
+
+OPENAI_TRANSCRIPTION_MODEL = os.getenv("OPENAI_TRANSCRIPTION_MODEL", "whisper-1")
+logger.info(f"Using transcription model: {OPENAI_TRANSCRIPTION_MODEL}")
 
 gttsclient = contextvars.ContextVar('gttsclient')
 

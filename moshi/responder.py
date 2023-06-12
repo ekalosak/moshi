@@ -1,5 +1,6 @@
 """ This module provides the ResponsePlayer class that plays audio responses to the remote client speakers. """
 import asyncio
+import os
 import time
 
 from aiortc import MediaStreamTrack
@@ -8,6 +9,10 @@ from av import AudioFrame, AudioFifo
 from loguru import logger
 
 from moshi import audio, SAMPLE_RATE, AUDIO_FORMAT, AUDIO_LAYOUT
+
+FRAME_SIZE = int(os.getenv("MOSHIFRAMESIZE", 960))
+assert FRAME_SIZE >= 128 and FRAME_SIZE <= 4096
+logger.info(f"Using transport frame size: {FRAME_SIZE}")
 
 logger.success("Loaded!")
 

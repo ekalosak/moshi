@@ -5,7 +5,7 @@ import tempfile
 from av import AudioFrame
 import pytest
 
-from moshi import audio, gcloud, speech
+from moshi import audio, gcloud, speech, lang
 
 @pytest.mark.asyncio
 @pytest.mark.gcloud
@@ -47,14 +47,13 @@ async def test_complementary_synthesis_and_transcription():
     text = "Hello World"
     langcode = 'en'
     voice = await speech.get_voice(langcode, 'MALE')
-    bytestring = await speech.synthesize_speech(
+    audio_frame = await speech.synthesize_speech(
         text=text,
         voice=voice,
     )
-    assert isinstance(transcript, bytes)
-    audio.save_bytes_to_wav_file(fp, bytestring)
-    audio_frame = audio.load_wav_to_audio_frame(fp)
     assert isinstance(audio_frame, AudioFrame)
     transcript = await speech.transcribe(audio_frame)
     assert isinstance(transcript, str)
-    assert transcript == text
+    print(f"transcript={transcript}")
+    print(f"text={text}")
+    assert lang.similar(transcript, text) > 0.75

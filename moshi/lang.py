@@ -1,4 +1,5 @@
 import asyncio
+from difflib import SequenceMatcher
 import contextvars
 import textwrap
 
@@ -8,6 +9,13 @@ from loguru import logger
 gtransclient = contextvars.ContextVar("gtransclient")
 
 logger.success("Loaded!")
+
+def similar(a, b) -> float:
+    """Return similarity of two strings.
+    Source:
+        - https://stackoverflow.com/a/17388505/5298555
+    """
+    return SequenceMatcher(None, a, b).ratio()
 
 def _setup_client():
     """Set the gtransclient ContextVar."""

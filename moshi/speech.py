@@ -15,8 +15,8 @@ from moshi import audio, gcloud
 
 GOOGLE_SPEECH_SYNTHESIS_TIMEOUT = int(os.getenv("GOOGLE_SPEECH_SYNTHESIS_TIMEOUT", 3))
 logger.info(f"Using speech synth timeout: {GOOGLE_SPEECH_SYNTHESIS_TIMEOUT}")
-GOOGLE_LANGUAGE_DETECTION_TIMEOUT = int(os.getenv("GOOGLE_LANGUAGE_DETECTION_TIMEOUT", 3))
-logger.info(f"Using language detection timeout: {GOOGLE_LANGUAGE_DETECTION_TIMEOUT}")
+GOOGLE_VOICE_SELECTION_TIMEOUT = int(os.getenv("GOOGLE_VOICE_SELECTION_TIMEOUT", 5))
+logger.info(f"Using language detection timeout: {GOOGLE_VOICE_SELECTION_TIMEOUT}")
 OPENAI_TRANSCRIPTION_MODEL = os.getenv("OPENAI_TRANSCRIPTION_MODEL", "whisper-1")
 logger.info(f"Using transcription model: {OPENAI_TRANSCRIPTION_MODEL}")
 
@@ -46,7 +46,7 @@ async def get_voice(langcode: str, gender="FEMALE", model="Standard") -> str:
     """
     client = _get_client()
     awaitable = client.list_voices(language_code=langcode)
-    response = await asyncio.wait_for(awaitable, timeout=GOOGLE_LANGUAGE_DETECTION_TIMEOUT)
+    response = await asyncio.wait_for(awaitable, timeout=GOOGLE_VOICE_SELECTION_TIMEOUT)
     voices = response.voices
     logger.debug(f"Language {langcode} has {len(voices)} supported voices.")
     for voice in voices:
@@ -91,6 +91,7 @@ async def synthesize_speech(text: str, voice: Voice, rate: int=24000) -> AudioFr
 
 async def transcribe(audio_frame: AudioFrame) -> str:
     _, fp = tempfile.mkstemp(suffix='.wav')
+    # TODO use a BytesIO rather than literally writing a file
     audio.write_audio_frame_to_wav(audio_frame, fp)
     logger.debug(f'Transcribing audio from {fp}')
     with open(fp, 'rb') as f:

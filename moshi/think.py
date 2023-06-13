@@ -1,15 +1,15 @@
 """ This module abstracts specific chatbot implementations for use in the ChitChat app. """
+import os
+import textwrap
 from dataclasses import asdict
 from enum import Enum
-import os
 from pprint import pformat
-import textwrap
 from typing import NewType
 
 import openai
 from loguru import logger
 
-from moshi import Model, ModelType, Message
+from moshi import Message, Model, ModelType
 
 OPENAI_COMPLETION_MODEL = Model(
     os.getenv("OPENAI_COMPLETION_MODEL", "text-davinci-002")

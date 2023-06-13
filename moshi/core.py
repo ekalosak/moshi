@@ -7,17 +7,8 @@ import textwrap
 from av import AudioFrame
 from loguru import logger
 
-from moshi import (
-    character,
-    speech,
-    lang,
-    think,
-    responder,
-    detector,
-    util,
-    Message,
-    Role,
-)
+from moshi import (Message, Role, character, detector, lang, responder, speech,
+                   think, util)
 
 MAX_LOOPS = int(os.getenv("MOSHIMAXLOOPS", 10))
 assert MAX_LOOPS >= 0

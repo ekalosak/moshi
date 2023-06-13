@@ -1,8 +1,8 @@
 import io
 import tempfile
 
-from av import AudioFifo, AudioFrame
 import pytest
+from av import AudioFifo, AudioFrame
 
 from moshi import audio
 

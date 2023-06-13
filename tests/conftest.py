@@ -4,15 +4,15 @@ import logging
 import os
 from pathlib import Path
 
-from aiortc.contrib import media
-from aiortc import MediaStreamTrack
-from aiortc.mediastreams import MediaStreamError
 import av
-from av import AudioFrame, AudioFifo, AudioResampler
-from loguru import logger
 import pytest
+from aiortc import MediaStreamTrack
+from aiortc.contrib import media
+from aiortc.mediastreams import MediaStreamError
+from av import AudioFifo, AudioFrame, AudioResampler
+from loguru import logger
 
-from moshi import SAMPLE_RATE, AUDIO_FORMAT, AUDIO_LAYOUT
+from moshi import AUDIO_FORMAT, AUDIO_LAYOUT, SAMPLE_RATE
 
 RESOURCEDIR = Path(__file__).parent / "resources"
 logging.getLogger("asyncio").setLevel(logging.CRITICAL)

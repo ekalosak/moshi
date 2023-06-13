@@ -8,7 +8,7 @@ from aiohttp import web
 from aiortc import RTCPeerConnection, RTCSessionDescription
 from loguru import logger
 
-from moshi import core, gcloud, util, speech, lang
+from moshi import core, gcloud, lang, speech, util
 
 ROOT = os.path.dirname(__file__)
 pcs = set()  # peer connections

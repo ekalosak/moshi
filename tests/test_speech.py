@@ -2,10 +2,10 @@
 import asyncio
 import tempfile
 
-from av import AudioFrame
 import pytest
+from av import AudioFrame
 
-from moshi import audio, gcloud, speech, lang
+from moshi import audio, gcloud, lang, speech
 
 
 @pytest.mark.asyncio

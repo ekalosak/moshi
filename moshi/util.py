@@ -3,9 +3,9 @@ import functools
 import sys
 import uuid
 
+import pyfiglet
 from loguru import logger
 from loguru._defaults import LOGURU_FORMAT
-import pyfiglet
 
 
 def _setup_loguru():

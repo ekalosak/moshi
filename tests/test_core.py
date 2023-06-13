@@ -2,20 +2,12 @@ import asyncio
 import os
 from unittest import mock
 
-from av import AudioResampler
 import pytest
+from av import AudioResampler
 from scipy import signal
 
-from moshi import (
-    audio,
-    Message,
-    Model,
-    Role,
-    WebRTCChatter,
-    SAMPLE_RATE,
-    AUDIO_FORMAT,
-    AUDIO_LAYOUT,
-)
+from moshi import (AUDIO_FORMAT, AUDIO_LAYOUT, SAMPLE_RATE, Message, Model,
+                   Role, WebRTCChatter, audio)
 
 DUMMY_AST_TEXT = "ast test"
 DUMMY_USR_TEXT = "usr test"

@@ -5,10 +5,10 @@ import tempfile
 import textwrap
 
 import av
-from av import AudioFrame, AudioFifo
+import openai
+from av import AudioFifo, AudioFrame
 from google.cloud import texttospeech
 from google.cloud.texttospeech import Voice
-import openai
 from loguru import logger
 
 from moshi import audio, gcloud

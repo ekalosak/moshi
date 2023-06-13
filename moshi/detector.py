@@ -6,7 +6,7 @@ from dataclasses import dataclass
 
 from aiortc import MediaStreamTrack
 from aiortc.mediastreams import MediaStreamError
-from av import AudioFrame, AudioFifo
+from av import AudioFifo, AudioFrame
 from loguru import logger
 
 from moshi import audio

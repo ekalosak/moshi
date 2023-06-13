@@ -3,11 +3,11 @@ import io
 import os
 import tempfile
 
-from aiortc.mediastreams import MediaStreamTrack
 import av
-from av import AudioFrame, AudioLayout, AudioFormat, AudioResampler, AudioFifo
-from loguru import logger
 import numpy as np
+from aiortc.mediastreams import MediaStreamTrack
+from av import AudioFifo, AudioFormat, AudioFrame, AudioLayout, AudioResampler
+from loguru import logger
 
 SAMPLE_RATE = int(os.getenv("MOSHISAMPLERATE", 48000))
 AUDIO_FORMAT = os.getenv("MOSHIAUDIOFORMAT", "s16")

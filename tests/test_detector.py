@@ -1,6 +1,6 @@
 import av
-from av import AudioFrame
 import pytest
+from av import AudioFrame
 
 from moshi import audio, detector
 

@@ -1,9 +1,9 @@
 from unittest import mock
-import pytest
-import openai
 
-from moshi import Message, Model, ModelType, Role
-from moshi import think
+import openai
+import pytest
+
+from moshi import Message, Model, ModelType, Role, think
 
 MODELS = [Model.TEXTADA001, Model.GPT35TURBO0301]
 

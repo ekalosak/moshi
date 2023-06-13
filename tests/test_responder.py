@@ -1,9 +1,9 @@
 import asyncio
 
-from aiortc.mediastreams import MediaStreamError
 import av
-from av import AudioFrame, AudioFifo
 import pytest
+from aiortc.mediastreams import MediaStreamError
+from av import AudioFifo, AudioFrame
 
 from moshi import audio, responder
 

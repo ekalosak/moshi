@@ -5,38 +5,25 @@ Moshi is a spoken language tutor.
 
 ## Setup
 
-Start pyenv:
-```sh
-eval "$(pyenv init -)"
-eval "$(pyenv virtualenv-init -)"
-```
-
-Make venv:
-```sh
-pyenv virtualenv 3.10-dev mm310 && \
-  pyenv activate mm310
-```
-
-Update pip:
-```sh
-python3.10 -m pip install --upgrade pip
-```
-
 Install system dependencies:
 ```sh
 brew install portaudio
 ```
 
-Install Python requirements:
-```sh
-pip install moshi
+Setup virtualenv and install project & its Python dependencies:
+```bash
+eval "$(pyenv init -)" && \
+    eval "$(pyenv virtualenv-init -)" && \
+    pyenv virtualenv 3.10-dev mm310 && \
+    pyenv activate mm310 && \
+    python3.10 -m pip install --upgrade pip && \
+    pip install -e .
 ```
-This uses the `pyproject.toml`'s specified dependencies.
 
 For a development installation, use the `-e` flag:
 ```sh
 mkdir build && \
-    pip install -e moshi[dev,test]
+    pip install -e .[dev,test]
 ```
 Note that the `setup.cfg` puts the `.egg-info` into the local `./build` directory; you MUST create the `build` dir first.
 
@@ -46,9 +33,19 @@ Note that the `setup.cfg` puts the `.egg-info` into the local `./build` director
 ```
 
 # Testing
-`pip install moshi[test]` and `pytest -m 'not openai and not gcloud and not slow'`
+Make sure you have the test dependencies installed:
+```bash
+pip install -e .[test]
+```
+
+Test using pytest:
+```bash
+pytest -m 'not openai and not gcloud and not slow'
+```
 
 # Usage
+
+To start the web server:
 ```bash
 python moshi/main.py
 ```

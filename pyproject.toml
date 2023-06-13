@@ -20,13 +20,13 @@ classifiers = [
 ]
 dependencies = [
   "aiortc",
+  "av",
   "google-cloud-translate",
   "google-cloud-texttospeech",
   "loguru",
+  "numpy",
   "openai",
-  "PyAV",
   "pyfiglet",
-  "SpeechRecognition",
 ]
 
 [project.optional-dependencies]

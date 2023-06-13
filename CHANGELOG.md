@@ -1,19 +1,22 @@
+# 23.6.4
+- Server functionality restored
+
 # 23.6.3  Tue Jun 13 13:50:34 EDT 2023
-Major refactor, subsuming the CLI into the web server; no more CLI, only web now.
-TTS and language det using Google Cloud, see runbook for how to setup cloud services.
+- Major refactor, subsuming the CLI into the web server; no more CLI, only web now.
+- TTS and language det using Google Cloud, see runbook for how to setup cloud services.
 
 # Mixed CLI <> server version
 
 ## 23.6.0
-WebRTCChatter appears working in smoke-tests (detecting utterance from track, replaying back, handling tracks)
+- WebRTCChatter appears working in smoke-tests (detecting utterance from track, replaying back, handling tracks)
 
 ## 23.5.1
-Tried a ton of garbage with sockets
-Eventually got WebRTC working; initial implementation of utterance detection from audio track on serverside.
+- Tried a ton of garbage with sockets
+- Eventually got WebRTC working; initial implementation of utterance detection from audio track on serverside.
 
 ## 23.5.0
-Basic implementation of text streaming from server to client using websockets.
-Logging streamed to frontend.
+- Basic implementation of text streaming from server to client using websockets.
+- Logging streamed to frontend.
 
 # CLI version
 

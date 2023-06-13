@@ -8,7 +8,7 @@ from aiohttp import web
 from aiortc import RTCPeerConnection, RTCSessionDescription
 from loguru import logger
 
-from moshi import chat, gcloud, util
+from moshi import core, gcloud, util, speech, lang
 
 ROOT = os.path.dirname(__file__)
 pcs = set()  # peer connections
@@ -49,7 +49,7 @@ async def offer(request):
     logger.info(f"Created peer connection and offer for remote: {request.remote}")
     logger.debug(f"offer: {offer}")
 
-    chatter = chat.WebRTCChatter()
+    chatter = core.WebRTCChatter()
 
     @pc.on("datachannel")
     def on_datachannel(channel):
@@ -120,7 +120,7 @@ async def on_startup(app):
     await gcloud.authenticate()
     logger.info(f"Authenticated to Google Cloud.")
     logger.debug("Creating API clients...")
-    lang._setup_client()
+    lang._setup_client()  # doing this here to avoid waiting when first request happens
     speech._setup_client()
     logger.info("API clients created.")
     logger.success("Set up!")

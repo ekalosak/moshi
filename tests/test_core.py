@@ -8,11 +8,14 @@ from scipy import signal
 
 from moshi import audio, Message, Model, Role, WebRTCChatter, SAMPLE_RATE, AUDIO_FORMAT, AUDIO_LAYOUT
 
+DUMMY_AST_TEXT = "ast test"
+DUMMY_USR_TEXT = "usr test"
+
 def test_chatter_init():
     chatter = WebRTCChatter()
 
 def dummy_response(*a, **k):
-    return ["ast test"]
+    return [DUMMY_AST_TEXT]
 
 def dummy_speech(frame):
     async def _dummy_speech(self, *a, **k):
@@ -29,7 +32,7 @@ async def dummy_get_voice(*a, **k) -> dict[str, str]:
 
 async def dummy_transcribe(*a, **k) -> str:
     await asyncio.sleep(0.)
-    return "test usr transcript"
+    return DUMMY_USR_TEXT
 
 @pytest.mark.slow
 @pytest.mark.asyncio
@@ -64,9 +67,8 @@ async def test_chatter_aiortc_components(utterance_audio_track, short_audio_fram
     ut_sec = audio.get_frame_seconds(utframe)
     assert 8.2 <= ut_sec <= 9., "Utterance detection degraded"  # 8.56 sec nominally
     # Check the messages
-    breakpoint()
-    assert chatter.messages[-2] == Message(Role.USR, "usr test")
-    assert chatter.messages[-1] == Message(Role.AST, "ast test")
+    assert chatter.messages[-2] == Message(Role.USR, DUMMY_USR_TEXT)
+    assert chatter.messages[-1] == Message(Role.AST, DUMMY_AST_TEXT)
     # Check convolution of utterance with the sink
     res = audio.make_resampler()
     _ut = res.resample(utframe)

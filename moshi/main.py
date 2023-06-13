@@ -23,19 +23,19 @@ async def index(request):
 
 async def favicon(request):
     """HTTP endpoint for the favicon"""
-    fp = os.path.join(ROOT, "web/favicon.ico")
+    fp = os.path.join(ROOT, "web/resources/favicon.ico")
     return web.FileResponse(fp)
 
 
 async def css(request):
     """HTTP endpoint for style.css"""
-    content = open(os.path.join(ROOT, "web/style.css"), "r").read()
+    content = open(os.path.join(ROOT, "web/resources/style.css"), "r").read()
     return web.Response(content_type="text/css", text=content)
 
 
 async def javascript(request):
     """HTTP endpoint for client.js"""
-    content = open(os.path.join(ROOT, "web/client.js"), "r").read()
+    content = open(os.path.join(ROOT, "web/resources/client.js"), "r").read()
     return web.Response(content_type="application/javascript", text=content)
 
 

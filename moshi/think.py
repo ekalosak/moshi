@@ -11,7 +11,9 @@ from loguru import logger
 
 from moshi import Model, ModelType, Message
 
-OPENAI_COMPLETION_MODEL = Model(os.getenv("OPENAI_COMPLETION_MODEL", "text-davinci-002"))
+OPENAI_COMPLETION_MODEL = Model(
+    os.getenv("OPENAI_COMPLETION_MODEL", "text-davinci-002")
+)
 logger.info(f"Using completion model: {OPENAI_COMPLETION_MODEL}")
 
 logger.success("Loaded!")
@@ -55,14 +57,16 @@ def _completion_payload_from_messages(messages: list[Message]) -> CompletionPayl
     payload = ""
     for msg in messages:
         msgstr = f"{msg.role}: {msg.content}"
-        payload = payload + '\n' + msgstr
+        payload = payload + "\n" + msgstr
     logger.debug(f"payload:\n{pformat(payload)}")
     return payload
 
 
 # TODO async openai
-def _chat_completion(payload: ChatCompletionPayload, n: int, model: Model, **kwargs) -> list[str]:
-    """ Get the message """
+def _chat_completion(
+    payload: ChatCompletionPayload, n: int, model: Model, **kwargs
+) -> list[str]:
+    """Get the message"""
     msg_contents = []
     assert _get_type_of_model(model) == ModelType.CHAT
     response = openai.ChatCompletion.create(
@@ -78,8 +82,11 @@ def _chat_completion(payload: ChatCompletionPayload, n: int, model: Model, **kwa
         msg_contents.append(choice.message.content)
     return msg_contents
 
+
 # TODO async openai
-def _completion(payload: CompletionPayload, n: int, model: Model, **kwargs) -> list[str]:
+def _completion(
+    payload: CompletionPayload, n: int, model: Model, **kwargs
+) -> list[str]:
     assert _get_type_of_model(model) == ModelType.COMP
     msg_contents = []
     response = openai.Completion.create(
@@ -94,6 +101,7 @@ def _completion(payload: CompletionPayload, n: int, model: Model, **kwargs) -> l
             logger.warning(f"Got finish_reason: {reason}")
         msg_contents.append(choice.text.strip())
     return msg_contents
+
 
 # TODO async
 def completion_from_assistant(

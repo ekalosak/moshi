@@ -13,30 +13,35 @@ from moshi import core, gcloud, util, speech, lang
 ROOT = os.path.dirname(__file__)
 pcs = set()  # peer connections
 
+
 async def index(request):
-    """ HTTP endpoint for index.html """
+    """HTTP endpoint for index.html"""
     logger.info(request)
     content = open(os.path.join(ROOT, "web/index.html"), "r").read()
     return web.Response(content_type="text/html", text=content)
 
+
 async def favicon(request):
-    """ HTTP endpoint for the favicon """
+    """HTTP endpoint for the favicon"""
     fp = os.path.join(ROOT, "web/favicon.ico")
     return web.FileResponse(fp)
 
+
 async def css(request):
-    """ HTTP endpoint for style.css """
+    """HTTP endpoint for style.css"""
     content = open(os.path.join(ROOT, "web/style.css"), "r").read()
     return web.Response(content_type="text/css", text=content)
 
+
 async def javascript(request):
-    """ HTTP endpoint for client.js """
+    """HTTP endpoint for client.js"""
     content = open(os.path.join(ROOT, "web/client.js"), "r").read()
     return web.Response(content_type="application/javascript", text=content)
 
+
 @util.async_with_pcid
 async def offer(request):
-    """ In WebRTC, there's an initial offer->answer exchange that negotiates the connection parameters.
+    """In WebRTC, there's an initial offer->answer exchange that negotiates the connection parameters.
     This endpoint accepts an offer request from a client and returns an answer with the SDP (session description protocol).
     Moreover, it sets up the PeerConnection (pc) and the event listeners on the connection.
     """
@@ -53,12 +58,14 @@ async def offer(request):
 
     @pc.on("datachannel")
     def on_datachannel(channel):
-        if channel.label == 'keepalive':
+        if channel.label == "keepalive":
+
             @channel.on("message")
             def on_message(message):
                 if isinstance(message, str) and message.startswith("ping"):
                     channel.send("pong" + message[4:])
-        elif channel.label == 'utterance':
+
+        elif channel.label == "utterance":
             chatter.set_utterance_channel(channel)
         else:
             raise ValueError(f"Got unknown channel: {channel.label}")
@@ -73,8 +80,10 @@ async def offer(request):
     @pc.on("track")
     def on_track(track):
         logger.info(f"Track {track.kind} received")
-        if track.kind != 'audio':
-            raise TypeError(f"Track kind not supported, expected 'audio', got: '{track.kind}'")
+        if track.kind != "audio":
+            raise TypeError(
+                f"Track kind not supported, expected 'audio', got: '{track.kind}'"
+            )
 
         # This is how input and output are connected to the chatter
         chatter.detector.setTrack(track)  # must be called before start()
@@ -102,6 +111,7 @@ async def offer(request):
         ),
     )
 
+
 @logger.catch
 async def on_shutdown(app):
     logger.info(f"Shutting down {len(pcs)} PeerConnections...")
@@ -110,6 +120,7 @@ async def on_shutdown(app):
     await asyncio.gather(*coros)
     pcs.clear()
     logger.success("Shut down gracefully!")
+
 
 @logger.catch
 async def on_startup(app):
@@ -125,10 +136,9 @@ async def on_startup(app):
     logger.info("API clients created.")
     logger.success("Set up!")
 
+
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description="Moshi web app"
-    )
+    parser = argparse.ArgumentParser(description="Moshi web app")
     parser.add_argument("--cert-file", help="SSL certificate file (for HTTPS)")
     parser.add_argument("--key-file", help="SSL key file (for HTTPS)")
     parser.add_argument(

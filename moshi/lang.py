@@ -10,12 +10,14 @@ gtransclient = contextvars.ContextVar("gtransclient")
 
 logger.success("Loaded!")
 
+
 def similar(a, b) -> float:
     """Return similarity of two strings.
     Source:
         - https://stackoverflow.com/a/17388505/5298555
     """
     return SequenceMatcher(None, a, b).ratio()
+
 
 def _setup_client():
     """Set the gtransclient ContextVar."""
@@ -28,10 +30,12 @@ def _setup_client():
         gtransclient.set(client)
         logger.info("Translation client initialized.")
 
-def _get_client() -> 'Client':
+
+def _get_client() -> "Client":
     """Get the translation client."""
     _setup_client()
     return gtransclient.get()
+
 
 async def detect_language(text: str) -> str:
     """Detects the text's language. Run setup_client first.
@@ -45,8 +49,8 @@ async def detect_language(text: str) -> str:
         client.detect_language,
         text,
     )
-    conf = result['confidence']
-    lang = result['language']
+    conf = result["confidence"]
+    lang = result["language"]
     logger.debug(f"Confidence: {conf}")
     logger.info(f"Language: {lang}")
     return lang

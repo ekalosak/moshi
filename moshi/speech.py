@@ -20,9 +20,10 @@ logger.info(f"Using language detection timeout: {GOOGLE_VOICE_SELECTION_TIMEOUT}
 OPENAI_TRANSCRIPTION_MODEL = os.getenv("OPENAI_TRANSCRIPTION_MODEL", "whisper-1")
 logger.info(f"Using transcription model: {OPENAI_TRANSCRIPTION_MODEL}")
 
-gttsclient = contextvars.ContextVar('gttsclient')
+gttsclient = contextvars.ContextVar("gttsclient")
 
 logger.success("Loaded!")
+
 
 def _setup_client() -> None:
     try:
@@ -34,10 +35,12 @@ def _setup_client() -> None:
         gttsclient.set(client)
         logger.info("Translation client initialized.")
 
-def _get_client() -> 'Client':
+
+def _get_client() -> "Client":
     """Get the texttospeech client."""
     _setup_client()
     return gttsclient.get()
+
 
 async def get_voice(langcode: str, gender="FEMALE", model="Standard") -> str:
     """Get a valid voice for the language. Just picks the first match.
@@ -52,10 +55,13 @@ async def get_voice(langcode: str, gender="FEMALE", model="Standard") -> str:
     for voice in voices:
         if model in voice.name and gender in str(voice.ssml_gender):
             return voice
-    raise ValueError(f"Voice not found for langcode={langcode}, gender={gender}, model={model}")
+    raise ValueError(
+        f"Voice not found for langcode={langcode}, gender={gender}, model={model}"
+    )
 
-async def _synthesize_speech_bytes(text: str, voice: Voice, rate: int=24000) -> bytes:
-    """ Synthesize speech to a bytestring in WAV (PCM_16) format.
+
+async def _synthesize_speech_bytes(text: str, voice: Voice, rate: int = 24000) -> bytes:
+    """Synthesize speech to a bytestring in WAV (PCM_16) format.
     Implemented with texttospeech.googleapis.com;
     """
     synthesis_input = texttospeech.SynthesisInput(text=text)
@@ -70,7 +76,9 @@ async def _synthesize_speech_bytes(text: str, voice: Voice, rate: int=24000) -> 
         language_code=langcode,
         ssml_gender=voice.ssml_gender,
     )
-    logger.debug(f"Requesting speech synthesis: synthesis_input={synthesis_input}, voice_selector={voice_selector}, audio_config={audio_config}")
+    logger.debug(
+        f"Requesting speech synthesis: synthesis_input={synthesis_input}, voice_selector={voice_selector}, audio_config={audio_config}"
+    )
     client = _get_client()
     request = dict(
         input=synthesis_input,
@@ -78,23 +86,29 @@ async def _synthesize_speech_bytes(text: str, voice: Voice, rate: int=24000) -> 
         audio_config=audio_config,
     )
     awaitable = client.synthesize_speech(request=request)
-    response = await asyncio.wait_for(awaitable, timeout=GOOGLE_SPEECH_SYNTHESIS_TIMEOUT)
-    logger.debug(f"Got response from texttospeech.synthesize_speech: {textwrap.shorten(str(response.audio_content), 32)}")
+    response = await asyncio.wait_for(
+        awaitable, timeout=GOOGLE_SPEECH_SYNTHESIS_TIMEOUT
+    )
+    logger.debug(
+        f"Got response from texttospeech.synthesize_speech: {textwrap.shorten(str(response.audio_content), 32)}"
+    )
     return response.audio_content
 
-async def synthesize_speech(text: str, voice: Voice, rate: int=24000) -> AudioFrame:
+
+async def synthesize_speech(text: str, voice: Voice, rate: int = 24000) -> AudioFrame:
     audio_bytes = await _synthesize_speech_bytes(text, voice, rate)
     assert isinstance(audio_bytes, bytes)
     audio_frame = audio.wav_bytes_to_audio_frame(audio_bytes)
     assert isinstance(audio_frame, AudioFrame)
     return audio_frame
 
+
 async def transcribe(audio_frame: AudioFrame) -> str:
-    _, fp = tempfile.mkstemp(suffix='.wav')
+    _, fp = tempfile.mkstemp(suffix=".wav")
     # TODO use a BytesIO rather than literally writing a file
     audio.write_audio_frame_to_wav(audio_frame, fp)
-    logger.debug(f'Transcribing audio from {fp}')
-    with open(fp, 'rb') as f:
+    logger.debug(f"Transcribing audio from {fp}")
+    with open(fp, "rb") as f:
         # TODO timeout I suppose, also async openai
         transcript = await asyncio.to_thread(
             openai.Audio.transcribe,
@@ -102,4 +116,4 @@ async def transcribe(audio_frame: AudioFrame) -> str:
             f,
         )
     logger.debug(f"transcript={transcript}")
-    return transcript['text']
+    return transcript["text"]

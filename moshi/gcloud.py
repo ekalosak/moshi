@@ -13,8 +13,9 @@ gcreds = contextvars.ContextVar("gcreds")
 
 logger.success("Loaded!")
 
+
 async def authenticate():
-    """ Ensure the gcreds context variable is set.
+    """Ensure the gcreds context variable is set.
     Raises:
         - google.auth.exceptions.RefreshError if it can't refresh, you'll need to run
             `gcloud auth application-default login`
@@ -30,4 +31,6 @@ async def authenticate():
         logger.info(f"gcreds initialized: {credentials}")
     if not credentials.valid:
         await asyncio.to_thread(credentials.refresh, Request())
-    logger.success("Google Cloud credentials refreshed and available via gcloud context var.")
+    logger.success(
+        "Google Cloud credentials refreshed and available via gcloud context var."
+    )

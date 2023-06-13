@@ -2,9 +2,11 @@ import pytest
 
 from moshi import lang
 
+
 def test_get_client():
     translation_client = lang._get_client()
     assert translation_client is not None
+
 
 @pytest.mark.asyncio
 @pytest.mark.gcloud
@@ -12,8 +14,10 @@ def test_get_client():
     "sentence,langcode",
     [
         pytest.param(
-            ("This should start the phrase because I'm speaking continuously for more than a couple seconds, though "
-                "your mileage may vary."),
+            (
+                "This should start the phrase because I'm speaking continuously for more than a couple seconds, though "
+                "your mileage may vary."
+            ),
             "en",
             id="English",
         ),
@@ -32,7 +36,7 @@ def test_get_client():
             "ja",
             id="Japanese",
         ),
-    ]
+    ],
 )
 async def test_detect_language(sentence, langcode):
     print(f"sentence={sentence}")

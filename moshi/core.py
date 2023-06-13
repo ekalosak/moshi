@@ -7,13 +7,24 @@ import textwrap
 from av import AudioFrame
 from loguru import logger
 
-from moshi import character, speech, lang, think, responder, detector, util, Message, Role
+from moshi import (
+    character,
+    speech,
+    lang,
+    think,
+    responder,
+    detector,
+    util,
+    Message,
+    Role,
+)
 
-MAX_LOOPS = int(os.getenv('MOSHIMAXLOOPS', 10))
+MAX_LOOPS = int(os.getenv("MOSHIMAXLOOPS", 10))
 assert MAX_LOOPS >= 0
 logger.info(f"Running main loop max times: {MAX_LOOPS}")
 
 logger.success("Loaded!")
+
 
 def _init_messages() -> list[Message]:
     messages = [
@@ -24,18 +35,24 @@ def _init_messages() -> list[Message]:
         Message(
             Role.SYS,
             "Do not provide a translation. Respond in the language the user speaks.",
-        )
+        ),
     ]
     return messages
+
 
 class WebRTCChatter:
     """This class does two important things:
     1. Coordinates the detector and responder, and
     2. Adapts the moshi.CliChatter for use in the WebRTC server.
     """
+
     def __init__(self):
-        self.detector = detector.UtteranceDetector()  # get_utterance: track -> AudioFrame
-        self.responder = responder.ResponsePlayer()  # play_response: AudioFrame -> track
+        self.detector = (
+            detector.UtteranceDetector()
+        )  # get_utterance: track -> AudioFrame
+        self.responder = (
+            responder.ResponsePlayer()
+        )  # play_response: AudioFrame -> track
         self.messages = _init_messages()
         self.character: character.Character = None
         self.__task = None
@@ -48,10 +65,7 @@ class WebRTCChatter:
         logger.debug("Starting detector...")
         await self.detector.start()
         logger.debug("Detector started!")
-        self.__task = asyncio.create_task(
-            self.__run(),
-            name="Main chat task"
-        )
+        self.__task = asyncio.create_task(self.__run(), name="Main chat task")
 
     @logger.catch
     async def stop(self):
@@ -61,7 +75,9 @@ class WebRTCChatter:
 
     def set_transcript_channel(self, channel):
         if self.__channel is not None:
-            raise ValueError(f"Already have a transcript channel: {self.__channel.label}:{self.__channel.id}")
+            raise ValueError(
+                f"Already have a transcript channel: {self.__channel.label}:{self.__channel.id}"
+            )
         self.__channel = channel
 
     @property
@@ -90,7 +106,7 @@ class WebRTCChatter:
 
     @logger.catch
     async def __run(self):
-        """ Run the main program loop. """
+        """Run the main program loop."""
         util.splash("moshi")
         for i in itertools.count():
             if i == MAX_LOOPS and MAX_LOOPS != 0:
@@ -105,7 +121,7 @@ class WebRTCChatter:
         util.splash("bye")
 
     async def __main(self):
-        """ Run one loop of the main program. """
+        """Run one loop of the main program."""
         usr_audio: AudioFrame = await self.__detect_user_utterance()
         usr_text: str = await self.__transcribe_audio(usr_audio)
         self.__add_message(usr_text, Role.USR)
@@ -172,5 +188,7 @@ class WebRTCChatter:
     async def __transcribe_audio(self, audio, role=Role.USR):
         logger.debug(f"Transcribing {role.value} audio: {audio}")
         transcript: str = await speech.transcribe(audio)
-        logger.info(f"Transcribed {role.value} utterance: {textwrap.shorten(transcript, 64)}")
+        logger.info(
+            f"Transcribed {role.value} utterance: {textwrap.shorten(transcript, 64)}"
+        )
         return transcript

@@ -115,7 +115,6 @@ async def on_shutdown(app):
 async def on_startup(app):
     """Setup the state monad."""
     logger.debug("Setting up logging and error handler...")
-    util.setup_loguru()
     asyncio.get_event_loop().set_exception_handler(util.aio_exception_handler)
     logger.debug("Authenticating to Google Cloud...")
     await gcloud.authenticate()

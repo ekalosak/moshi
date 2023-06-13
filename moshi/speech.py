@@ -29,7 +29,8 @@ def _setup_client() -> None:
         gttsclient.set(client)
         logger.info("Translation client initialized.")
 
-def get_client() -> 'Client':
+def _get_client() -> 'Client':
+    """Get the texttospeech client."""
     _setup_client()
     return gttsclient.get()
 
@@ -38,7 +39,7 @@ async def get_voice(language: str, gender="FEMALE", model="Standard") -> str:
     Source:
         - https://cloud.google.com/text-to-speech/pricing for list of valid voice model classes
     """
-    client = get_client()
+    client = _get_client()
     response = await client.list_voices(language_code=language)
     voices = response.voices
     logger.debug(f"Language {language} has {len(voices)} supported voices.")
@@ -57,7 +58,7 @@ async def _synthesize_speech_bytes(text: str, language: 'Language', voice: 'Voic
         sample_rate_hertz=rate,
     )
     logger.debug(f"Requesting speech synthesis: synthesis_input={synthesis_input}, voice={voice}, audio_config={audio_config}")
-    client = get_client()
+    client = _get_client()
     response = await client.synthesize_speech(
         input=synthesis_input,
         voice=voice,
@@ -68,7 +69,10 @@ async def _synthesize_speech_bytes(text: str, language: 'Language', voice: 'Voic
 
 async def synthesize_speech(text: str, language: 'Language', voice: 'Voice', rate: int=24000) -> AudioFrame:
     audio_bytes = await _synthesize_speech_bytes(text, language, voice, rate)
-    return audio.wav_bytes_to_audio_frame(audio_bytes)
+    assert isinstance(audio_bytes, bytes)
+    audio_frame = audio.wav_bytes_to_audio_frame(audio_bytes)
+    assert isinstance(audio_frame, AudioFrame)
+    return audio_frame
 
 async def transcribe(audio_frame: AudioFrame) -> str:
     _, fp = tempfile.mkstemp(suffix='.wav')

@@ -11,21 +11,31 @@ from moshi import audio, Message, Model, Role, WebRTCChatter, SAMPLE_RATE, AUDIO
 def test_chatter_init():
     chatter = WebRTCChatter()
 
-async def dummy(*a,**k):
-    await asyncio.sleep(0.)
-
-def dummy_response(*a,**k):
+def dummy_response(*a, **k):
     return ["ast test"]
 
 def dummy_speech(frame):
-    def _dummy_speech():
+    async def _dummy_speech(self, *a, **k):
         return frame
     return _dummy_speech
 
+async def dummy_detect_lang(*a, **k) -> str:
+    await asyncio.sleep(0.)
+    return "en"
+
+async def dummy_get_voice(*a, **k) -> dict[str, str]:
+    await asyncio.sleep(0.)
+    return {'name': "test", "ssml_gender": "test"}
+
+async def dummy_transcribe(*a, **k) -> str:
+    await asyncio.sleep(0.)
+    return "test usr transcript"
+
 @pytest.mark.slow
 @pytest.mark.asyncio
-@mock.patch('moshi.core.WebRTCChatter._WebRTCChatter__transcribe_audio', dummy)
-@mock.patch('moshi.core.WebRTCChatter._WebRTCChatter__detect_language', dummy)
+@mock.patch('moshi.core.lang.detect_language', dummy_detect_lang)
+@mock.patch('moshi.core.speech.get_voice', dummy_get_voice)
+@mock.patch('moshi.core.speech.transcribe', dummy_transcribe)
 @mock.patch('moshi.core.think.completion_from_assistant', dummy_response)
 async def test_chatter_aiortc_components(utterance_audio_track, short_audio_frame, Sink):
     """ Test that the chatter detects the utterance and responds.
@@ -37,16 +47,16 @@ async def test_chatter_aiortc_components(utterance_audio_track, short_audio_fram
     sleep = 20.
     print('initializing chatter and sink (as dummy client); source is utterance_audio_track')
     chatter = WebRTCChatter()
-    # chatter.responder._ResponsePlayer__throttle_playback = dummy
-    chatter._WebRTCChatter__synth_speech = dummy_speech(short_audio_frame)
-    # NOTE patches ^
-    chatter.messages.append(Message("user", "usr test"))
     chatter.detector.setTrack(utterance_audio_track)
     sink = Sink(chatter.responder.audio)
-    print('chatter and sink initialized, starting them now...')
-    await asyncio.gather(chatter.start(), sink.start())
-    print(f'chatter and sink started, sleeping {sleep}')
-    await asyncio.sleep(sleep) # sec
+    # TODO chatter.responder._ResponsePlayer__throttle_playback = dummy
+    with mock.patch('moshi.core.WebRTCChatter._WebRTCChatter__synth_speech', dummy_speech(short_audio_frame)):
+        print('chatter and sink initialized, starting them now...')
+        await asyncio.gather(chatter.start(), sink.start())
+        print(f'chatter and sink started, sleeping {sleep}')
+        await asyncio.sleep(sleep) # sec
+    chat_task = chatter._WebRTCChatter__task
+    print(f'chatter.__task: {chat_task}')
     print('stopping chatter and sink')
     await asyncio.gather(chatter.stop(), sink.stop())
     print('stopped!')
@@ -54,6 +64,7 @@ async def test_chatter_aiortc_components(utterance_audio_track, short_audio_fram
     ut_sec = audio.get_frame_seconds(utframe)
     assert 8.2 <= ut_sec <= 9., "Utterance detection degraded"  # 8.56 sec nominally
     # Check the messages
+    breakpoint()
     assert chatter.messages[-2] == Message(Role.USR, "usr test")
     assert chatter.messages[-1] == Message(Role.AST, "ast test")
     # Check convolution of utterance with the sink

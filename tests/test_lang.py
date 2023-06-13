@@ -3,7 +3,7 @@ import pytest
 from moshi import lang
 
 def test_get_client():
-    translation_client = lang.get_client()
+    translation_client = lang._get_client()
     assert translation_client is not None
 
 @pytest.mark.asyncio

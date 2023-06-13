@@ -7,7 +7,7 @@ import textwrap
 from av import AudioFrame
 from loguru import logger
 
-from moshi import speech, lang, think, responder, detector, util, Message, Role
+from moshi import character, speech, lang, think, responder, detector, util, Message, Role
 
 MAX_LOOPS = int(os.getenv('MOSHIMAXLOOPS', 10))
 assert MAX_LOOPS >= 0
@@ -37,7 +37,7 @@ class WebRTCChatter:
         self.detector = detector.UtteranceDetector()  # get_utterance: track -> AudioFrame
         self.responder = responder.ResponsePlayer()  # play_response: AudioFrame -> track
         self.messages = _init_messages()
-        self.language = None
+        self.character: character.Character = None
         self.__task = None
 
     @logger.catch
@@ -59,22 +59,34 @@ class WebRTCChatter:
         self.__task.cancel(f"{self.__class__.__name__}.stop() called")
         self.__task = None
 
+    def set_transcript_channel(self, channel):
+        if self.__channel is not None:
+            raise ValueError(f"Already have a transcript channel: {self.__channel.label}:{self.__channel.id}")
+        self.__channel = channel
+
+    @property
+    def voice(self) -> object:
+        return self.character.voice
+
+    @property
+    def language(self) -> str:
+        return self.character.language
+
     @property
     def user_utterance(self) -> str:
         """The latest user utterance."""
-        logger.trace("\n" + pformat(self.messages))
-        for msg in self.messages[::-1]:
-            if msg.role == Role.USR:
-                return msg.content
-        raise ValueError("No user utterances in self.messages")
+        return self.__latest_msg(Role.USR).content
 
     @property
     def assistant_utterance(self) -> str:
         """The latest assistant utterance."""
+        return self.__latest_msg(Role.AST).content
+
+    def __latest_msg(self, role: Role) -> Message:
         for msg in self.messages[::-1]:
-            if msg.role == Role.AST:
-                return msg.content
-        raise ValueError("No assistant utterances in self.messages")
+            if msg.role == role:
+                return msg
+        raise ValueError(f"No {role.value} utterances in self.messages")
 
     @logger.catch
     async def __run(self):
@@ -96,23 +108,36 @@ class WebRTCChatter:
         """ Run one loop of the main program. """
         usr_audio: AudioFrame = await self.__detect_user_utterance()
         usr_text: str = await self.__transcribe_audio(usr_audio)
-        await self.__detect_language(usr_text)
-        await self.__get_response()
-        ast_audio = await self.__synth_speech()
-        await self.responder.send_utterance(ast_audio)
+        self.__add_message(usr_text, Role.USR)
+        await self.__init_character(sample_text=usr_text)
+        ast_text: str = await self.__get_response()
+        self.__add_message(ast_text, Role.AST)
+        ast_audio: AudioFrame = await self.__synth_speech()
+        await self.__send_assistant_utterance(ast_audio)
 
-    def set_transcript_channel(self, channel):
-        if self.__channel is not None:
-            raise ValueError(f"Already have a transcript channel: {self.__channel.label}:{self.__channel.id}")
-        self.__channel = channel
+    async def __init_character(self, sample_text: str):
+        """Using the sample text, initialize the voice and language used by Chatter."""
+        if self.character is not None:
+            return
+        language = await lang.detect_language(sample_text)
+        logger.debug(f"Language detected: {language}")
+        voice = await speech.get_voice(language)
+        logger.debug(f"Selected voice: {voice}")
+        self.character = character.Character(voice, language)
+        logger.info(f"Initialized character: {self.character}")
 
     async def __detect_user_utterance(self) -> AudioFrame:
-        logger.debug(f"Detecting user utterance...")
+        logger.debug("Detecting user utterance...")
         usr_audio: AudioFrame = await self.detector.get_utterance()
         logger.info(f"Detected user utterance: {usr_audio}")
         return usr_audio
 
-    def __add_message(self, content:str, role:Role):
+    async def __send_assistant_utterance(self, ast_audio: AudioFrame):
+        logger.debug(f"Sending assistant utterance: {ast_audio}...")
+        await self.responder.send_utterance(ast_audio)
+        logger.info("Sent assistant utterance.")
+
+    def __add_message(self, content: str, role: Role):
         assert isinstance(content, str)
         if not isinstance(role, Role):
             role = Role(role)
@@ -124,12 +149,16 @@ class WebRTCChatter:
         msg = self.messages[-1]
         logger.debug(f"Synthesizing to speech: {msg}")
         assert msg.role == Role.AST
-        frame = await speech.synthesize_speech(msg.content, self.language)
+        frame = await speech.synthesize_speech(msg.content, self.language, self.voice)
         logger.info(f"Speech synthesized: {frame}")
+        assert isinstance(frame, AudioFrame)
         return frame
 
     async def __get_response(self):
-        logger.debug(f"Responding to user text: {self.messages[-1]}")
+        """Retrieve the chatbot's response to the user utterance."""
+        usr_msg = self.messages[-1]
+        assert usr_msg.content is self.user_utterance, "State is out of whack"
+        logger.debug(f"Responding to user message: {usr_msg}")
         ast_txts: str = await asyncio.to_thread(
             think.completion_from_assistant,
             self.messages,
@@ -138,19 +167,10 @@ class WebRTCChatter:
         assert len(ast_txts) == 1
         ast_txt = ast_txts[0]
         logger.info(f"Got assistant response: {textwrap.shorten(ast_txt, 64)}")
-        self.__add_message(ast_txt, Role.AST)
+        return ast_txt
 
     async def __transcribe_audio(self, audio, role=Role.USR):
         logger.debug(f"Transcribing {role.value} audio: {audio}")
         transcript: str = await speech.transcribe(audio)
         logger.info(f"Transcribed {role.value} utterance: {textwrap.shorten(transcript, 64)}")
-        self.__add_message(transcript, Role.USR)
         return transcript
-
-    async def __detect_language(self, text: str):
-        """ Using the user's utterance text, determine the language they're speaking. """
-        if self.language:
-            logger.debug(f"Language already detected: {self.language}")
-            return
-        self.language = await lang.detect_language(text)
-        logger.info(f"Language detected: {self.language}")

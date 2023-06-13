@@ -20,7 +20,8 @@ def _setup_client():
         gtransclient.set(client)
         logger.info("Translation client initialized.")
 
-def get_client() -> 'Client':
+def _get_client() -> 'Client':
+    """Get the translation client."""
     _setup_client()
     return gtransclient.get()
 
@@ -29,7 +30,7 @@ async def detect_language(text: str) -> str:
     Source:
         - https://cloud.google.com/translate/docs/basic/detecting-language#translate-detect-language-multiple-python
     """
-    client = get_client()
+    client = _get_client()
     logger.debug(f"Detecting language for: {textwrap.shorten(text, 64)}")
     # NOTE using to_thread rather than TranslationAsyncClient because later has much more complicated syntax
     result = await asyncio.to_thread(

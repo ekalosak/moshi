@@ -21,9 +21,12 @@ async def test_get_voice(langcode):
 async def test_speech_synthesis():
     await gcloud.authenticate()
     text = "Hello World"
-    audio_frame = await speech.synthesize_speech(text, 'en_US')
+    langcode = 'en_US'
+    voice = await speech.get_voice(langcode, 'FEMALE')
+    print(f"type(voice): {type(voice)}")
+    audio_frame = await speech.synthesize_speech(text, langcode, voice)
     assert isinstance(audio_frame, AudioFrame)
-    assert .2 < audio.get_(audio_frame) < 1.2
+    assert .2 < audio.get_frame_seconds(audio_frame) < 1.2
 
 @pytest.mark.asyncio
 @pytest.mark.openai

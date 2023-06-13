@@ -17,18 +17,34 @@ logger.info(f"Using transcription model: {OPENAI_TRANSCRIPTION_MODEL}")
 
 gttsclient = contextvars.ContextVar('gttsclient')
 
-def setup_client() -> None:
+def _setup_client() -> None:
     try:
         gttsclient.get()
         logger.debug("Text to speech client already exists.")
     except LookupError as e:
         logger.debug("Creating text to speech client...")
-        tts_client = texttospeech.TextToSpeechAsyncClient()
+        client = texttospeech.TextToSpeechAsyncClient()
+        gttsclient.set(client)
         logger.success("Loaded!")
 
 def get_client() -> 'Client':
-    setup_client()
+    _setup_client()
     return gttsclient.get()
+
+async def get_voice(language: str, gender="FEMALE", model="Standard") -> str:
+    """Get a valid voice for the language. Just picks the first match.
+    Source:
+        - https://cloud.google.com/text-to-speech/pricing for list of valid voice model classes
+    """
+    client = get_client()
+    response = await client.list_voices(language_code=language)
+    voices = response.voices
+    logger.debug(f"Language {language} has {len(voices)} supported voices.")
+    for voice in voices:
+        if model in voice.name and gender in str(voice.ssml_gender):
+            return voice
+    raise ValueError(f"Voice not found for language={language}, gender={gender}, model={model}")
+
 
 async def synthesize_speech(text: str, language: 'Language', rate: int=24000) -> bytes:
     """ Synthesize speech to a bytestring in WAV (PCM_16) format.

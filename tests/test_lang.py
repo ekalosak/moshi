@@ -2,16 +2,9 @@ import pytest
 
 from moshi import lang
 
-def test_setup_client():
-    lang.setup_client()
-
-@pytest.mark.asyncio
-@pytest.mark.gcloud
-@pytest.mark.parametrize('langcode', ['en_US', 'jp', 'es_MX'])
-async def test_get_voice(langcode):
-    voice = await get_voice(langcode)
-    breakpoint()
-    a=1
+def test_get_client():
+    translation_client = lang.get_client()
+    assert translation_client is not None
 
 @pytest.mark.asyncio
 @pytest.mark.gcloud
@@ -36,11 +29,14 @@ async def test_get_voice(langcode):
         ),
         pytest.param(
             "もしもし",
-            "jp",
+            "ja",
             id="Japanese",
         ),
     ]
 )
 async def test_detect_language(sentence, langcode):
+    print(f"sentence={sentence}")
+    print(f"langcode={langcode}")
     detlang = await lang.detect_language(sentence)
+    print(f"detlang={detlang}")
     assert detlang.startswith(langcode)

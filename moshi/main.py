@@ -120,8 +120,8 @@ async def on_startup(app):
     await gcloud.authenticate()
     logger.info(f"Authenticated to Google Cloud.")
     logger.debug("Creating API clients...")
-    lang.setup_client()
-    speech.setup_client()
+    lang._setup_client()
+    speech._setup_client()
     logger.info("API clients created.")
     logger.success("Set up!")
 

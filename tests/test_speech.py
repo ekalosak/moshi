@@ -9,11 +9,20 @@ from moshi import audio, gcloud, speech
 
 @pytest.mark.asyncio
 @pytest.mark.gcloud
+@pytest.mark.parametrize('langcode', ['en_US', 'ja', 'es_MX'])
+async def test_get_voice(langcode):
+    voice = await speech.get_voice(langcode, 'MALE')
+    assert voice is not None
+    assert 'Standard' in voice.name, "Use 'Standard' as default or $$$^^^"
+    assert 'MALE' in str(voice.ssml_gender), "Failed to get the correct gendered voice"
+
+@pytest.mark.asyncio
+@pytest.mark.gcloud
 async def test_speech_synthesis():
     await gcloud.authenticate()
     _, fp = tempfile.mkstemp(suffix='.wav')
     text = "Hello World"
-    bytestring = await speech.synthesize_text(text)
+    bytestring = await speech.synthesize_speech(text, 'en_US')
     audio.save_bytes_to_wav_file(fp, bytestring)
     print(f"Synthesized '{text}' to {fp}")
 

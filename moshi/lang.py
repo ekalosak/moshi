@@ -5,17 +5,17 @@ import textwrap
 from google.cloud import translate_v2 as translate
 from loguru import logger
 
-logger.success("Loaded!")
-
 gtransclient = contextvars.ContextVar("gtransclient")
+
+logger.success("Loaded!")
 
 def _setup_client():
     """Set the gtransclient ContextVar."""
     try:
         gtransclient.get()
-        logger.debug("gtransclient already exists")
+        logger.debug("Translation client already exists.")
     except LookupError:
-        logger.debug("Creating translation client")
+        logger.debug("Creating translation client...")
         client = translate.Client()
         gtransclient.set(client)
         logger.info("Translation client initialized.")

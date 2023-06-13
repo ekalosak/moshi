@@ -20,11 +20,10 @@ async def test_get_voice(langcode):
 @pytest.mark.gcloud
 async def test_speech_synthesis():
     await gcloud.authenticate()
-    _, fp = tempfile.mkstemp(suffix='.wav')
     text = "Hello World"
-    bytestring = await speech.synthesize_speech(text, 'en_US')
-    audio.save_bytes_to_wav_file(fp, bytestring)
-    print(f"Synthesized '{text}' to {fp}")
+    audio_frame = await speech.synthesize_speech(text, 'en_US')
+    assert isinstance(audio_frame, AudioFrame)
+    assert .2 < audio.get_(audio_frame) < 1.2
 
 @pytest.mark.asyncio
 @pytest.mark.openai

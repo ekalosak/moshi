@@ -98,7 +98,7 @@ class WebRTCChatter:
         usr_text: str = await self.__transcribe_audio(usr_audio)
         await self.__detect_language(usr_text)
         await self.__get_response()
-        ast_audio = self.__synth_speech()
+        ast_audio = await self.__synth_speech()
         await self.responder.send_utterance(ast_audio)
 
     def set_transcript_channel(self, channel):
@@ -120,11 +120,11 @@ class WebRTCChatter:
         logger.debug(f"Adding message: {msg}")
         self.messages.append(msg)
 
-    def __synth_speech(self) -> AudioFrame:
+    async def __synth_speech(self) -> AudioFrame:
         msg = self.messages[-1]
         logger.debug(f"Synthesizing to speech: {msg}")
         assert msg.role == Role.AST
-        frame = speech.synthesize_language(msg.content, self.language)
+        frame = await speech.synthesize_speech(msg.content, self.language)
         logger.info(f"Speech synthesized: {frame}")
         return frame
 
@@ -152,8 +152,5 @@ class WebRTCChatter:
         if self.language:
             logger.debug(f"Language already detected: {self.language}")
             return
-        self.language = await asyncio.to_thread(
-            lang.recognize_language,
-            text,
-        )
+        self.language = await lang.detect_language(text)
         logger.info(f"Language detected: {self.language}")

@@ -72,6 +72,10 @@ def write_audio_frame_to_wav(frame: AudioFrame, output_file):
             container.mux(packet)
     logger.debug(f"Wrote audio in WAV (pcm_s16le) format to {output_file}")
 
+def write_bytes_to_wav_file(filename: str, bytestring: bytes):
+    with open(filename, "wb") as f:
+        f.write(bytestring)
+
 def load_wav_to_buffer(fp: str) -> AudioFifo:
     with av.open(fp, 'r') as container:
         fifo = AudioFifo()
@@ -84,6 +88,7 @@ def load_wav_to_audio_frame(fp: str) -> AudioFrame:
     res = make_resampler()
     return res.resample(frame)[0]
 
-def save_bytes_to_wav_file(filename: str, bytestring: bytes):
-    with open(filename, "wb") as f:
-        f.write(bytestring)
+def wav_bytes_to_audio_frame(wav: bytes) -> AudioFrame:
+    _, fp = tempfile.mkstemp()
+    write_bytes_to_wav_file(fp, wav)
+    return load_wav_to_audio_frame(fp)

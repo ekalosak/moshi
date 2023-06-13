@@ -6,7 +6,7 @@ from av import AudioResampler
 import pytest
 from scipy import signal
 
-from moshi import audio, Message, Role, WebRTCChatter, SAMPLE_RATE, AUDIO_FORMAT, AUDIO_LAYOUT
+from moshi import audio, Message, Model, Role, WebRTCChatter, SAMPLE_RATE, AUDIO_FORMAT, AUDIO_LAYOUT
 
 def test_chatter_init():
     chatter = WebRTCChatter()
@@ -87,9 +87,10 @@ async def test_chatter_aiortc_components(utterance_audio_track, short_audio_fram
 @pytest.mark.slow
 @pytest.mark.asyncio
 @pytest.mark.openai
+@mock.patch('moshi.think.OPENAI_COMPLETION_MODEL', Model.TEXTADA001)
 async def test_chatter_happy_path(utterance_audio_track, Sink):
     """ Check the full integration. """
-    timeout = 20.
+    timeout = 30.
     chatter = WebRTCChatter()
     chatter.detector.setTrack(utterance_audio_track)
     sink = Sink(chatter.responder.audio)

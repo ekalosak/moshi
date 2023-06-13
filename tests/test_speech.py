@@ -24,7 +24,7 @@ async def test_speech_synthesis():
     langcode = 'en_US'
     voice = await speech.get_voice(langcode, 'FEMALE')
     print(f"type(voice): {type(voice)}")
-    audio_frame = await speech.synthesize_speech(text, langcode, voice)
+    audio_frame = await speech.synthesize_speech(text, voice)
     assert isinstance(audio_frame, AudioFrame)
     assert .2 < audio.get_frame_seconds(audio_frame) < 1.2
 
@@ -45,9 +45,11 @@ async def test_complementary_synthesis_and_transcription():
     await gcloud.authenticate()
     _, fp = tempfile.mkstemp(suffix='.wav')
     text = "Hello World"
+    langcode = 'en'
+    voice = await speech.get_voice(langcode, 'MALE')
     bytestring = await speech.synthesize_speech(
         text=text,
-        language='en_US'
+        voice=voice,
     )
     assert isinstance(transcript, bytes)
     audio.save_bytes_to_wav_file(fp, bytestring)

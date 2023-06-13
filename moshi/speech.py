@@ -7,6 +7,7 @@ import textwrap
 import av
 from av import AudioFrame, AudioFifo
 from google.cloud import texttospeech
+from google.cloud.texttospeech import Voice
 import openai
 from loguru import logger
 
@@ -14,6 +15,8 @@ from moshi import audio, gcloud
 
 GOOGLE_SPEECH_SYNTHESIS_TIMEOUT = int(os.getenv("GOOGLE_SPEECH_SYNTHESIS_TIMEOUT", 3))
 logger.info(f"Using speech synth timeout: {GOOGLE_SPEECH_SYNTHESIS_TIMEOUT}")
+GOOGLE_LANGUAGE_DETECTION_TIMEOUT = int(os.getenv("GOOGLE_LANGUAGE_DETECTION_TIMEOUT", 3))
+logger.info(f"Using language detection timeout: {GOOGLE_LANGUAGE_DETECTION_TIMEOUT}")
 OPENAI_TRANSCRIPTION_MODEL = os.getenv("OPENAI_TRANSCRIPTION_MODEL", "whisper-1")
 logger.info(f"Using transcription model: {OPENAI_TRANSCRIPTION_MODEL}")
 
@@ -27,7 +30,7 @@ def _setup_client() -> None:
         logger.debug("Text to speech client already exists.")
     except LookupError as e:
         logger.debug("Creating text to speech client...")
-        client = texttospeech.TextToSpeechClient()
+        client = texttospeech.TextToSpeechAsyncClient()
         gttsclient.set(client)
         logger.info("Translation client initialized.")
 
@@ -42,8 +45,8 @@ async def get_voice(langcode: str, gender="FEMALE", model="Standard") -> str:
         - https://cloud.google.com/text-to-speech/pricing for list of valid voice model classes
     """
     client = _get_client()
-    awaitable = asyncio.to_thread(client.list_voices, language_code=langcode)
-    response = await asyncio.wait_for(awaitable, timeout=GOOGLE_SPEECH_SYNTHESIS_TIMEOUT)
+    awaitable = client.list_voices(language_code=langcode)
+    response = await asyncio.wait_for(awaitable, timeout=GOOGLE_LANGUAGE_DETECTION_TIMEOUT)
     voices = response.voices
     logger.debug(f"Language {langcode} has {len(voices)} supported voices.")
     for voice in voices:
@@ -51,7 +54,7 @@ async def get_voice(langcode: str, gender="FEMALE", model="Standard") -> str:
             return voice
     raise ValueError(f"Voice not found for langcode={langcode}, gender={gender}, model={model}")
 
-async def _synthesize_speech_bytes(text: str, language: 'Language', voice: 'Voice', rate: int=24000) -> bytes:
+async def _synthesize_speech_bytes(text: str, voice: Voice, rate: int=24000) -> bytes:
     """ Synthesize speech to a bytestring in WAV (PCM_16) format.
     Implemented with texttospeech.googleapis.com;
     """
@@ -60,29 +63,27 @@ async def _synthesize_speech_bytes(text: str, language: 'Language', voice: 'Voic
         audio_encoding=texttospeech.AudioEncoding.LINEAR16,  # NOTE fixed s16 format
         sample_rate_hertz=rate,
     )
-    logger.debug(f"Requesting speech synthesis: synthesis_input={synthesis_input}, voice={voice}, audio_config={audio_config}")
+    langcode = voice.language_codes[0]
+    logger.debug(f"Extracted language code from voice: {langcode}")
+    voice_selector = texttospeech.VoiceSelectionParams(
+        name=voice.name,
+        language_code=langcode,
+        ssml_gender=voice.ssml_gender,
+    )
+    logger.debug(f"Requesting speech synthesis: synthesis_input={synthesis_input}, voice_selector={voice_selector}, audio_config={audio_config}")
     client = _get_client()
     request = dict(
         input=synthesis_input,
-        voice=voice,
+        voice=voice_selector,
         audio_config=audio_config,
     )
-    awaitables = [client.synthesize_speech(request)]
-    done, pending = await asyncio.wait(awaitables, timeout=GOOGLE_SPEECH_SYNTHESIS_TIMEOUT)
-    if pending:
-        task = pending.pop()
-        logger.debug(f"Cancelling speech synthesis task: {task}")
-        task.cancel()
-        raise TimeoutError("Timed out after {GOOGLE_SPEECH_SYNTHESIS_TIMEOUT} seconds waiting for speech synthesis.")
-    if done:
-        task = done.pop()
-        if e := task.exception():
-            raise e
-    logger.debug(f"Got response from texttospeech.synthesize_speech: {response.audio_content[:32]}")
+    awaitable = client.synthesize_speech(request=request)
+    response = await asyncio.wait_for(awaitable, timeout=GOOGLE_SPEECH_SYNTHESIS_TIMEOUT)
+    logger.debug(f"Got response from texttospeech.synthesize_speech: {textwrap.shorten(str(response.audio_content), 32)}")
     return response.audio_content
 
-async def synthesize_speech(text: str, language: 'Language', voice: 'Voice', rate: int=24000) -> AudioFrame:
-    audio_bytes = await _synthesize_speech_bytes(text, language, voice, rate)
+async def synthesize_speech(text: str, voice: Voice, rate: int=24000) -> AudioFrame:
+    audio_bytes = await _synthesize_speech_bytes(text, voice, rate)
     assert isinstance(audio_bytes, bytes)
     audio_frame = audio.wav_bytes_to_audio_frame(audio_bytes)
     assert isinstance(audio_frame, AudioFrame)

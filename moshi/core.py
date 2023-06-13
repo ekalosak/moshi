@@ -149,7 +149,7 @@ class WebRTCChatter:
         msg = self.messages[-1]
         logger.debug(f"Synthesizing to speech: {msg}")
         assert msg.role == Role.AST
-        frame = await speech.synthesize_speech(msg.content, self.language, self.voice)
+        frame = await speech.synthesize_speech(msg.content, self.voice)
         logger.info(f"Speech synthesized: {frame}")
         assert isinstance(frame, AudioFrame)
         return frame

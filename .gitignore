@@ -1,5 +1,6 @@
 build/
 logs/
+secret/
 *.egg-info/
 *.pyc
 *node_modules/

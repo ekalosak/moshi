@@ -17,7 +17,17 @@ from moshi import core, gcloud, lang, speech, util
 ROOT = os.path.dirname(__file__)
 pcs = set()  # peer connections
 
-async def handle_login(request):
+async def login(request):
+    """HTTP GET endpoint for login.html"""
+    logger.info(request)
+    content = open(os.path.join(ROOT, "web/resources/login.html"), "r").read()
+    return web.Response(content_type="text/html", text=content)
+
+async def login_callback(request):
+    """HTTP POST endpoint for handling Google OAuth 2.0 callback i.e. after user logs in.
+    Sets up the user session, then redirects to main page.
+    """
+    logger.info(request)
     token = request.query.get('token')  # Retrieve the Google ID token from the query parameters
     try:
         id_info = id_token.verify_oauth2_token(token, requests.Request())
@@ -26,21 +36,13 @@ async def handle_login(request):
         # Generate a session token and store it in the session storage
         session = await get_session(request)
         session['user_id'] = id_info['sub']  # Store the user ID in the session
+        # TODO redirect to moshi
         return web.json_response({'message': 'Authentication successful'})
     except ValueError:
         return web.json_response({'message': 'Authentication failed'})
 
-async def login(request):
-    """HTTP endpoint for login.html"""
-    # TODO move to "/"
-    # TODO redirect logged in users
-    logger.info(request)
-    content = open(os.path.join(ROOT, "web/resources/login.html"), "r").read()
-    return web.Response(content_type="text/html", text=content)
-
 async def index(request):
     """HTTP endpoint for index.html"""
-    # TODO move from "/" to the "/m/unstructured" endpoint
     logger.info(request)
     content = open(os.path.join(ROOT, "web/resources/index.html"), "r").read()
     return web.Response(content_type="text/html", text=content)
@@ -181,10 +183,13 @@ if __name__ == "__main__":
         ssl_context = None
 
     app = web.Application()
+    secret_key = os.urandom(32)
+    aiohttp_session.setup(app, EncryptedCookieStorage(secret_key))
     app.on_shutdown.append(on_shutdown)
     app.on_startup.append(on_startup)
     app.router.add_get("/", index)
     app.router.add_get("/login", login)
+    app.router.add_post("/login/callback", login_callback)
     app.router.add_get("/favicon.ico", favicon)
     app.router.add_get("/client.js", javascript)
     app.router.add_get("/style.css", css)

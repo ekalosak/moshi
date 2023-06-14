@@ -7,7 +7,6 @@ import pyfiglet
 from loguru import logger
 from loguru._defaults import LOGURU_FORMAT
 
-
 def _setup_loguru():
     LOG_FORMAT = LOGURU_FORMAT + " | <g><d>{extra}</d></g>"
     logger.remove()
@@ -15,10 +14,6 @@ def _setup_loguru():
     logger.add("logs/server.log", rotation="10 MB")
     logger.level("INSTRUCTION", no=38, color="<light-yellow><bold>")
     logger.level("SPLASH", no=39, color="<light-magenta><bold>")
-
-
-_setup_loguru()
-
 
 def async_with_pcid(f):
     """Decorator for contextualizing the logger with a PeerConnection uid."""

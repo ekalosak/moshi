@@ -33,7 +33,7 @@ def _setup_client() -> None:
         logger.debug("Creating text to speech client...")
         client = texttospeech.TextToSpeechAsyncClient()
         gttsclient.set(client)
-        logger.info("Translation client initialized.")
+        logger.info("Text to speech client initialized.")
 
 
 def _get_client() -> "Client":

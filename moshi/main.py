@@ -1,8 +1,10 @@
 import argparse
 import asyncio
+# import contextvars
 import json
 import os
 import ssl
+import urllib.parse
 
 from aiohttp import web
 import aiohttp_session
@@ -12,16 +14,36 @@ from google.oauth2 import id_token
 from google.auth.transport import requests
 from loguru import logger
 
-from moshi import core, gcloud, lang, speech, util
+from moshi import core, gcloud, lang, speech, util, AuthenticationError
+# from moshi.auth import allowed_users
 
 ROOT = os.path.dirname(__file__)
+ALLOWED_ISS = ['accounts.google.com', 'https://accounts.google.com']
+logger.info(f"Using ALLOWED_ISS={ALLOWED_ISS}")
+
+# Setup allowed users
+# allowed_users = contextvars.ContextVar("allowed_users")
+with open('secret/user-whitelist.csv', 'r') as f:
+    whitelisted_emails = f.readlines()
+whitelisted_emails = [em.strip() for em in whitelisted_emails]
+# allowed_users.set(_allowed_users)
+logger.info(f"Allowed users: {whitelisted_emails}")
+
 pcs = set()  # peer connections
 
+# Define HTTP endpoints
 async def login(request):
     """HTTP GET endpoint for login.html"""
     logger.info(request)
     content = open(os.path.join(ROOT, "web/resources/login.html"), "r").read()
     return web.Response(content_type="text/html", text=content)
+
+def _handle_auth_error(e: AuthenticationError):
+    """Raise the AuthenticationError to the user, redirecting them to the login page."""
+    err_str = str(e)
+    logger.debug(f"Presenting err_str to user: {err_str}")
+    err_str = urllib.parse.quote(err_str)
+    raise web.HTTPFound(f"/login?error={err_str}")
 
 async def login_callback(request):
     """HTTP POST endpoint for handling Google OAuth 2.0 callback i.e. after user logs in.
@@ -32,18 +54,43 @@ async def login_callback(request):
     token = data['credential']
     try:
         id_info = id_token.verify_oauth2_token(token, requests.Request())
-        if id_info['iss'] not in ['accounts.google.com', 'https://accounts.google.com']:
-            raise ValueError('Invalid token')
-        # Generate a session token and store it in the session storage
+        if id_info['iss'] not in ALLOWED_ISS:
+            raise AuthenticationError('Authentication failed')
         session = await aiohttp_session.get_session(request)
+        user_email = id_info['email']
+        logger.debug(f'user_email={user_email}')
+        if user_email not in whitelisted_emails:
+            raise AuthenticationError('Unrecognized user')
         session['user_id'] = id_info['sub']  # Store the user ID in the session
-        # TODO redirect to moshi
-        logger.debug("Authentication successful")
+        session['user_given_name'] = id_info['given_name']
+        session['user_email'] = id_info['email']
+        # TODO make sure the user email is verified id_info['email_verified']
+        # TODO require session['logged_in'] for all other pages
+        logger.debug(f"Authentication successful for user: {user_email}")
         raise web.HTTPFound('/')
-    except ValueError:
-        logger.debug("Authentication failed")
-        raise web.HTTPFound('/login')
+    except AuthenticationError as e:
+        logger.error(f"Authentication failed: {e}")
+        _handle_auth_error(e)
 
+def require_authentication(http_endpoint_handler):
+    """Decorate an HTTP endpoint so it requires auth."""
+    async def wrapped_handler(request):
+        session = await aiohttp_session.get_session(request)
+        user_email = session.get('user_email')
+        logger.debug(f"Checking authentication for user_email: {user_email}")
+        try:
+            if user_email not in whitelisted_emails:
+                if user_email is None:
+                    raise AuthenticationError("Please login")
+                else:
+                    raise AuthenticationError(f"Unrecognized user: {user_email}")
+        except AuthenticationError as e:
+            _handle_auth_error(e)
+        return await handler(request)
+    return wrapped_handler
+
+
+@require_authentication
 async def index(request):
     """HTTP endpoint for index.html"""
     logger.info(request)
@@ -63,12 +110,14 @@ async def css(request):
     return web.Response(content_type="text/css", text=content)
 
 
+@require_authentication
 async def javascript(request):
     """HTTP endpoint for client.js"""
     content = open(os.path.join(ROOT, "web/resources/client.js"), "r").read()
     return web.Response(content_type="application/javascript", text=content)
 
 
+# Create WebRTC handler
 @util.async_with_pcid
 async def offer(request):
     """In WebRTC, there's an initial offer->answer exchange that negotiates the connection parameters.
@@ -155,8 +204,9 @@ async def on_shutdown(app):
 @logger.catch
 async def on_startup(app):
     """Setup the state monad."""
-    logger.debug("Setting up logging and error handler...")
+    logger.debug("Setting up error handler...")
     asyncio.get_event_loop().set_exception_handler(util.aio_exception_handler)
+    logger.info("Error handler set up.")
     logger.debug("Authenticating to Google Cloud...")
     await gcloud.authenticate()
     logger.info(f"Authenticated to Google Cloud.")
@@ -164,6 +214,9 @@ async def on_startup(app):
     lang._setup_client()  # doing this here to avoid waiting when first request happens
     speech._setup_client()
     logger.info("API clients created.")
+    logger.debug("Setting up logger...")
+    util._setup_loguru()
+    logger.info("Logger set up.")
     logger.success("Set up!")
 
 

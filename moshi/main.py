@@ -8,8 +8,8 @@ from aiohttp import web
 import aiohttp_session
 from aiohttp_session.cookie_storage import EncryptedCookieStorage
 from aiortc import RTCPeerConnection, RTCSessionDescription
-from google import oauth2
-from google.auth import transport
+from google.oauth2 import id_token
+from google.auth.transport import requests
 from loguru import logger
 
 from moshi import core, gcloud, lang, speech, util
@@ -28,13 +28,14 @@ async def login_callback(request):
     Sets up the user session, then redirects to main page.
     """
     logger.info(request)
-    token = request.query.get('token')  # Retrieve the Google ID token from the query parameters
+    data = await request.post()
+    token = data['credential']
     try:
         id_info = id_token.verify_oauth2_token(token, requests.Request())
         if id_info['iss'] not in ['accounts.google.com', 'https://accounts.google.com']:
             raise ValueError('Invalid token')
         # Generate a session token and store it in the session storage
-        session = await get_session(request)
+        session = await aiohttp_session.get_session(request)
         session['user_id'] = id_info['sub']  # Store the user ID in the session
         # TODO redirect to moshi
         return web.json_response({'message': 'Authentication successful'})
@@ -189,7 +190,7 @@ if __name__ == "__main__":
     app.on_startup.append(on_startup)
     app.router.add_get("/", index)
     app.router.add_get("/login", login)
-    app.router.add_post("/login/callback", login_callback)
+    app.router.add_post("/login", login_callback)
     app.router.add_get("/favicon.ico", favicon)
     app.router.add_get("/client.js", javascript)
     app.router.add_get("/style.css", css)

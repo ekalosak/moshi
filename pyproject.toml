@@ -25,6 +25,7 @@ dependencies = [
   "google-auth",
   "google-cloud-translate",
   "google-cloud-texttospeech",
+  "jinja2",
   "loguru",
   "numpy",
   "openai",

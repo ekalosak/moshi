@@ -1,6 +1,5 @@
 import argparse
 import asyncio
-# import contextvars
 import json
 import os
 import ssl
@@ -12,31 +11,40 @@ from aiohttp_session.cookie_storage import EncryptedCookieStorage
 from aiortc import RTCPeerConnection, RTCSessionDescription
 from google.oauth2 import id_token
 from google.auth.transport import requests
+import jinja2
 from loguru import logger
 
 from moshi import core, gcloud, lang, speech, util, AuthenticationError
-# from moshi.auth import allowed_users
 
+# Setup constants
 ROOT = os.path.dirname(__file__)
 ALLOWED_ISS = ['accounts.google.com', 'https://accounts.google.com']
-logger.info(f"Using ALLOWED_ISS={ALLOWED_ISS}")
+logger.info(f"Using constants:\n\tROOT={ROOT}\n\tALLOWED_ISS={ALLOWED_ISS}")
 
 # Setup allowed users
-# allowed_users = contextvars.ContextVar("allowed_users")
 with open('secret/user-whitelist.csv', 'r') as f:
     whitelisted_emails = f.readlines()
 whitelisted_emails = [em.strip() for em in whitelisted_emails]
-# allowed_users.set(_allowed_users)
-logger.info(f"Allowed users: {whitelisted_emails}")
+_email_string = f"\n\t".join(whitelisted_emails)
+logger.info(f"Allowed users:\n\t{_email_string}")
 
-pcs = set()  # peer connections
+# Setup global objects
+pcs = set()
+env = jinja2.Environment(
+    loader=jinja2.FileSystemLoader(ROOT + '/web'),
+    autoescape=jinja2.select_autoescape(['html', 'xml']),
+)
+logger.info("Setup peer connection tracker and html templating engine.")
 
 # Define HTTP endpoints
 async def login(request):
     """HTTP GET endpoint for login.html"""
     logger.info(request)
-    content = open(os.path.join(ROOT, "web/resources/login.html"), "r").read()
-    return web.Response(content_type="text/html", text=content)
+    error_message = request.query.get('error', '')
+    template = env.get_template('login.html')
+    html = template.render(error=error_message)
+    return web.Response(text=html, content_type='text/html')
+
 
 def _handle_auth_error(e: AuthenticationError):
     """Raise the AuthenticationError to the user, redirecting them to the login page."""
@@ -94,26 +102,26 @@ def require_authentication(http_endpoint_handler):
 async def index(request):
     """HTTP endpoint for index.html"""
     logger.info(request)
-    content = open(os.path.join(ROOT, "web/resources/index.html"), "r").read()
+    content = open(os.path.join(ROOT, "web/index.html"), "r").read()
     return web.Response(content_type="text/html", text=content)
 
 
 async def favicon(request):
     """HTTP endpoint for the favicon"""
-    fp = os.path.join(ROOT, "web/resources/favicon.ico")
+    fp = os.path.join(ROOT, "web/favicon.ico")
     return web.FileResponse(fp)
 
 
 async def css(request):
     """HTTP endpoint for style.css"""
-    content = open(os.path.join(ROOT, "web/resources/style.css"), "r").read()
+    content = open(os.path.join(ROOT, "web/style.css"), "r").read()
     return web.Response(content_type="text/css", text=content)
 
 
 @require_authentication
 async def javascript(request):
     """HTTP endpoint for client.js"""
-    content = open(os.path.join(ROOT, "web/resources/client.js"), "r").read()
+    content = open(os.path.join(ROOT, "web/client.js"), "r").read()
     return web.Response(content_type="application/javascript", text=content)
 
 

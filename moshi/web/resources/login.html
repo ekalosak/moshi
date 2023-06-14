@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>~ Moshi ~</title>
+  <link rel="stylesheet" href="/style.css">
+  <style>
+    .login-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .login-button {
+      width: 30%;
+      margin: 0 auto;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="top-container">
+    <h1>Moshi</h1>
+    <p>Moshi is a language speaking tutor.</p>
+    <img src="/favicon.ico" alt="Moshi" style="width: 32px;" id="moshiIcon" class="dancing-image">
+  </div>
+
+  <div id="login" class="main-container">
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <div id="login-container">
+      <div id="g_id_onload"
+         data-client_id="YOUR_GOOGLE_CLIENT_ID"
+         data-login_uri="https://your.domain/your_login_endpoint"
+         data-auto_prompt="false">
+      </div>
+      <div class="g_id_signin login-button"
+         data-type="standard"
+         data-size="large"
+         data-theme="filled_black"
+         data-text="sign_in_with"
+         data-shape="rectangular"
+         data-logo_alignment="left">
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>

@@ -20,7 +20,9 @@ classifiers = [
 ]
 dependencies = [
   "aiortc",
+  "aiohttp_session",
   "av",
+  "google-auth",
   "google-cloud-translate",
   "google-cloud-texttospeech",
   "loguru",

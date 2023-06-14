@@ -38,9 +38,11 @@ async def login_callback(request):
         session = await aiohttp_session.get_session(request)
         session['user_id'] = id_info['sub']  # Store the user ID in the session
         # TODO redirect to moshi
-        return web.json_response({'message': 'Authentication successful'})
+        logger.debug("Authentication successful")
+        raise web.HTTPFound('/')
     except ValueError:
-        return web.json_response({'message': 'Authentication failed'})
+        logger.debug("Authentication failed")
+        raise web.HTTPFound('/login')
 
 async def index(request):
     """HTTP endpoint for index.html"""

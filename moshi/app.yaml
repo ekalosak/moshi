@@ -7,6 +7,4 @@
 runtime: python310
 handlers:
   - url: /static
-    static_dir: moshi/web/static
-  - url: /.*
-    script: auto
+    static_dir: web/static

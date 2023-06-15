@@ -36,7 +36,7 @@ env = jinja2.Environment(
 )
 logger.info("Setup peer connection tracker and html templating engine.")
 
-# Define HTTP endpoints
+# Define HTTP endpoints and tooling for authentication
 async def login(request):
     """HTTP GET endpoint for login.html"""
     logger.info(request)
@@ -44,7 +44,6 @@ async def login(request):
     template = env.get_template('login.html')
     html = template.render(error=error_message)
     return web.Response(text=html, content_type='text/html')
-
 
 def _handle_auth_error(e: AuthenticationError):
     """Raise the AuthenticationError to the user, redirecting them to the login page."""
@@ -85,27 +84,21 @@ def require_authentication(http_endpoint_handler):
     """Decorate an HTTP endpoint so it requires auth."""
     async def auth_wrapper(request):
         logger.debug(f"Checking authentication for page '{request.path}'")
-        # breakpoint()
         request = util.remove_non_session_cookies(request, COOKIE_NAME)  # NOTE because google's cookie is unparsable by http.cookies
         session = await get_session(request)
         user_email = session.get('user_email')
         logger.debug(f"Checking authentication for user_email: {user_email}")
-        print(f"request.headers:")
-        for k, v in request.headers.items():
-            print(f"\t{k}: {v}")
-        print(f"session: {session}")
         try:
+            if user_email is None:
+                raise web.HTTPFound(f"/login")
             if user_email not in whitelisted_emails:
-                if user_email is None:
-                    raise web.HTTPFound(f"/login")
-                else:
-                    raise AuthenticationError(f"Unrecognized user: {user_email}")
+                raise AuthenticationError(f"Unrecognized user: {user_email}")
         except AuthenticationError as e:
             _handle_auth_error(e)
         return await http_endpoint_handler(request)
     return auth_wrapper
 
-
+# Define application HTTP endpoints
 @require_authentication
 async def index(request):
     """HTTP endpoint for index.html"""
@@ -113,7 +106,7 @@ async def index(request):
     content = open(os.path.join(ROOT, "web/index.html"), "r").read()
     return web.Response(content_type="text/html", text=content)
 
-
+# Define resource HTTP endpoints
 async def favicon(request):
     """HTTP endpoint for the favicon"""
     fp = os.path.join(ROOT, "web/favicon.ico")
@@ -238,6 +231,7 @@ async def on_startup(app):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Moshi web app")
+    # TODO add an arg --debug that makes SimpleCookieStorage
     parser.add_argument("--cert-file", help="SSL certificate file (for HTTPS)")
     parser.add_argument("--key-file", help="SSL key file (for HTTPS)")
     parser.add_argument(
@@ -255,10 +249,10 @@ if __name__ == "__main__":
         ssl_context = None
 
     app = web.Application()
-    # TODO use a secret key in ./secret/ so subsequent server invocations don't invalidate usr cookies
-    # secret_key = os.urandom(32)
-    # cookie_storage = EncryptedCookieStorage()
-    cookie_storage = SimpleCookieStorage(cookie_name=COOKIE_NAME)
+    with open('secret/cookie_encryption_secret_32', 'rb') as f:
+        secret_key = f.read()
+    cookie_storage = EncryptedCookieStorage(secret_key, cookie_name=COOKIE_NAME)
+    # cookie_storage = SimpleCookieStorage(cookie_name=COOKIE_NAME)
     session_setup(app, cookie_storage)
     logger.warning("Using insecure cookie storage")
     app.on_shutdown.append(on_shutdown)

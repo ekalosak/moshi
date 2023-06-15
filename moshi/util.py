@@ -38,6 +38,7 @@ def splash(text: str):
         "\n" + pyfiglet.Figlet(font="roman").renderText(text),
     )
 
+# TODO needs testing obv v
 def remove_non_session_cookies(req: 'aiohttp.web_request.Request', session_name: str) -> 'aiohttp.web_request.Request':
     """Because Python's http.cookie.SimpleCookie parsing craps out when it hits an invalid component, see
     notes/issues/http-headers for the whole saga, this function removes all but the session cookie from a request."""

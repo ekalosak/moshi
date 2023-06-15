@@ -12,11 +12,12 @@ from aiortc.mediastreams import MediaStreamError
 from av import AudioFifo, AudioFrame, AudioResampler
 from loguru import logger
 
-from moshi import AUDIO_FORMAT, AUDIO_LAYOUT, SAMPLE_RATE
+from moshi import AUDIO_FORMAT, AUDIO_LAYOUT, SAMPLE_RATE, util
 
 RESOURCEDIR = Path(__file__).parent / "resources"
 logging.getLogger("asyncio").setLevel(logging.CRITICAL)
 
+util._setup_loguru()
 
 @pytest.fixture(autouse=True)
 def _print_blank_line():

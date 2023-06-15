@@ -1,0 +1,133 @@
+This file contains artifacts from my investigation into why Firefox doesn't take session cookies from aiohttp.
+It turns out that the `g_state` header from Google one-tap is not parsable (https://stackoverflow.com/q/66864766).
+The code snippet below replicates the result using raw headers extracted from a modified aiohttp/web_requests.py#L574.
+
+Ultimately Google's damn cookie isn't parsable by http.cookies.SimpleCookie...
+
+Python's http.cookies lib is problematic:
+- Django rewrote parse headers: https://github.com/django/django/commit/93a135d111c2569d88d65a3f4ad9e6d9ad291452
+  - https://github.com/django/django/pull/6277
+- https://bugs.python.org/issue27674
+- https://bugs.python.org/issue25228
+- https://bugs.python.org/issue41945
+- https://bugs.python.org/issue31456
+
+This one is _exactly_ what happened to me:
+- https://bugs.python.org/issue17340
+
+```python
+from http.cookies import SimpleCookie
+
+ffx = 'g_state={"i_l":0}; g_csrf_token=397d85fedc4b26b9; MOSHI-001="{\\"created\\": 1686788627\\054 \\"session\\": {\\"user_id\\": \\"107351735327079456170\\"\\054 \\"user_given_name\\": \\"Eric\\"\\054 \\"user_email\\": \\"helloateric@gmail.com\\"}}"'
+sfi = 'MOSHI-001="{\\"created\\": 1686788761\\054 \\"session\\": {\\"user_id\\": \\"107351735327079456170\\"\\054 \\"user_given_name\\": \\"Eric\\"\\054 \\"user_email\\": \\"helloateric@gmail.com\\"}}"; g_csrf_token=1461f42980e37b1b; g_state={"i_l":0}'
+
+def parse(s):
+    print(s)
+    p = SimpleCookie(s)
+    print(p)
+
+print('---')
+parse(ffx)
+print('---')
+parse(sfi)
+
+ffx = 'MOSHI-001="{\\"created\\": 1686788627\\054 \\"session\\": {\\"user_id\\": \\"107351735327079456170\\"\\054 \\"user_given_name\\": \\"Eric\\"\\054 \\"user_email\\": \\"helloateric@gmail.com\\"}}"'
+sfi = 'MOSHI-001="{\\"created\\": 1686788761\\054 \\"session\\": {\\"user_id\\": \\"107351735327079456170\\"\\054 \\"user_given_name\\": \\"Eric\\"\\054 \\"user_email\\": \\"helloateric@gmail.com\\"}}"'
+print('---')
+parse(ffx)
+print('---')
+parse(sfi)
+
+print('---')
+ffx = 'g_state="{\\"i_l\\":0}"; g_csrf_token=397d85fedc4b26b9; MOSHI-001="{\\"created\\": 1686788627\\054 \\"session\\": {\\"user_id\\": \\"107351735327079456170\\"\\054 \\"user_given_name\\": \\"Eric\\"\\054 \\"user_email\\": \\"helloateric@gmail.com\\"}}"'
+parse(ffx)
+```
+
+--- NOTES BELOW
+
+Safari:
+'Cookie': 'MOSHI-001="{\\"created\\": 1686786180\\054 \\"session\\": {\\"user_id\\": \\"107351735327079456170\\"\\054 \\"user_given_name\\": \\"Eric\\"\\054 \\"user_email\\": \\"helloateric@gmail.com\\"}}"; g_csrf_token=58930872c3c9f3f0; g_state={"i_l":0}',
+
+Firefox:
+'Cookie': 'g_state={"i_l":0}; g_csrf_token=da74473efb1aff99; MOSHI-001="{\\"created\\": 1686786308\\054 \\"session\\": {\\"user_id\\": \\"107351735327079456170\\"\\054 \\"user_given_name\\": \\"Eric\\"\\054 \\"user_email\\": \\"helloateric@gmail.com\\"}}"',
+
+---
+MOSHI-001="{\\"created\\": 1686786180\\054 \\"session\\": {\\"user_id\\": \\"107351735327079456170\\"\\054 \\"user_given_name\\": \\"Eric\\"\\054 \\"user_email\\": \\"helloateric@gmail.com\\"}}"
+MOSHI-001="{\\"created\\": 1686786308\\054 \\"session\\": {\\"user_id\\": \\"107351735327079456170\\"\\054 \\"user_given_name\\": \\"Eric\\"\\054 \\"user_email\\": \\"helloateric@gmail.com\\"}}"'
+
+---
+FIREFOX:
+"""
+2023-06-14 20:18:33.903 | INFO     | __main__:login:42 - <Request GET /login > | {}
+2023-06-14 20:18:38.100 | INFO     | __main__:login_callback:60 - <Request POST /login > | {}
+2023-06-14 20:18:38.186 | DEBUG    | __main__:login_callback:69 - user_email=helloateric@gmail.com | {}
+2023-06-14 20:18:38.187 | DEBUG    | __main__:login_callback:78 - Authentication successful for user: helloateric@gmail.com | {}
+2023-06-14 20:18:38.191 | DEBUG    | __main__:auth_wrapper:87 - Checking authentication for page '/' | {}
+aiohttp.web_request.raw: g_state={"i_l":0}; g_csrf_token=11eb56f2edbb7ac3; MOSHI-001="{\"created\": 1686788318\054 \"session\": {\"user_id\": \"107351735327079456170\"\054 \"user_given_name\": \"Eric\"\054 \"user_email\": \"helloateric@gmail.com\"}}"
+aiohttp.web_request.parsed: 
+2023-06-14 20:18:38.191 | DEBUG    | __main__:auth_wrapper:90 - Checking authentication for user_email: None | {}
+request.headers:
+        Host: localhost:5000
+        User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:109.0) Gecko/20100101 Firefox/114.0
+        Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8
+        Accept-Language: en-US,en;q=0.5
+        Accept-Encoding: gzip, deflate, br
+        Referer: http://localhost:5000/login
+        DNT: 1
+        Connection: keep-alive
+        Cookie: g_state={"i_l":0}; g_csrf_token=11eb56f2edbb7ac3; MOSHI-001="{\"created\": 1686788318\054 \"session\": {\"user_id\": \"107351735327079456170\"\054 \"user_given_name\": \"Eric\"\054 \"user_email\": \"helloateric@gmail.com\"}}"
+        Upgrade-Insecure-Requests: 1
+        Sec-Fetch-Dest: document
+        Sec-Fetch-Mode: navigate
+        Sec-Fetch-Site: same-origin
+session: <Session [new:True, changed:False, created:1686788318] {}>
+"""
+
+SAFARI:
+"""
+2023-06-14 20:19:37.791 | INFO     | __main__:login:42 - <Request GET /login > | {}
+2023-06-14 20:19:56.261 | INFO     | __main__:login_callback:60 - <Request POST /login > | {}
+2023-06-14 20:19:56.346 | DEBUG    | __main__:login_callback:69 - user_email=helloateric@gmail.com | {}
+2023-06-14 20:19:56.346 | DEBUG    | __main__:login_callback:78 - Authentication successful for user: helloateric@gmail.com | {}
+2023-06-14 20:19:56.354 | DEBUG    | __main__:auth_wrapper:87 - Checking authentication for page '/' | {}
+aiohttp.web_request.raw: MOSHI-001="{\"created\": 1686788396\054 \"session\": {\"user_id\": \"107351735327079456170\"\054 \"user_given_name\": \"Eric\"\054 \"user_email\": \"helloateric@gmail.com\"}}"; g_csrf_token=a12433e9e9613a90; g_state={"i_l":0}
+aiohttp.web_request.parsed: Set-Cookie: MOSHI-001="{\"created\": 1686788396\054 \"session\": {\"user_id\": \"107351735327079456170\"\054 \"user_given_name\": \"Eric\"\054 \"user_email\": \"helloateric@gmail.com\"}}"
+Set-Cookie: g_csrf_token=a12433e9e9613a90
+2023-06-14 20:19:56.354 | DEBUG    | __main__:auth_wrapper:90 - Checking authentication for user_email: helloateric@gmail.com | {}
+request.headers:
+        Host: localhost:5000
+        Cookie: MOSHI-001="{\"created\": 1686788396\054 \"session\": {\"user_id\": \"107351735327079456170\"\054 \"user_given_name\": \"Eric\"\054 \"user_email\": \"helloateric@gmail.com\"}}"; g_csrf_token=a12433e9e9613a90; g_state={"i_l":0}
+        Connection: keep-alive
+        Upgrade-Insecure-Requests: 1
+        Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
+        User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.2 Safari/605.1.15
+        Referer: http://localhost:5000/login
+        Accept-Encoding: gzip, deflate
+        Accept-Language: en-US,en;q=0.9
+session: <Session [new:False, changed:False, created:1686788396] {'user_id': '107351735327079456170', 'user_given_name': 'Eric', 'user_email': 'helloateric@gmail.com'}>
+2023-06-14 20:19:56.355 | INFO     | __main__:index:110 - <Request GET / > | {}
+2023-06-14 20:19:56.406 | DEBUG    | __main__:auth_wrapper:87 - Checking authentication for page '/client.js' | {}
+aiohttp.web_request.raw: MOSHI-001="{\"created\": 1686788396\054 \"session\": {\"user_id\": \"107351735327079456170\"\054 \"user_given_name\": \"Eric\"\054 \"user_email\": \"helloateric@gmail.com\"}}"; g_csrf_token=a12433e9e9613a90; g_state={"i_l":0}
+aiohttp.web_request.parsed: Set-Cookie: MOSHI-001="{\"created\": 1686788396\054 \"session\": {\"user_id\": \"107351735327079456170\"\054 \"user_given_name\": \"Eric\"\054 \"user_email\": \"helloateric@gmail.com\"}}"
+Set-Cookie: g_csrf_token=a12433e9e9613a90
+2023-06-14 20:19:56.407 | DEBUG    | __main__:auth_wrapper:90 - Checking authentication for user_email: helloateric@gmail.com | {}
+request.headers:
+        Host: localhost:5000
+        Accept: */*
+        Connection: keep-alive
+        Cookie: MOSHI-001="{\"created\": 1686788396\054 \"session\": {\"user_id\": \"107351735327079456170\"\054 \"user_given_name\": \"Eric\"\054 \"user_email\": \"helloateric@gmail.com\"}}"; g_csrf_token=a12433e9e9613a90; g_state={"i_l":0}
+        User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.2 Safari/605.1.15
+        Accept-Language: en-US,en;q=0.9
+        Referer: http://localhost:5000/
+        Accept-Encoding: gzip, deflate
+session: <Session [new:False, changed:False, created:1686788396] {'user_id': '107351735327079456170', 'user_given_name': 'Eric', 'user_email': 'helloateric@gmail.com'}>
+"""
+
+
+
+---
+FIREFOX in aiohttp.web_response, breakpoint and show `raw`:
+'g_state={"i_l":0}; g_csrf_token=397d85fedc4b26b9; MOSHI-001="{\\"created\\": 1686788627\\054 \\"session\\": {\\"user_id\\": \\"107351735327079456170\\"\\054 \\"user_given_name\\": \\"Eric\\"\\054 \\"user_email\\": \\"helloateric@gmail.com\\"}}"'
+
+SAFARI same:
+'MOSHI-001="{\\"created\\": 1686788761\\054 \\"session\\": {\\"user_id\\": \\"107351735327079456170\\"\\054 \\"user_given_name\\": \\"Eric\\"\\054 \\"user_email\\": \\"helloateric@gmail.com\\"}}"; g_csrf_token=1461f42980e37b1b; g_state={"i_l":0}'

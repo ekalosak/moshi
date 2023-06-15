@@ -1,7 +1,10 @@
-CHANGELOG.md
-README.md
-app.yaml
-moshi
-pyproject.toml
-secret
-setup.cfg
+.DS_Store
+.git
+.gitignore
+.pyenv
+.pytest_cache
+build
+hosting
+notes
+scripts
+tests

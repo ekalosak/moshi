@@ -6,7 +6,7 @@ from google.auth import default
 from google.auth.transport.requests import Request
 from loguru import logger
 
-GOOGLE_PROJECT = "moshi-001"
+GOOGLE_PROJECT = "moshi-002"
 logger.info(f"Using Google Cloud project: {GOOGLE_PROJECT}")
 
 gcreds = contextvars.ContextVar("gcreds")

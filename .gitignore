@@ -1,6 +1,7 @@
 build/
 logs/
 secret/
+*creds.js
 *.egg-info/
 *.pyc
 *node_modules/

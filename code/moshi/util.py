@@ -2,6 +2,7 @@ import asyncio
 import functools
 from http.cookies import SimpleCookie
 import sys
+from textwrap import shorten
 import uuid
 
 import pyfiglet
@@ -51,13 +52,13 @@ def remove_non_session_cookies(req: 'aiohttp.web_request.Request', session_name:
         assert len(ck) in (0, 1)
         if session_name in ck.keys():
             session_cookie = ck
-            logger.debug(f"Found session cookie: {session_cookie}")
+            logger.debug(f"Found session cookie: {shorten(str(session_cookie), 32)}")
             break
     if session_cookie is None:
         cookie_str = ""
     else:
         cookie_str = session_cookie.output().split('Set-Cookie: ')[1]
-    logger.debug(f"Extracted session cookie string: {cookie_str}")
+    logger.debug(f"Extracted session cookie string: {shorten(str(cookie_str), 32)}")
     hdr = req.headers.copy()
     hdr['Cookie'] = cookie_str
     out = req.clone(headers=hdr)

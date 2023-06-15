@@ -41,7 +41,7 @@ async def login(request):
     """HTTP GET endpoint for login.html"""
     logger.info(request)
     error_message = request.query.get('error', '')
-    template = env.get_template('login.html')
+    template = env.get_template('templates/login.html')
     html = template.render(error=error_message)
     return web.Response(text=html, content_type='text/html')
 
@@ -90,11 +90,13 @@ def require_authentication(http_endpoint_handler):
         logger.debug(f"Checking authentication for user_email: {user_email}")
         try:
             if user_email is None:
+                logger.debug("No user_email in session cookie, user not logged in.")
                 raise web.HTTPFound(f"/login")
             if user_email not in whitelisted_emails:
                 raise AuthenticationError(f"Unrecognized user: {user_email}")
         except AuthenticationError as e:
             _handle_auth_error(e)
+        logger.debug(f"User {user_email} is authenticated!")
         return await http_endpoint_handler(request)
     return auth_wrapper
 
@@ -103,26 +105,26 @@ def require_authentication(http_endpoint_handler):
 async def index(request):
     """HTTP endpoint for index.html"""
     logger.info(request)
-    content = open(os.path.join(ROOT, "web/index.html"), "r").read()
+    content = open(os.path.join(ROOT, "web/templates/index.html"), "r").read()
     return web.Response(content_type="text/html", text=content)
 
 # Define resource HTTP endpoints
 async def favicon(request):
     """HTTP endpoint for the favicon"""
-    fp = os.path.join(ROOT, "web/favicon.ico")
+    fp = os.path.join(ROOT, "web/static/favicon.ico")
     return web.FileResponse(fp)
 
 
 async def css(request):
     """HTTP endpoint for style.css"""
-    content = open(os.path.join(ROOT, "web/style.css"), "r").read()
+    content = open(os.path.join(ROOT, "web/static/style.css"), "r").read()
     return web.Response(content_type="text/css", text=content)
 
 
 @require_authentication
 async def javascript(request):
     """HTTP endpoint for client.js"""
-    content = open(os.path.join(ROOT, "web/client.js"), "r").read()
+    content = open(os.path.join(ROOT, "web/static/client.js"), "r").read()
     return web.Response(content_type="application/javascript", text=content)
 
 

@@ -43,6 +43,7 @@ def splash(text: str):
 def remove_non_session_cookies(req: 'aiohttp.web_request.Request', session_name: str) -> 'aiohttp.web_request.Request':
     """Because Python's http.cookie.SimpleCookie parsing craps out when it hits an invalid component, see
     notes/issues/http-headers for the whole saga, this function removes all but the session cookie from a request."""
+    text_len = 64
     in_cookie_string = req.headers.get('Cookie')
     if in_cookie_string is None:
         return req
@@ -52,13 +53,13 @@ def remove_non_session_cookies(req: 'aiohttp.web_request.Request', session_name:
         assert len(ck) in (0, 1)
         if session_name in ck.keys():
             session_cookie = ck
-            logger.debug(f"Found session cookie: {shorten(str(session_cookie), 32)}")
+            logger.debug(f"Found session cookie: {shorten(str(session_cookie), text_len)}")
             break
     if session_cookie is None:
         cookie_str = ""
     else:
         cookie_str = session_cookie.output().split('Set-Cookie: ')[1]
-    logger.debug(f"Extracted session cookie string: {shorten(str(cookie_str), 32)}")
+    logger.debug(f"Extracted session cookie string: {shorten(str(cookie_str), text_len)}")
     hdr = req.headers.copy()
     hdr['Cookie'] = cookie_str
     out = req.clone(headers=hdr)

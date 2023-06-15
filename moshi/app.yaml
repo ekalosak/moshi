@@ -5,6 +5,9 @@
 # Source: https://cloud.google.com/appengine/docs/standard/python3/building-app/writing-web-service
 
 runtime: python310
-handlers:
-  - url: /static
-    static_dir: web/static
+entrypoint: gunicorn --bind :8080 --workers 1 --threads 8 --timeout 0 --worker-class aiohttp.GunicornWebWorker main:app
+# handlers:
+# - url: /static
+#   static_dir: web/static
+# - url: /.*
+#   script: auto

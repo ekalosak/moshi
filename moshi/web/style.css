@@ -115,3 +115,28 @@ button:hover {
     75% { transform: rotate(-10deg); }
     100% { transform: rotate(0deg); }
 }
+
+
+.error-container {
+  background-color: rgba(255, 221, 221, 0.5);
+  border: 1px solid #ff0000; /* Red border */
+  border-radius: 4px; /* Rounded corners */
+  color: rgba(255, 255, 255, 1.0);
+  padding: 10px; /* Padding around the error message */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 30%;
+  margin: 0 auto;
+}
+
+/* Login elements */
+.login-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.login-button {
+  width: 30%;
+  margin: 0 auto;
+}

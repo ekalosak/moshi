@@ -6,7 +6,7 @@ import ssl
 import urllib.parse
 
 from aiohttp import web
-import aiohttp_session
+from aiohttp_session import get_session, new_session, setup as session_setup, SimpleCookieStorage
 from aiohttp_session.cookie_storage import EncryptedCookieStorage
 from aiortc import RTCPeerConnection, RTCSessionDescription
 from google.oauth2 import id_token
@@ -19,7 +19,7 @@ from moshi import core, gcloud, lang, speech, util, AuthenticationError
 # Setup constants
 ROOT = os.path.dirname(__file__)
 ALLOWED_ISS = ['accounts.google.com', 'https://accounts.google.com']
-logger.info(f"Using constants:\n\tROOT={ROOT}\n\tALLOWED_ISS={ALLOWED_ISS}")
+COOKIE_NAME = "MOSHI-001"
 
 # Setup allowed users
 with open('secret/user-whitelist.csv', 'r') as f:
@@ -58,22 +58,23 @@ async def login_callback(request):
     Sets up the user session, then redirects to main page.
     """
     logger.info(request)
+    session = await new_session(request)
     data = await request.post()
     token = data['credential']
     try:
         id_info = id_token.verify_oauth2_token(token, requests.Request())
         if id_info['iss'] not in ALLOWED_ISS:
             raise AuthenticationError('Authentication failed')
-        session = await aiohttp_session.get_session(request)
         user_email = id_info['email']
         logger.debug(f'user_email={user_email}')
         if user_email not in whitelisted_emails:
             raise AuthenticationError('Unrecognized user')
-        session['user_id'] = id_info['sub']  # Store the user ID in the session
+        user_id = id_info['sub']
+        session['user_id'] = user_id
         session['user_given_name'] = id_info['given_name']
-        session['user_email'] = id_info['email']
+        session['user_email'] = user_email
+        session.set_new_identity(user_id)
         # TODO make sure the user email is verified id_info['email_verified']
-        # TODO require session['logged_in'] for all other pages
         logger.debug(f"Authentication successful for user: {user_email}")
         raise web.HTTPFound('/')
     except AuthenticationError as e:
@@ -82,20 +83,27 @@ async def login_callback(request):
 
 def require_authentication(http_endpoint_handler):
     """Decorate an HTTP endpoint so it requires auth."""
-    async def wrapped_handler(request):
-        session = await aiohttp_session.get_session(request)
+    async def auth_wrapper(request):
+        logger.debug(f"Checking authentication for page '{request.path}'")
+        # breakpoint()
+        request = util.remove_non_session_cookies(request, COOKIE_NAME)  # NOTE because google's cookie is unparsable by http.cookies
+        session = await get_session(request)
         user_email = session.get('user_email')
         logger.debug(f"Checking authentication for user_email: {user_email}")
+        print(f"request.headers:")
+        for k, v in request.headers.items():
+            print(f"\t{k}: {v}")
+        print(f"session: {session}")
         try:
             if user_email not in whitelisted_emails:
                 if user_email is None:
-                    raise AuthenticationError("Please login")
+                    raise web.HTTPFound(f"/login")
                 else:
                     raise AuthenticationError(f"Unrecognized user: {user_email}")
         except AuthenticationError as e:
             _handle_auth_error(e)
-        return await handler(request)
-    return wrapped_handler
+        return await http_endpoint_handler(request)
+    return auth_wrapper
 
 
 @require_authentication
@@ -247,8 +255,12 @@ if __name__ == "__main__":
         ssl_context = None
 
     app = web.Application()
-    secret_key = os.urandom(32)
-    aiohttp_session.setup(app, EncryptedCookieStorage(secret_key))
+    # TODO use a secret key in ./secret/ so subsequent server invocations don't invalidate usr cookies
+    # secret_key = os.urandom(32)
+    # cookie_storage = EncryptedCookieStorage()
+    cookie_storage = SimpleCookieStorage(cookie_name=COOKIE_NAME)
+    session_setup(app, cookie_storage)
+    logger.warning("Using insecure cookie storage")
     app.on_shutdown.append(on_shutdown)
     app.on_startup.append(on_startup)
     app.router.add_get("/", index)

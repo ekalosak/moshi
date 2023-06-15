@@ -5,29 +5,19 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>~ Moshi ~</title>
   <link rel="stylesheet" href="/style.css">
-  <style>
-    .login-container {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
-    .login-button {
-      width: 30%;
-      margin: 0 auto;
-    }
-  </style>
 </head>
 
 <body>
 
   <div class="top-container">
     <h1>Moshi</h1>
-    <div id="error-container">
-      {% if error %}
-      <p class="error">{{ error }}</p>
-      {% endif %}
-    </div>
     <img src="/favicon.ico" alt="Moshi" style="width: 32px;" id="moshiIcon" class="dancing-image">
+    {% if error %}
+    <br><br>
+    <div id="error-message" class="error-container">
+      <p class="error">{{ error }}</p>
+    </div>
+    {% endif %}
   </div>
 
   <div id="login" class="main-container">

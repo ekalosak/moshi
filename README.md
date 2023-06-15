@@ -1,6 +1,16 @@
 # 🧑💬🤖 moshi
 Moshi is a spoken language tutor.
 
+# Build
+`setuptools` and `build`
+
+Run this:
+```
+pip install --upgrade pip && \
+    pip install build && \
+    python -m build
+```
+
 # Development
 
 ## Setup

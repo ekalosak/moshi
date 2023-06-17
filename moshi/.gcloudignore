@@ -2,6 +2,8 @@
 .gitignore
 __pycache__/
 *.log
+*.swp
+*.swo
 NOTES
 __init__.py
 app.yaml

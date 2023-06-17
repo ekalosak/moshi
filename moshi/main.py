@@ -2,7 +2,7 @@ import argparse
 
 from aiohttp import web
 
-from server import make_app
+from moshi.server import make_app
 
 app = make_app()
 

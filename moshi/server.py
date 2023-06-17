@@ -222,6 +222,9 @@ async def on_shutdown(app):
 @logger.catch
 async def on_startup(app):
     """Setup the state monad."""
+    logger.debug("Setting up logger...")
+    util._setup_loguru()
+    logger.info("Logger set up.")
     logger.debug("Setting up error handler...")
     asyncio.get_event_loop().set_exception_handler(util.aio_exception_handler)
     logger.info("Error handler set up.")
@@ -232,9 +235,6 @@ async def on_startup(app):
     lang._setup_client()  # doing this here to avoid waiting when first request happens
     speech._setup_client()
     logger.info("API clients created.")
-    logger.debug("Setting up logger...")
-    util._setup_loguru()
-    logger.info("Logger set up.")
     logger.success("Set up!")
 
 @logger.catch

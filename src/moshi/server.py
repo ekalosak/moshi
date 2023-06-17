@@ -44,7 +44,7 @@ logger.debug(f"ROOT={ROOT} contains:\n\t{_files}")
 # Setup global objects
 pcs = set()
 env = jinja2.Environment(
-    loader=jinja2.FileSystemLoader(ROOT + '/web'),
+    loader=jinja2.FileSystemLoader(ROOT),
     autoescape=jinja2.select_autoescape(['html', 'xml']),
 )
 logger.info("Setup peer connection tracker and html templating engine.")
@@ -122,26 +122,27 @@ def require_authentication(http_endpoint_handler):
 async def index(request):
     """HTTP endpoint for index.html"""
     logger.info(request)
-    content = open(os.path.join(ROOT, "web/templates/index.html"), "r").read()
-    return web.Response(content_type="text/html", text=content)
+    template = env.get_template('templates/index.html')
+    html = template.render()
+    return web.Response(text=html, content_type="text/html")
 
 # Define resource HTTP endpoints
 async def favicon(request):
     """HTTP endpoint for the favicon"""
-    fp = os.path.join(ROOT, "web/static/favicon.ico")
+    fp = os.path.join(ROOT, "static/favicon.ico")
     return web.FileResponse(fp)
 
 
 async def css(request):
     """HTTP endpoint for style.css"""
-    content = open(os.path.join(ROOT, "web/static/style.css"), "r").read()
+    content = open(os.path.join(ROOT, "static/style.css"), "r").read()
     return web.Response(content_type="text/css", text=content)
 
 
 @require_authentication
 async def javascript(request):
     """HTTP endpoint for client.js"""
-    content = open(os.path.join(ROOT, "web/static/client.js"), "r").read()
+    content = open(os.path.join(ROOT, "static/client.js"), "r").read()
     return web.Response(content_type="application/javascript", text=content)
 
 

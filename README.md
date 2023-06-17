@@ -11,6 +11,15 @@ pip install --upgrade pip && \
     python -m build
 ```
 
+## PyPi
+With the Google Cloud Artifact Registry set up (see notes/../GOOGLE_CLOUD.md for runbook):
+```
+set -x GOOGLE_CLOUD_PYPI_URL https://us-east1-python.pkg.dev/moshi-002/moshi-002-repo/
+python3 -m twine upload \
+    --repository-url $GOOGLE_CLOUD_PYPI_URL \
+    "dist/*"
+```
+
 # Development
 
 ## Setup
@@ -72,3 +81,6 @@ To start the web server:
 ```bash
 python moshi/main.py
 ```
+
+# Deployment
+`cd moshi && gcloud app deploy`

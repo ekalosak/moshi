@@ -19,18 +19,17 @@ from moshi import core, gcloud, lang, speech, util, AuthenticationError
 ROOT = os.path.dirname(__file__)
 ALLOWED_ISS = ['accounts.google.com', 'https://accounts.google.com']
 COOKIE_NAME = "MOSHI-002"
+with open('secret/client_id', 'r') as f:
+    CLIENT_ID = f.read().strip()
 SECURE_COOKIE = not bool(os.getenv("MOSHIDEBUG", False))
 if not SECURE_COOKIE:
     logger.warning(f"SECURE_COOKIE={SECURE_COOKIE}")
 else:
     logger.info(f"SECURE_COOKIE={SECURE_COOKIE}")
-
-# Setup allowed users
 with open('secret/user-whitelist.csv', 'r') as f:
-    whitelisted_emails = f.readlines()
-whitelisted_emails = [em.strip() for em in whitelisted_emails]
-_email_string = f"\n\t".join(whitelisted_emails)
-logger.info(f"Allowed users:\n\t{_email_string}")
+    whitelisted_emails = [em.strip() for em in f.readlines()]
+_es = '\n\t'.join(whitelisted_emails)  # note, \ not allowed in f-string {} terms
+logger.info(f"Allowed users:\n\t{_es}")
 
 # Setup global objects
 pcs = set()
@@ -46,7 +45,11 @@ async def login(request):
     logger.info(request)
     error_message = request.query.get('error', '')
     template = env.get_template('templates/login.html')
-    html = template.render(error=error_message)
+    html = template.render(
+        client_id=CLIENT_ID,
+        login_uri=str(request.url),
+        error=error_message,
+    )
     return web.Response(text=html, content_type='text/html')
 
 def _handle_auth_error(e: AuthenticationError):

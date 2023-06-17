@@ -26,7 +26,7 @@ async def authenticate():
     except LookupError:
         logger.debug("gcreds not yet created, initializing...")
         credentials, project_id = default()
-        assert project_id == GOOGLE_PROJECT, "Unexpected project: {project_id}"
+        assert project_id == GOOGLE_PROJECT, f"Unexpected project: {project_id}"
         gcreds.set(credentials)
         logger.info(f"gcreds initialized: {credentials}")
     if not credentials.valid:

@@ -1,6 +1,7 @@
 import asyncio
 import functools
 from http.cookies import SimpleCookie
+import os
 import sys
 from textwrap import shorten
 import uuid
@@ -9,11 +10,14 @@ import pyfiglet
 from loguru import logger
 from loguru._defaults import LOGURU_FORMAT
 
+FILE_LOGS = os.getenv("MOSHILOGTODISK", 0)
+
 def _setup_loguru():
     LOG_FORMAT = LOGURU_FORMAT + " | <g><d>{extra}</d></g>"
     logger.remove()
     logger.add(sink=sys.stderr, format=LOG_FORMAT, colorize=True)
-    logger.add("logs/server.log", rotation="10 MB")
+    if FILE_LOGS:
+        logger.add("logs/server.log", rotation="10 MB")
     logger.level("INSTRUCTION", no=38, color="<light-yellow><bold>")
     logger.level("SPLASH", no=39, color="<light-magenta><bold>")
 

@@ -1,4 +1,5 @@
 import asyncio
+import glog
 import json
 import os
 import ssl
@@ -30,6 +31,9 @@ with open('secret/user-whitelist.csv', 'r') as f:
     whitelisted_emails = [em.strip() for em in f.readlines()]
 _es = '\n\t'.join(whitelisted_emails)  # note, \ not allowed in f-string {} terms
 logger.info(f"Allowed users:\n\t{_es}")
+
+# DEBUG print files
+logger.debug(f"ROOT={ROOT} contains:\n{glob.glob(ROOT + '/*')}")
 
 # Setup global objects
 pcs = set()
@@ -242,7 +246,7 @@ def make_app() -> 'web.Application':
     """Initialize the """
     app = web.Application()
     if SECURE_COOKIE:
-        with open('secret/cookie_encryption_secret_32', 'rb') as f:
+        with open('secret/session_cookie_key_32', 'rb') as f:
             secret_key = f.read()
         cookie_storage = EncryptedCookieStorage(secret_key, cookie_name=COOKIE_NAME)
     else:

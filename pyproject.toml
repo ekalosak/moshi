@@ -49,9 +49,6 @@ dev = [
 Homepage = "https://github.com/ekalosak/moshi/tree/main"
 Repository = "https://github.com/ekalosak/moshi.git"
 
-[tool.setuptools]
-packages = ["moshi"]
-
 [tool.pytest.ini_options]
 markers = [
   "slow: runs more than a second or two to run",

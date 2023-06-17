@@ -1,7 +1,8 @@
 import asyncio
-import glog
+import glob
 import json
 import os
+from pathlib import Path
 import ssl
 import urllib.parse
 
@@ -20,20 +21,25 @@ from moshi import core, gcloud, lang, speech, util, AuthenticationError
 ROOT = os.path.dirname(__file__)
 ALLOWED_ISS = ['accounts.google.com', 'https://accounts.google.com']
 COOKIE_NAME = "MOSHI-002"
-with open('secret/client_id', 'r') as f:
-    CLIENT_ID = f.read().strip()
+CLIENT_ID = "462213871057-tsn4b76f24n40i7qrdrhflc7tp5hdqu2.apps.googleusercontent.com"
+# with open('secret/client_id', 'r') as f:
+#     CLIENT_ID = f.read().strip()
 SECURE_COOKIE = not bool(os.getenv("MOSHIDEBUG", False))
 if not SECURE_COOKIE:
     logger.warning(f"SECURE_COOKIE={SECURE_COOKIE}")
 else:
     logger.info(f"SECURE_COOKIE={SECURE_COOKIE}")
-with open('secret/user-whitelist.csv', 'r') as f:
-    whitelisted_emails = [em.strip() for em in f.readlines()]
+# NOTE DEBUG cloud deployment secret injection
+# with open('secret/user-whitelist.csv', 'r') as f:
+#     whitelisted_emails = [em.strip() for em in f.readlines()]
+whitelisted_emails = ["helloateric@gmail.com"]
 _es = '\n\t'.join(whitelisted_emails)  # note, \ not allowed in f-string {} terms
 logger.info(f"Allowed users:\n\t{_es}")
 
 # DEBUG print files
-logger.debug(f"ROOT={ROOT} contains:\n{glob.glob(ROOT + '/*')}")
+_files = [Path(p).name for p in Path(ROOT).iterdir()]
+_files = "\n\t".join(_files)
+logger.debug(f"ROOT={ROOT} contains:\n\t{_files}")
 
 # Setup global objects
 pcs = set()
@@ -246,8 +252,9 @@ def make_app() -> 'web.Application':
     """Initialize the """
     app = web.Application()
     if SECURE_COOKIE:
-        with open('secret/session_cookie_key_32', 'rb') as f:
-            secret_key = f.read()
+        secret_key = os.urandom(32)
+        # with open('secret/session_cookie_key_32', 'rb') as f:
+        #     secret_key = f.read()
         cookie_storage = EncryptedCookieStorage(secret_key, cookie_name=COOKIE_NAME)
     else:
         cookie_storage = SimpleCookieStorage(cookie_name=COOKIE_NAME)

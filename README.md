@@ -53,6 +53,19 @@ Test using pytest:
 pytest -m 'not openai and not gcloud and not slow'
 ```
 
+## Run on the local App Engine
+```sh
+set -x GOOGLE_CLOUD_PROJECT moshi-002
+set -x CLOUD_SDK_ROOT /Users/eric/bin/google-cloud-sdk
+
+python3 $CLOUD_SDK_ROOT/bin/dev_appserver.py \
+--port=8080 \
+--host=localhost \
+    --runtime_python_path="python3=/Users/eric/.pyenv/shims/python3,python27=/Users/eric/.pyenv/shims/python2" \
+    app.yaml
+```
+Computer go brrr, then `localhost:8080`.
+
 # Usage
 
 To start the web server:

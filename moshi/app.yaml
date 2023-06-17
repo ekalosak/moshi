@@ -6,8 +6,3 @@
 
 runtime: python310
 entrypoint: gunicorn --bind :$PORT --workers 1 --threads 1 --timeout 5 --worker-class aiohttp.GunicornWebWorker main:app
-# handlers:
-# - url: /static
-#   static_dir: web/static
-# - url: /.*
-#   script: auto

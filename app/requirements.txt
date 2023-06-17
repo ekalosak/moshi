@@ -1,2 +1,3 @@
 --extra-index-url https://us-east1-python.pkg.dev/moshi-002/moshi-002-repo/simple
+gunicorn
 moshi

@@ -1,6 +1,6 @@
 [project]
 name = "moshi"
-version = "23.6.6"
+version = "23.6.7"
 description = "Moshi is a spoken language tutor."
 readme = "README.md"
 requires-python = ">=3.7"
@@ -35,7 +35,6 @@ dependencies = [
 [project.optional-dependencies]
 tests = [
   'pytest',
-  # 'pytest-benchmark[histogram]>=3.2.1',
   'pytest-asyncio',
   'scipy',
 ]

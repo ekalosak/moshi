@@ -11,23 +11,24 @@ pip install --upgrade pip && \
     python -m build
 ```
 
-## PyPi
+## Push to gcloud PyPi
 With the Google Cloud Artifact Registry set up (see notes/../GOOGLE_CLOUD.md for runbook):
-```
+```fish
+gcloud auth login
 set -x GOOGLE_CLOUD_PYPI_URL https://us-east1-python.pkg.dev/moshi-002/moshi-002-repo/
+pip install twine keyring keyrings.google-artifactregistry-auth
+keyring --list-backends
 python3 -m twine upload \
     --repository-url $GOOGLE_CLOUD_PYPI_URL \
     "dist/*"
 ```
+^ hit enter through the usrnames
+Source: https://cloud.google.com/artifact-registry/docs/python/authentication#keyring-setup
+When u list-backends, look for GCloud. If u don't see, GLHF.
 
 # Development
 
 ## Setup
-
-Install system dependencies:
-```sh
-brew install portaudio
-```
 
 Setup virtualenv and install project & its Python dependencies:
 ```bash
@@ -35,7 +36,7 @@ eval "$(pyenv init -)" && \
     eval "$(pyenv virtualenv-init -)" && \
     pyenv virtualenv 3.10-dev mm310 && \
     pyenv activate mm310 && \
-    python3.10 -m pip install --upgrade pip && \
+    pip install --upgrade pip && \
     pip install -e .
 ```
 

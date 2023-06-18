@@ -20,7 +20,8 @@ pip install twine keyring keyrings.google-artifactregistry-auth
 keyring --list-backends
 python3 -m twine upload \
     --repository-url $GOOGLE_CLOUD_PYPI_URL \
-    "dist/*"
+    "dist/*" \
+    --verbose
 ```
 ^ hit enter through the usrnames
 Source: https://cloud.google.com/artifact-registry/docs/python/authentication#keyring-setup

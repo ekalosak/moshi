@@ -6,3 +6,5 @@
 
 runtime: python310
 entrypoint: gunicorn --bind :$PORT --workers 1 --threads 1 --timeout 5 --worker-class aiohttp.GunicornWebWorker main:app
+env_variables:
+  LOGURU_LEVEL: "TRACE"

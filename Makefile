@@ -18,24 +18,26 @@ build-install:
 	pip install --upgrade pip && \
     pip install build
 
-bump:
-	sed -i -E 's/(^version = "[0-9]+\.[0-9]+\.)([0-9]+)"/echo "\1$((\2+1))\""/e' pyproject.toml
+# bump:
+# 	grep version < pyproject.toml | sed -E 's/.*"([^"]+)".*/\1/' | cut -f 3 -d '.' | awk '{print $0 + 1}' > tmp
 
 dev: auth-install build-install
 	mkdir build 2>/dev/null || echo "build/ exists" && \
     pip install -e .[dev,test]
 
-deploy:
-	(cd app/ && gcloud -q app deploy) && \
-		gcloud app browse
+deploy: deploy-nobrowse
+	gcloud app browse
 
-deploy-full: build-install build publish
+deploy-nobrowse:
+	(cd app/ && gcloud -q app deploy)
+
+deploy-full: build-install build publish deploy-nobrowse
 	echo "✅ Deployed."
 
 logs:
 	gcloud app logs tail -s default
 
-publish:
+publish: build
 	python3 -m twine upload \
 		 --repository-url $(GOOGLE_CLOUD_PYPI_URL) \
 		 "dist/*" \

@@ -57,7 +57,7 @@ async def login(request: web_request.Request):
     template = env.get_template('templates/login.html')
     origin = request.url.origin()
     logger.debug(f"request origin: {str(origin)}")
-    login_uri = request.url.with_scheme(origin.scheme)
+    login_uri = request.url.with_scheme('https')  # NOTE for google login button to appear, login_uri must be https on public site "[GSI_LOGGER]: Error parsing configuration from HTML: Unsecured login_uri provided. client:44:322" otherwise;
     logger.debug(f"using login_uri for Google auth: {login_uri}")
     html = template.render(
         client_id=CLIENT_ID,

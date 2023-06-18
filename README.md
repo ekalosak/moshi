@@ -2,14 +2,17 @@
 Moshi is a spoken language tutor.
 
 # Build
-`setuptools` and `build`
+Uses `setuptools` and `build` to package Python code.
 
 Run this:
 ```
-pip install --upgrade pip && \
-    pip install build && \
-    python -m build
+make build-install && make build
 ```
+
+Files:
+- Makefile
+- pyproject.toml
+- setup.cfg
 
 ## Push to gcloud PyPi
 With the Google Cloud Artifact Registry set up (see notes/../GOOGLE_CLOUD.md for runbook):
@@ -85,4 +88,4 @@ python moshi/main.py
 ```
 
 # Deployment
-`cd moshi && gcloud app deploy`
+`cd app && gcloud app deploy`

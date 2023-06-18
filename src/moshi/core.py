@@ -10,7 +10,7 @@ from loguru import logger
 
 from moshi import (Message, Role, UserResetError, character, detector, lang, responder, speech, think, util)
 
-CONNECTION_TIMEOUT = int(os.getenv("MOSHICONNECTIONTIMEOUT", 10))
+CONNECTION_TIMEOUT = int(os.getenv("MOSHICONNECTIONTIMEOUT", 5))
 MAX_LOOPS = int(os.getenv("MOSHIMAXLOOPS", 10))
 assert MAX_LOOPS >= 0
 logger.info(f"Running main loop max times: {MAX_LOOPS}")
@@ -37,18 +37,18 @@ class WebRTCChatter:
     """
 
     def __init__(self):
-        self.detector = (
-            detector.UtteranceDetector()
-        )  # get_utterance: track -> AudioFrame
-        self.responder = (
-            responder.ResponsePlayer()
-        )  # play_response: AudioFrame -> track
         self.messages = _init_messages()
         self.character: character.Character = None
         self.__task = None
         self.__channels = {}
         self.__connected = asyncio.Event()
         self.__status_and_transcript_channels_connected = asyncio.Event()
+        self.detector = (
+            detector.UtteranceDetector(self.__connected)
+        )  # get_utterance: track -> AudioFrame
+        self.responder = (
+            responder.ResponsePlayer()
+        )  # play_response: AudioFrame -> track
 
     @logger.catch
     async def start(self):

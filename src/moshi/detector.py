@@ -38,7 +38,7 @@ class ListeningConfig:
 class UtteranceDetector:
     """An audio media sink that detects utterances."""
 
-    def __init__(self, config=ListeningConfig()):
+    def __init__(self, connected_event: asyncio.Event, config=ListeningConfig()):
         self.__track = None
         self.__task = None
         self.__config = config
@@ -48,6 +48,7 @@ class UtteranceDetector:
         )  # used to switch between dumping frames from the track and listening to them
         self.__background_energy = None
         logger.debug(f"Using config: {self.__config}")
+        self.__connected = connected_event
 
     @logger.catch
     async def start(self):
@@ -105,6 +106,7 @@ class UtteranceDetector:
         frames from the track to remain 'real-time'. Otherwise those audio frames would back up and we'd be processing
         e.g. synthesized speech feedback."""
         while True:
+            await self.__connected.wait()
             try:
                 await asyncio.wait_for(
                     self.__dump_frame(), timeout=self.__config.utterance_timeout_seconds

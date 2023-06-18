@@ -21,10 +21,6 @@ build-install:
 # bump:
 # 	grep version < pyproject.toml | sed -E 's/.*"([^"]+)".*/\1/' | cut -f 3 -d '.' | awk '{print $0 + 1}' > tmp
 
-dev: auth-install build-install
-	mkdir build 2>/dev/null || echo "build/ exists" && \
-    pip install -e .[dev,test]
-
 deploy-only: deploy-nobrowse
 	gcloud app browse
 
@@ -33,6 +29,14 @@ deploy-nobrowse:
 
 deploy: build publish deploy-only
 	@echo "✅ Deployed."
+
+dev-install: auth-install build-install
+	mkdir build 2>/dev/null || echo "build/ exists" && \
+    pip install -e .[dev,test]
+
+dev:
+	ls **/*py | MOSHINOSECURITY=1 entr -rc python app/main.py --port 8080
+
 
 logs:
 	gcloud app logs tail -s default

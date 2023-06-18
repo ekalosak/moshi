@@ -18,8 +18,8 @@ build-install:
 	pip install --upgrade pip && \
     pip install build
 
-# bump:
-# 	grep version < pyproject.toml | sed -E 's/.*"([^"]+)".*/\1/' | cut -f 3 -d '.' | awk '{print $0 + 1}' > tmp
+bump:
+	./scripts/bump_version.sh
 
 deploy-only: deploy-nobrowse
 	gcloud app browse

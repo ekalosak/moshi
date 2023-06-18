@@ -1,11 +1,11 @@
 // https://github.com/aiortc/aiortc/blob/main/examples/server/client.js
 // get DOM elements
 var pingPongChannelLog = document.getElementById('ping-pong-channel'),
+    statusLog = document.getElementById('status-channel'),
+    transcriptLog = document.getElementById('transcript-channel'),
     iceConnectionLog = document.getElementById('ice-connection-state'),
     iceGatheringLog = document.getElementById('ice-gathering-state'),
-    signalingLog = document.getElementById('signaling-state'),
-    utteranceDetected = document.getElementById('utterance-detected'),
-    utteranceTranscript = document.getElementById('utterance-transcript');
+    signalingLog = document.getElementById('signaling-state');
 
 // peer connection
 var pc = null;
@@ -119,10 +119,29 @@ function start() {
         }
     }
 
+    // Status channel
+    statusChannel = pc.createDataChannel('status', parameters);
+    statusChannel.onclose = function() {
+        statusLog.textContent += 'Disconnected.\n';
+    };
+    statusChannel.onopen = function() {
+        statusLog.textContent += 'Connected.\n';
+    };
+    statusChannel.onmessage = function(evt) {
+        statusLog.textContent += evt.data + '\n';
+    };
+
+    // Transcript channel
+    transcriptChannel = pc.createDataChannel('transcript', parameters);
+    transcriptChannel.onmessage = function(evt) {
+        transcriptLog.textContent += evt.data + '\n';
+    };
+
+    // Ping pong channel
     if (document.getElementById('use-datachannel').checked) {
         var parameters = JSON.parse(document.getElementById('datachannel-parameters').value);
 
-        dc = pc.createDataChannel('keepalive', parameters);
+        dc = pc.createDataChannel('pingpong', parameters);
         dc.onclose = function() {
             clearInterval(dcInterval);
             pingPongChannelLog.textContent += '- close\n';
@@ -254,16 +273,16 @@ function escapeRegExp(string) {
     return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // $& means the whole matched string
 }
 
-// show/hide nerd stuff
-var showNerdStuffButton = document.getElementById('showNerdStuff');
-var showNerdStuffDiv = document.getElementById('nerd-stuff');
-
-showNerdStuffButton.addEventListener('click', function() {
-  if (showNerdStuffDiv.style.display === 'none') {
-    showNerdStuffDiv.style.display = 'block';
-    showNerdStuffButton.textContent = 'Hide diagnostics';
-  } else {
-    showNerdStuffDiv.style.display = 'none';
-    showNerdStuffButton.textContent = 'Show diagnostics';
-  }
-});
+// // show/hide nerd stuff
+// var showNerdStuffButton = document.getElementById('showNerdStuff');
+// var showNerdStuffDiv = document.getElementById('nerd-stuff');
+//
+// showNerdStuffButton.addEventListener('click', function() {
+//   if (showNerdStuffDiv.style.display === 'none') {
+//     showNerdStuffDiv.style.display = 'block';
+//     showNerdStuffButton.textContent = 'Hide diagnostics';
+//   } else {
+//     showNerdStuffDiv.style.display = 'none';
+//     showNerdStuffButton.textContent = 'Show diagnostics';
+//   }
+// });

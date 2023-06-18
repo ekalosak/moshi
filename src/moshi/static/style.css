@@ -140,3 +140,15 @@ button:hover {
   width: 30%;
   margin: 0 auto;
 }
+
+pre {
+  /* height: 100px; */
+  overflow: auto;
+  display: flex;
+  flex-direction: column-reverse;
+}
+
+/* pre { */
+/*     overflow-x: hidden; */
+/*     overflow-y: auto; */
+/* } */

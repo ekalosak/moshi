@@ -9,7 +9,7 @@ import urllib.parse
 from aiohttp import web, web_request
 from aiohttp_session import get_session, new_session, setup as session_setup, SimpleCookieStorage
 from aiohttp_session.cookie_storage import EncryptedCookieStorage
-from aiortc import RTCPeerConnection, RTCSessionDescription
+from aiortc import RTCPeerConnection, RTCSessionDescription, RTCDataChannel
 from google.oauth2 import id_token
 from google.auth.transport import requests
 import jinja2
@@ -40,6 +40,7 @@ else:
 # with open('secret/user-whitelist.csv', 'r') as f:
 #     whitelisted_emails = [em.strip() for em in f.readlines()]
 whitelisted_emails = ["helloateric@gmail.com", "JKenyon@umich.edu", "Triciak@umich.edu", "benkalosakenyon@gmail.com", "natekenyon3@gmail.com", "leahpom@gmail.com"]
+whitelisted_emails = [em.lower() for em in whitelisted_emails]
 _es = '\n\t'.join(whitelisted_emails)  # note, \ not allowed in f-string {} terms
 logger.info(f"Allowed users:\n\t{_es}")
 
@@ -97,7 +98,7 @@ async def login_callback(request):
         id_info = id_token.verify_oauth2_token(token, requests.Request())
         if id_info['iss'] not in ALLOWED_ISS:
             raise AuthenticationError('Authentication failed')
-        user_email = id_info['email']
+        user_email = id_info['email'].lower()
         logger.debug(f'user_email={user_email}')
         if user_email not in whitelisted_emails:
             raise AuthenticationError('Unrecognized user')
@@ -181,18 +182,14 @@ async def offer(request):
     chatter = core.WebRTCChatter()
 
     @pc.on("datachannel")
-    def on_datachannel(channel):
-        if channel.label == "keepalive":
-
+    def on_datachannel(channel: RTCDataChannel):
+        if channel.label == "pingpong":
             @channel.on("message")
             def on_message(message):
                 if isinstance(message, str) and message.startswith("ping"):
-                    channel.send("pong" + message[4:])
-
-        elif channel.label == "utterance":
-            chatter.set_utterance_channel(channel)
+                    channel.send("pong" + message[4:])  # NOTE blocking io
         else:
-            raise ValueError(f"Got unknown channel: {channel.label}")
+            chatter.add_channel(channel)
 
     @pc.on("connectionstatechange")
     async def on_connectionstatechange():
@@ -200,9 +197,11 @@ async def offer(request):
         if pc.connectionState == "failed":
             await pc.close()
             pcs.discard(pc)
-        if pc.connectionState == "connecting":
+        elif pc.connectionState == "connecting":
             # on_track should have been called by this point, so start should be ok
             await chatter.start()
+        elif pc.connectionState == "connected":
+            await chatter.connected()
 
     @pc.on("track")
     def on_track(track):
@@ -211,8 +210,6 @@ async def offer(request):
             raise TypeError(
                 f"Track kind not supported, expected 'audio', got: '{track.kind}'"
             )
-
-        # This is how input and output are connected to the chatter
         chatter.detector.setTrack(track)  # must be called before start()
         pc.addTrack(chatter.responder.audio)
 

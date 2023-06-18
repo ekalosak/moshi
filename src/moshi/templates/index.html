@@ -5,11 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>~ Moshi ~</title>
     <link rel="stylesheet" href="/style.css">
-    <style>
-      #nerd-stuff {
-        display: none;
-      }
-    </style>
+    <!-- <style> -->
+    <!--   #nerd-stuff { -->
+    <!--     display: none; -->
+    <!--   } -->
+    <!-- </style> -->
 </head>
 <body>
 
@@ -22,9 +22,9 @@
   <div class="main-container">
     <h2>Instructions</h2>
     <ol>
-      <li>Click the Start button,</li>
-      <li>Wait for the signal,</li>
-      <li>Start speaking in some language.</li>
+      <li>Click the Start button</li>
+      <li>Wait for the Status to say "connected"</li>
+      <li>Start speaking in the language you'd like to learn</li>
     </ol>
     <br>
     <p>
@@ -37,14 +37,20 @@
       <button id="stop" style="display: none" onclick="stop()">Stop</button>
     </p>
 
-    <h2>Audio status</h2>
+    <h2>Status</h2>
     <p>
-      <audio id="audio" autoplay controls></audio>
+      <pre id="status-channel" style="height: 200px;"></pre>
     </p>
 
     <h2>Transcript</h2>
     <p>
-      <pre id="transcript" style="height: 200px;"></pre>
+      <pre id="transcript-channel" style="height: 200px;"></pre>
+    </p>
+    <hr>
+
+    <h2>Audio status</h2>
+    <p>
+      <audio id="audio" autoplay controls></audio>
     </p>
     <hr>
 
@@ -67,7 +73,7 @@
     </p>
 
     <h2>Diagnostics</h2>
-    <p>
+    <p hidden>
       <button id="showNerdStuff">Show diagnostics</button>
     </p>
 
@@ -84,34 +90,36 @@
     </p>
     <pre id="ping-pong-channel" style="height: 200px;"></pre>
 
-    <h3>WebRTC Connection Options</h3>
-    <p>
-    Don't mess with these unless you know what you're doing.
-    </p>
-    <p>
-    <div class="option">
-        <input id="use-datachannel" checked="checked" type="checkbox"/>
-        <label for="use-datachannel">Use datachannel</label>
-        <select id="datachannel-parameters">
-            <option value='{"ordered": true}'>Ordered, reliable</option>
-            <option value='{"ordered": false, "maxRetransmits": 0}'>Unordered, no retransmissions</option>
-            <option value='{"ordered": false, "maxPacketLifetime": 500}'>Unordered, 500ms lifetime</option>
-        </select>
-    </div>
-    <div class="option">
-        <input id="use-audio" checked="checked" type="checkbox"/>
-        <label for="use-audio">Use audio</label>
-        <select id="audio-codec">
-            <option value="default" selected>Default codecs</option>
-            <option value="opus/48000/2">Opus</option>
-            <option value="PCMU/8000">PCMU</option>
-            <option value="PCMA/8000">PCMA</option>
-        </select>
-    </div>
-    <div class="option">
-        <input id="use-stun" type="checkbox"/>
-        <label for="use-stun">Use STUN server</label>
-    </div>
+    <div hidden id="toggle-options">
+      <h3>WebRTC Connection Options</h3>
+      <p>
+        Don't mess with these unless you know what you're doing.
+      </p>
+      <p>
+        <div class="option">
+            <input id="use-datachannel" checked="checked" type="checkbox"/>
+            <label for="use-datachannel">Use datachannel</label>
+            <select id="datachannel-parameters">
+                <option value='{"ordered": true}'>Ordered, reliable</option>
+                <option value='{"ordered": false, "maxRetransmits": 0}'>Unordered, no retransmissions</option>
+                <option value='{"ordered": false, "maxPacketLifetime": 500}'>Unordered, 500ms lifetime</option>
+            </select>
+        </div>
+        <div class="option">
+            <input id="use-audio" checked="checked" type="checkbox"/>
+            <label for="use-audio">Use audio</label>
+            <select id="audio-codec">
+                <option value="default" selected>Default codecs</option>
+                <option value="opus/48000/2">Opus</option>
+                <option value="PCMU/8000">PCMU</option>
+                <option value="PCMA/8000">PCMA</option>
+            </select>
+        </div>
+        <div class="option">
+            <input id="use-stun" type="checkbox"/>
+            <label for="use-stun">Use STUN server</label>
+        </div>
+      </div>
     </p>
 
     <h3>WebRTC Connection State</h3>

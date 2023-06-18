@@ -54,7 +54,7 @@ class UtteranceDetector:
         """Start detecting speech."""
         if self.__track is None:
             raise ValueError(
-                "Track not yet set, call `your_audio_listener.setTrack(your_track)` before starting listening."
+                "Track not yet set."
             )
         self.__task = asyncio.create_task(
             self.__dump_frames(),
@@ -69,8 +69,8 @@ class UtteranceDetector:
         self.__task.cancel()
         try:
             await self.__task  # this should sleep until the __task is cancelled
-        except asyncio.CancelledError:
-            pass
+        except asyncio.CancelledError as e:
+            logger.error(e)
         self.__task = None
 
     @logger.catch

@@ -17,6 +17,13 @@ from loguru import logger
 
 from moshi import core, gcloud, lang, speech, util, AuthenticationError
 
+NO_SECURITY = bool(os.getenv("MOSHINOSECURITY", False))
+if NO_SECURITY:
+    logger.warning(f"NO_SECURITY={NO_SECURITY}")
+HTTPS = not NO_SECURITY
+if not HTTPS:
+    logger.warning(f"HTTPS={HTTPS}")
+
 # Setup constants
 ROOT = os.path.dirname(__file__)
 ALLOWED_ISS = ['accounts.google.com', 'https://accounts.google.com']
@@ -24,7 +31,7 @@ COOKIE_NAME = "MOSHI-002"
 CLIENT_ID = "462213871057-tsn4b76f24n40i7qrdrhflc7tp5hdqu2.apps.googleusercontent.com"
 # with open('secret/client_id', 'r') as f:
 #     CLIENT_ID = f.read().strip()
-SECURE_COOKIE = not bool(os.getenv("MOSHIDEBUG", False))
+SECURE_COOKIE = not NO_SECURITY
 if not SECURE_COOKIE:
     logger.warning(f"SECURE_COOKIE={SECURE_COOKIE}")
 else:
@@ -57,8 +64,13 @@ async def login(request: web_request.Request):
     template = env.get_template('templates/login.html')
     origin = request.url.origin()
     logger.debug(f"request origin: {str(origin)}")
-    login_uri = request.url.with_scheme('https')  # NOTE for google login button to appear, login_uri must be https on public site "[GSI_LOGGER]: Error parsing configuration from HTML: Unsecured login_uri provided. client:44:322" otherwise;
-    logger.debug(f"using login_uri for Google auth: {login_uri}")
+    scheme = 'https' if HTTPS else 'http'
+    if scheme == 'http':
+        logger.warning("Using HTTP, no SSL - insecure!")
+    # NOTE for google login button to appear, login_uri must be https on public site "[GSI_LOGGER]: Error parsing
+    # configuration from HTML: Unsecured login_uri provided. client:44:322" otherwise;
+    login_uri = request.url.with_scheme(scheme)
+    logger.debug(f"Using login_uri for Google auth: {login_uri}")
     html = template.render(
         client_id=CLIENT_ID,
         login_uri=login_uri,
@@ -164,7 +176,7 @@ async def offer(request):
     pc = RTCPeerConnection()
     pcs.add(pc)
     logger.info(f"Created peer connection and offer for remote: {request.remote}")
-    logger.debug(f"offer: {offer}")
+    logger.trace(f"offer: {offer}")
 
     chatter = core.WebRTCChatter()
 
@@ -184,10 +196,13 @@ async def offer(request):
 
     @pc.on("connectionstatechange")
     async def on_connectionstatechange():
-        logger.info(f"Connection state is: {pc.connectionState}")
+        logger.info(f"Connection state changed to: {pc.connectionState}")
         if pc.connectionState == "failed":
             await pc.close()
             pcs.discard(pc)
+        if pc.connectionState == "connecting":
+            # on_track should have been called by this point, so start should be ok
+            await chatter.start()
 
     @pc.on("track")
     def on_track(track):
@@ -209,11 +224,8 @@ async def offer(request):
     # on_track gets called when the remote description is set, I think
     await pc.setRemoteDescription(offer)
 
-    # on_track should have been called by this point, so start should be ok
-    await chatter.start()
-
     answer = await pc.createAnswer()
-    logger.debug(f"answer: {answer}")
+    logger.trace(f"answer: {answer}")
     await pc.setLocalDescription(answer)
 
     return web.Response(

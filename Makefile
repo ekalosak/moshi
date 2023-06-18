@@ -31,7 +31,7 @@ deploy-only: deploy-nobrowse
 deploy-nobrowse:
 	(cd app/ && gcloud -q app deploy)
 
-deploy: build-install build publish deploy-only
+deploy: build publish deploy-only
 	@echo "✅ Deployed."
 
 logs:

@@ -32,7 +32,7 @@ else:
 # NOTE DEBUG cloud deployment secret injection
 # with open('secret/user-whitelist.csv', 'r') as f:
 #     whitelisted_emails = [em.strip() for em in f.readlines()]
-whitelisted_emails = ["helloateric@gmail.com"]
+whitelisted_emails = ["helloateric@gmail.com", "JKenyon@umich.edu", "Triciak@umich.edu", "benkalosakenyon@gmail.com", "natekenyon3@gmail.com", "leahpom@gmail.com"]
 _es = '\n\t'.join(whitelisted_emails)  # note, \ not allowed in f-string {} terms
 logger.info(f"Allowed users:\n\t{_es}")
 

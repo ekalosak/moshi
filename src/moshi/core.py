@@ -8,8 +8,7 @@ from aiortc import RTCDataChannel
 from av import AudioFrame
 from loguru import logger
 
-from moshi import (Message, Role, character, detector, lang, responder, speech,
-                   think, util)
+from moshi import (Message, Role, UserResetError, character, detector, lang, responder, speech, think, util)
 
 CONNECTION_TIMEOUT = int(os.getenv("MOSHICONNECTIONTIMEOUT", 5))
 MAX_LOOPS = int(os.getenv("MOSHIMAXLOOPS", 10))
@@ -17,7 +16,6 @@ assert MAX_LOOPS >= 0
 logger.info(f"Running main loop max times: {MAX_LOOPS}")
 
 logger.success("Loaded!")
-
 
 def _init_messages() -> list[Message]:
     messages = [
@@ -50,6 +48,7 @@ class WebRTCChatter:
         self.__task = None
         self.__channels = {}
         self.__connected = asyncio.Event()
+        self.__status_and_transcript_channels_connected = asyncio.Event()
 
     @logger.catch
     async def start(self):
@@ -64,16 +63,25 @@ class WebRTCChatter:
     @logger.catch
     async def stop(self):
         await self.detector.stop()
+        await self.__send_status("Disconnecting...")
         self.__task.cancel(f"{self.__class__.__name__}.stop() called")
         self.__task = None
 
     async def connected(self):
-        logger.debug("Connected")
+        logger.debug("RTCPeerConnection status 'connected', waiting for status and transcript channels...")
+        await asyncio.wait_for(
+            self.__status_and_transcript_channels_connected.wait(),
+            timeout=CONNECTION_TIMEOUT,
+        )
         self.__connected.set()
 
     def add_channel(self, channel: RTCDataChannel):
         self.__channels[channel.label] = channel
         logger.info(f"Added a channel: {channel.label}:{channel.id}")
+        if "status" in self.__channels and "transcript" in self.__channels:
+            self.__status_and_transcript_channels_connected.set()
+            logger.success("Status and transcript channels initialized!")
+            self.__send_status("Connected!")
 
     @property
     def voice(self) -> object:
@@ -111,28 +119,35 @@ class WebRTCChatter:
         for i in itertools.count():
             if i == MAX_LOOPS and MAX_LOOPS != 0:
                 logger.info(f"Reached MAX_LOOPS: {MAX_LOOPS}, i={i}")
+                self.__send_status("Error: maximum conversation lenght reached, please refresh the page.")
                 break
             logger.debug(f"Starting loop number: i={i}")
-            # TODO handle errors in main
-            await self.__main()
+            try:
+                await self.__main()
+            except UserResetError as e:
+                self.__send_status(f"Error: {str(e)}\n\tPlease refresh the page")
+                break
         util.splash("bye")
 
     async def __main(self):
         """Run one loop of the main program."""
-        self.__send_status("Listening...")
         usr_audio: AudioFrame = await self.__detect_user_utterance()
         self.__send_status("Transcribing...")
         usr_text: str = await self.__transcribe_audio(usr_audio)
         usr_msg = self.__add_message(usr_text, Role.USR)
-        __send_transcript(usr_msg)
+        self.__send_transcript(usr_msg)
         await self.__init_character(sample_text=usr_text)
         self.__send_status("Thinking...")
         ast_text: str = await self.__get_response()
-        ast_msg = self.__add_message(ast_text, Role.AST)
-        self.__send_transcript(ast_msg)
-        self.__send_status("Speaking...")
-        ast_audio: AudioFrame = await self.__synth_speech()
-        await self.__send_assistant_utterance(ast_audio)
+        if ast_text:
+            ast_msg = self.__add_message(ast_text, Role.AST)
+            self.__send_transcript(ast_msg)
+            self.__send_status("Speaking...")
+            ast_audio: AudioFrame = await self.__synth_speech()
+            await self.__send_assistant_utterance(ast_audio)
+        else:
+            logger.warning("Got empty assistant response")
+            raise UserResetError("I have nothing to say.")
 
     async def __init_character(self, sample_text: str):
         """Using the sample text, initialize the voice and language used by Chatter."""
@@ -147,7 +162,8 @@ class WebRTCChatter:
 
     async def __detect_user_utterance(self) -> AudioFrame:
         logger.debug("Detecting user utterance...")
-        usr_audio: AudioFrame = await self.detector.get_utterance()
+        listening_callback = lambda msg: self.__send_status(msg)
+        usr_audio: AudioFrame = await self.detector.get_utterance(listening_callback)
         logger.info(f"Detected user utterance: {usr_audio}")
         return usr_audio
 
@@ -171,10 +187,12 @@ class WebRTCChatter:
             # NOTE channel.send does aio via ensure_future. Source: https://github.com/aiortc/aiortc/blob/main/src/aiortc/rtcsctptransport.py#L1796
             channel.send(status)
         else:
+            logger.debug(f"channels: {self.__channels}")
             logger.warning(f"Dropping status because channel not yet initialized: {status}")
 
-    async def __send_transcript(self, msg: Message):
-        if channel := self.__channels.get("transcript") is not None:
+    def __send_transcript(self, msg: Message):
+        logger.debug(f"Sending transcript: {msg}")
+        if channel := self.__channels.get("transcript"):
             match msg.role:
                 case Role.USR:
                     name = "you  "
@@ -188,7 +206,7 @@ class WebRTCChatter:
         else:
             logger.warning(f"Dropping transcript because channel not yet initialized: {status}")
 
-    async def __synth_speech(self) -> AudioFrame:
+    async def __synth_speech(self, text: str=None) -> AudioFrame:
         msg = self.messages[-1]
         logger.debug(f"Synthesizing to speech: {msg}")
         assert msg.role == Role.AST

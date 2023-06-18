@@ -7,6 +7,8 @@ var pingPongChannelLog = document.getElementById('ping-pong-channel'),
     iceGatheringLog = document.getElementById('ice-gathering-state'),
     signalingLog = document.getElementById('signaling-state');
 
+statusLog.textContent += 'Ready.\n';
+
 // peer connection
 var pc = null;
 
@@ -125,7 +127,7 @@ function start() {
         statusLog.textContent += 'Disconnected.\n';
     };
     statusChannel.onopen = function() {
-        statusLog.textContent += 'Connected.\n';
+        statusLog.textContent += 'Connecting...\n';
     };
     statusChannel.onmessage = function(evt) {
         statusLog.textContent += evt.data + '\n';

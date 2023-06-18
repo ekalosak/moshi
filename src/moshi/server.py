@@ -171,7 +171,7 @@ async def offer(request):
     Moreover, it sets up the PeerConnection (pc) and the event listeners on the connection.
     """
     params = await request.json()
-    logger.debug(f"request params: {params}")
+    logger.trace(f"Request params: {params}")
     offer = RTCSessionDescription(sdp=params["sdp"], type=params["type"])
 
     pc = RTCPeerConnection()

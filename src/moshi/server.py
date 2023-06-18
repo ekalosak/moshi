@@ -6,7 +6,7 @@ from pathlib import Path
 import ssl
 import urllib.parse
 
-from aiohttp import web
+from aiohttp import web, web_request
 from aiohttp_session import get_session, new_session, setup as session_setup, SimpleCookieStorage
 from aiohttp_session.cookie_storage import EncryptedCookieStorage
 from aiortc import RTCPeerConnection, RTCSessionDescription
@@ -38,8 +38,8 @@ logger.info(f"Allowed users:\n\t{_es}")
 
 # DEBUG print files
 _files = [Path(p).name for p in Path(ROOT).iterdir()]
-_files = "\n\t".join(_files)
-logger.debug(f"ROOT={ROOT} contains:\n\t{_files}")
+_files = ", ".join(_files)
+logger.debug(f"ROOT={ROOT} contains: {_files}")
 
 # Setup global objects
 pcs = set()
@@ -50,14 +50,18 @@ env = jinja2.Environment(
 logger.info("Setup peer connection tracker and html templating engine.")
 
 # Define HTTP endpoints and tooling for authentication
-async def login(request):
+async def login(request: web_request.Request):
     """HTTP GET endpoint for login.html"""
     logger.info(request)
     error_message = request.query.get('error', '')
     template = env.get_template('templates/login.html')
+    origin = request.url.origin()
+    logger.debug(f"request origin: {str(origin)}")
+    login_uri = request.url.with_scheme(origin.scheme)
+    logger.debug(f"using login_uri for Google auth: {login_uri}")
     html = template.render(
         client_id=CLIENT_ID,
-        login_uri=str(request.url),
+        login_uri=login_uri,
         error=error_message,
     )
     return web.Response(text=html, content_type='text/html')

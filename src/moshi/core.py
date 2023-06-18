@@ -10,7 +10,7 @@ from loguru import logger
 
 from moshi import (Message, Role, UserResetError, character, detector, lang, responder, speech, think, util)
 
-CONNECTION_TIMEOUT = int(os.getenv("MOSHICONNECTIONTIMEOUT", 5))
+CONNECTION_TIMEOUT = int(os.getenv("MOSHICONNECTIONTIMEOUT", 10))
 MAX_LOOPS = int(os.getenv("MOSHIMAXLOOPS", 10))
 assert MAX_LOOPS >= 0
 logger.info(f"Running main loop max times: {MAX_LOOPS}")

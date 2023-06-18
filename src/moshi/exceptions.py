@@ -1,5 +1,5 @@
 class AuthenticationError(Exception):
-    """Raised when backend authentication fails."""
+    """Raised when user authentication fails."""
     ...
 
 class UserResetError(Exception):

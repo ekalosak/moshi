@@ -1,3 +1,5 @@
+__version__ = "23.6.12"
+
 import os
 
 from loguru import logger

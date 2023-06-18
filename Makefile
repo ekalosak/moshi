@@ -25,14 +25,14 @@ dev: auth-install build-install
 	mkdir build 2>/dev/null || echo "build/ exists" && \
     pip install -e .[dev,test]
 
-deploy: deploy-nobrowse
+deploy-only: deploy-nobrowse
 	gcloud app browse
 
 deploy-nobrowse:
 	(cd app/ && gcloud -q app deploy)
 
-deploy-full: build-install build publish deploy-nobrowse
-	echo "✅ Deployed."
+deploy: build-install build publish deploy-only
+	@echo "✅ Deployed."
 
 logs:
 	gcloud app logs tail -s default

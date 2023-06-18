@@ -15,6 +15,7 @@ from google.auth.transport import requests
 import jinja2
 from loguru import logger
 
+import moshi
 from moshi import core, gcloud, lang, speech, util, AuthenticationError
 
 NO_SECURITY = bool(os.getenv("MOSHINOSECURITY", False))
@@ -140,7 +141,7 @@ async def index(request):
     """HTTP endpoint for index.html"""
     logger.info(request)
     template = env.get_template('templates/index.html')
-    html = template.render()
+    html = template.render(version=f"alpha-{moshi.__version__}")
     return web.Response(text=html, content_type="text/html")
 
 # Define resource HTTP endpoints

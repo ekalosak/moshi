@@ -1,5 +1,7 @@
+"""Main module, used to assemble the server components and routes.
+See app/main.py for usage example.
+"""
 import asyncio
-import glob
 import json
 import os
 from pathlib import Path
@@ -175,8 +177,7 @@ async def offer(request):
     params = await request.json()
     logger.trace(f"Request params: {params}")
     offer = RTCSessionDescription(sdp=params["sdp"], type=params["type"])
-
-    rtc_config = _make_rtc_config()
+    ice_config = ice.make_ice_config()
     pc = RTCPeerConnection()
     pcs.add(pc)
     logger.info(f"Created peer connection and offer for remote: {request.remote}")
@@ -263,6 +264,9 @@ async def on_startup(app):
     speech._setup_client()
     secrets._setup_client()
     logger.info("API clients created.")
+    logger.debug("Getting ICE configuration...")
+    await ice._setup_ice_config()
+    logger.info("ICE configuration created.")
     logger.success("Set up!")
 
 @logger.catch

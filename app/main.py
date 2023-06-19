@@ -1,10 +1,11 @@
 import argparse
+import asyncio
 
 from aiohttp import web
 
 from moshi.server import make_app
 
-app = make_app()
+app = asyncio.run(make_app())
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Moshi web app")

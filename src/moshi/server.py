@@ -31,14 +31,14 @@ ALLOWED_ISS = ['accounts.google.com', 'https://accounts.google.com']
 COOKIE_NAME = "MOSHI-002"
 # Client id is for Google OAuth2
 CLIENT_ID = "462213871057-tsn4b76f24n40i7qrdrhflc7tp5hdqu2.apps.googleusercontent.com"
-# with open('secret/client_id', 'r') as f:
-#     CLIENT_ID = f.read().strip()
+SESSION_KEY_SECRET_ID = "session-key-001"  # for HTTP cookie encryption
+logger.info(f"Using SESSION_KEY_SECRET_ID={SESSION_KEY_SECRET_ID}")
 SECURE_COOKIE = not NO_SECURITY
 if not SECURE_COOKIE:
     logger.warning(f"SECURE_COOKIE={SECURE_COOKIE}")
 else:
     logger.info(f"SECURE_COOKIE={SECURE_COOKIE}")
-# NOTE DEBUG cloud deployment secret injection
+# NOTE DEBUG cloud deployment database
 # with open('secret/user-whitelist.csv', 'r') as f:
 #     whitelisted_emails = [em.strip() for em in f.readlines()]
 whitelisted_emails = ["helloateric@gmail.com", "JKenyon@umich.edu", "Triciak@umich.edu", "benkalosakenyon@gmail.com", "natekenyon3@gmail.com", "leahpom@gmail.com"]
@@ -266,17 +266,17 @@ async def on_startup(app):
     logger.success("Set up!")
 
 @logger.catch
-def make_app() -> 'web.Application':
+async def make_app() -> 'web.Application':
     """Initialize the """
     app = web.Application()
     if SECURE_COOKIE:
-        secret_key = os.urandom(32)
-        # with open('secret/session_cookie_key_32', 'rb') as f:
-        #     secret_key = f.read()
+        secret_key = await secrets.get_secret(SESSION_KEY_SECRET_ID, decode=None)
+        # secret_key = os.urandom(32)
         cookie_storage = EncryptedCookieStorage(secret_key, cookie_name=COOKIE_NAME)
+        logger.success("Setup encrypted cookie storage.")
     else:
         cookie_storage = SimpleCookieStorage(cookie_name=COOKIE_NAME)
-        logger.warning("Using insecure cookie storage")
+        logger.warning("Using insecure cookie storage.")
     session_setup(app, cookie_storage)
     app.on_shutdown.append(on_shutdown)
     app.on_startup.append(on_startup)

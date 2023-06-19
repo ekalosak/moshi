@@ -52,7 +52,8 @@ Repository = "https://github.com/ekalosak/moshi.git"
 [tool.pytest.ini_options]
 markers = [
   "slow: runs more than a second or two to run",
-  "openai: access to the _paid_ OpenAI models API",
+  "openai: access to the _paid_ OpenAI APIs",
   "gcloud: access to the _paid_ Google Cloud APIs",
+  "metered: access to the _paid_ Metered.ca TURN server",
   "asyncio: uses async and await"
 ]

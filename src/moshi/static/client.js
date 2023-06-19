@@ -48,12 +48,6 @@ function createPeerConnection() {
         document.getElementById('audio').srcObject = evt.streams[0];
     });
 
-    // add utterance status feedback
-    pc.addEventListener('utterancedetection', function(evt) {
-        console.log('utterancedetection evt: ' + evt);
-        utteranceDetected.textContent += ' -> ' + evt;
-    }, false);
-
     return pc;
 }
 

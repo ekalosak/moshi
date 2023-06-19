@@ -1,0 +1,45 @@
+import asyncio
+import contextvars
+import os
+
+from google.cloud import secretmanager
+from loguru import logger
+
+from moshi import gcloud
+
+SECRET_TIMEOUT = os.getenv("MOSHISECRETTIMEOUT", 2)
+logger.info("Using SECRET_TIMEOUT={SECRET_TIMEOUT}")
+
+gsecretclient = contextvars.ContextVar("gsecretclient")
+
+def _setup_client():
+    """Set the gtransclient ContextVar."""
+    try:
+        gsecretclient.get()
+        logger.debug("Secretmanager client already exists.")
+    except LookupError:
+        logger.debug("Creating secretmanager client...")
+        client = secretmanager.SecretManagerServiceAsyncClient()
+        gsecretclient.set(client)
+        logger.info(f"Secretmanager client initialized: {gsecretclient}")
+
+def _get_client() -> secretmanager.SecretManagerServiceAsyncClient:
+    """Get the secrets-manager client."""
+    _setup_client()
+    return gsecretclient.get()
+
+async def get_secret(secret_id: str, project_id=gcloud.GOOGLE_PROJECT, version_id: str|None=None) -> str:
+    """Get a secret from the secrets-manager. If version is None, get latest."""
+    client = _get_client()
+    logger.debug(f"Getting secret: {secret_id}")
+    version_id = version_id or "latest"
+    name = f"projects/{project_id}/secrets/{secret_id}/versions/{version_id}"
+    logger.debug(f"Constructed name: {name}")
+    response = await asyncio.wait_for(
+        client.access_secret_version(request={"name": name}),
+        timeout=SECRET_TIMEOUT,
+    )
+    logger.info(f"Retrieved secret: {response.name}")
+    secret = response.payload.data.decode("UTF-8")
+    logger.debug(f"Secret length: {len(secret)}")
+    return secret

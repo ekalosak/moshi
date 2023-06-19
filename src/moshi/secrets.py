@@ -28,7 +28,12 @@ def _get_client() -> secretmanager.SecretManagerServiceAsyncClient:
     _setup_client()
     return gsecretclient.get()
 
-async def get_secret(secret_id: str, project_id=gcloud.GOOGLE_PROJECT, version_id: str|None=None) -> str:
+async def get_secret(
+    secret_id: str,
+    project_id=gcloud.GOOGLE_PROJECT,
+    version_id: str|None=None,
+    decode: str|None="UTF-8",
+) -> str|bytes:
     """Get a secret from the secrets-manager. If version is None, get latest."""
     client = _get_client()
     logger.debug(f"Getting secret: {secret_id}")
@@ -40,6 +45,10 @@ async def get_secret(secret_id: str, project_id=gcloud.GOOGLE_PROJECT, version_i
         timeout=SECRET_TIMEOUT,
     )
     logger.info(f"Retrieved secret: {response.name}")
-    secret = response.payload.data.decode("UTF-8")
+    if decode is not None:
+        secret = response.payload.data.decode(decode)
+    else:
+        secret = response.payload.data
     logger.debug(f"Secret length: {len(secret)}")
+    logger.debug(f"Secret type: {type(secret)}")
     return secret

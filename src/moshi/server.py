@@ -16,7 +16,7 @@ import jinja2
 from loguru import logger
 
 import moshi
-from moshi import core, gcloud, lang, speech, util, AuthenticationError
+from moshi import secrets, core, gcloud, lang, speech, util, AuthenticationError
 
 NO_SECURITY = bool(os.getenv("MOSHINOSECURITY", False))
 if NO_SECURITY:
@@ -29,6 +29,7 @@ if not HTTPS:
 ROOT = os.path.dirname(__file__)
 ALLOWED_ISS = ['accounts.google.com', 'https://accounts.google.com']
 COOKIE_NAME = "MOSHI-002"
+# Client id is for Google OAuth2
 CLIENT_ID = "462213871057-tsn4b76f24n40i7qrdrhflc7tp5hdqu2.apps.googleusercontent.com"
 # with open('secret/client_id', 'r') as f:
 #     CLIENT_ID = f.read().strip()
@@ -175,6 +176,7 @@ async def offer(request):
     logger.trace(f"Request params: {params}")
     offer = RTCSessionDescription(sdp=params["sdp"], type=params["type"])
 
+    rtc_config = _make_rtc_config()
     pc = RTCPeerConnection()
     pcs.add(pc)
     logger.info(f"Created peer connection and offer for remote: {request.remote}")
@@ -259,6 +261,7 @@ async def on_startup(app):
     logger.debug("Creating API clients...")
     lang._setup_client()  # doing this here to avoid waiting when first request happens
     speech._setup_client()
+    secrets._setup_client()
     logger.info("API clients created.")
     logger.success("Set up!")
 

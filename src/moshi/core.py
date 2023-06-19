@@ -13,7 +13,7 @@ from moshi import (Message, Role, UserResetError, character, detector, lang, res
 CONNECTION_TIMEOUT = int(os.getenv("MOSHICONNECTIONTIMEOUT", 5))
 MAX_LOOPS = int(os.getenv("MOSHIMAXLOOPS", 10))
 assert MAX_LOOPS >= 0
-logger.info(f"Running main loop max times: {MAX_LOOPS}")
+logger.info(f"Using MAX_LOOPS={MAX_LOOPS}")
 
 logger.success("Loaded!")
 

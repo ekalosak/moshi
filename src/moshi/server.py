@@ -16,7 +16,7 @@ import jinja2
 from loguru import logger
 
 import moshi
-from moshi import secrets, core, gcloud, lang, speech, util, AuthenticationError
+from moshi import secrets, core, gcloud, lang, speech, util, UserAuthenticationError
 
 NO_SECURITY = bool(os.getenv("MOSHINOSECURITY", False))
 if NO_SECURITY:
@@ -81,8 +81,8 @@ async def login(request: web_request.Request):
     )
     return web.Response(text=html, content_type='text/html')
 
-def _handle_auth_error(e: AuthenticationError):
-    """Raise the AuthenticationError to the user, redirecting them to the login page."""
+def _handle_auth_error(e: UserAuthenticationError):
+    """Raise the UserAuthenticationError to the user, redirecting them to the login page."""
     err_str = str(e)
     logger.debug(f"Presenting err_str to user: {err_str}")
     err_str = urllib.parse.quote(err_str)
@@ -99,11 +99,11 @@ async def login_callback(request):
     try:
         id_info = id_token.verify_oauth2_token(token, requests.Request())
         if id_info['iss'] not in ALLOWED_ISS:
-            raise AuthenticationError('Authentication failed')
+            raise UserAuthenticationError('Authentication failed')
         user_email = id_info['email'].lower()
         logger.debug(f'user_email={user_email}')
         if user_email not in whitelisted_emails:
-            raise AuthenticationError('Unrecognized user')
+            raise UserAuthenticationError('Unrecognized user')
         user_id = id_info['sub']
         session['user_id'] = user_id
         session['user_given_name'] = id_info['given_name']
@@ -112,8 +112,8 @@ async def login_callback(request):
         # TODO make sure the user email is verified id_info['email_verified']
         logger.debug(f"Authentication successful for user: {user_email}")
         raise web.HTTPFound('/')
-    except AuthenticationError as e:
-        logger.error(f"Authentication failed: {e}")
+    except UserAuthenticationError as e:
+        logger.error(f"User authentication failed: {e}")
         _handle_auth_error(e)
 
 def require_authentication(http_endpoint_handler):
@@ -129,8 +129,8 @@ def require_authentication(http_endpoint_handler):
                 logger.debug("No user_email in session cookie, user not logged in.")
                 raise web.HTTPFound(f"/login")
             if user_email not in whitelisted_emails:
-                raise AuthenticationError(f"Unrecognized user: {user_email}")
-        except AuthenticationError as e:
+                raise UserAuthenticationError(f"Unrecognized user: {user_email}")
+        except UserAuthenticationError as e:
             _handle_auth_error(e)
         logger.debug(f"User {user_email} is authenticated!")
         return await http_endpoint_handler(request)

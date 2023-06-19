@@ -4,7 +4,7 @@ import os
 
 from loguru import logger
 
-from .exceptions import AuthenticationError, UserResetError
+from .exceptions import UserAuthenticationError, UserResetError
 from .base import Message, Model, ModelType, Role
 from .gcloud import GOOGLE_PROJECT
 from .audio import AUDIO_FORMAT, AUDIO_LAYOUT, SAMPLE_RATE

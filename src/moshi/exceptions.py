@@ -1,4 +1,4 @@
-class AuthenticationError(Exception):
+class UserAuthenticationError(Exception):
     """Raised when user authentication fails."""
     ...
 

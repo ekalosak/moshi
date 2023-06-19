@@ -113,7 +113,7 @@ class WebRTCChatter:
         util.splash("moshi")
         try:
             await asyncio.wait_for(self.__connected.wait(), timeout=CONNECTION_TIMEOUT)
-        except TimeoutError:
+        except asyncio.TimeoutError:
             logger.error("TimeoutError: CONNECTION_TIMEOUT={CONNECTION_TIMEOUT}")
             await self.__send_status("Timed out while establishing connection, try refreshing the page.")
         for i in itertools.count():

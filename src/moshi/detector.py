@@ -105,8 +105,10 @@ class UtteranceDetector:
         """While the detector is not actively listening, e.g. during response and computation, it must dump the audio
         frames from the track to remain 'real-time'. Otherwise those audio frames would back up and we'd be processing
         e.g. synthesized speech feedback."""
+        logger.debug("Awaiting ICE connection completion and establishment of all datachannels...")
+        await self.__connected.wait()
+        logger.debug("ICE connection succeeded!")
         while True:
-            await self.__connected.wait()
             try:
                 await asyncio.wait_for(
                     self.__dump_frame(), timeout=self.__config.utterance_timeout_seconds

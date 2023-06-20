@@ -232,7 +232,6 @@ async def offer(request):
             await chatter.stop()
             logger.info(f"Track {track.kind} ended")
 
-    # on_track gets called when the remote description is set, I think
     await pc.setRemoteDescription(offer)
 
     answer = await pc.createAnswer()

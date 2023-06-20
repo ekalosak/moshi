@@ -21,14 +21,17 @@ build-install:
 bump:
 	./scripts/bump_version.sh
 
-deploy-only: deploy-nobrowse
+deploy-nopub: deploy-nobrowse
 	gcloud app browse
 
 deploy-nobrowse:
 	(cd app/ && gcloud -q app deploy)
 
-deploy: bump build publish deploy-only
+deploy-nologs: bump build publish deploy-nopub
 	@echo "✅ Deployed."
+
+deploy: deploy-nologs logs
+	@echo "Getting logs..."
 
 dev-install: auth-install build-install
 	mkdir build 2>/dev/null || echo "build/ exists" && \

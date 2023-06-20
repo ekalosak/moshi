@@ -143,14 +143,14 @@ async def index(request):
     """HTTP endpoint for index.html"""
     logger.info(request)
     session = await get_session(request)
-    http_client = session['http_client']
-    with ice.client(http_client):
-        if turn_token := session.get('turn_token'):
-            valid = await ice.user_token_valid(turn_token)
-        if not turn_token or not valid:
-            logger.debug("Refreshing TURN server token...")
-            session['turn_token'] = await ice.get_turn_token(session['user_id'])
-        logger.info("TURN server token refreshed.")
+    # http_client = session['http_client']
+    # with ice.client(http_client):
+    #     if turn_token := session.get('turn_token'):
+    #         valid = await ice.user_token_valid(turn_token)
+    #     if not turn_token or not valid:
+    #         logger.debug("Refreshing TURN server token...")
+    #         session['turn_token'] = await ice.get_turn_token(session['user_id'])
+    #     logger.info("TURN server token refreshed.")
     template = env.get_template('templates/index.html')
     html = template.render(version=f"alpha-{moshi.__version__}")
     return web.Response(text=html, content_type="text/html")
@@ -186,8 +186,9 @@ async def offer(request):
     session = await get_session(request)
     logger.trace(f"Request params: {params}")
     offer = RTCSessionDescription(sdp=params["sdp"], type=params["type"])
-    ice_config = await ice.get_ice_config(session['turn_token'])
-    pc = RTCPeerConnection(ice_config)
+    # ice_config = await ice.get_ice_config(session['turn_token'])
+    # pc = RTCPeerConnection(ice_config)
+    pc = RTCPeerConnection()
     pcs.add(pc)
     logger.info(f"Created peer connection and offer for remote: {request.remote}")
     logger.trace(f"offer: {offer}")
@@ -273,6 +274,8 @@ async def on_startup(app):
     speech._setup_client()
     secrets._setup_client()
     logger.info("API clients created.")
+    # logger.debug("Setting up aiohttp_client...")
+    # app['http_client'] = aiohttp.ClientSession()
     logger.success("Set up!")
 
 @logger.catch
@@ -297,6 +300,4 @@ async def make_app() -> 'web.Application':
     app.router.add_get("/client.js", javascript)
     app.router.add_get("/style.css", css)
     app.router.add_post("/offer", offer)
-    async with aiohttp.ClientSession() as aiohttp_client:
-        app['http_client'] = aiohttp_client
-        yield app
+    return app

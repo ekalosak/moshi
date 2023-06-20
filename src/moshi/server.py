@@ -175,23 +175,27 @@ async def javascript(request):
     return web.Response(content_type="application/javascript", text=content)
 
 
-# Create WebRTC handler; offer is called by client.js on index.html;
+# Create WebRTC handler; offer/ is called by client.js on index.html having created an initial SDP offer;
 @util.async_with_pcid
 async def offer(request):
     """In WebRTC, there's an initial offer->answer exchange that negotiates the connection parameters.
     This endpoint accepts an offer request from a client and returns an answer with the SDP (session description protocol).
     Moreover, it sets up the PeerConnection (pc) and the event listeners on the connection.
+    Sources:
+        - RFC 3264
+        - RFC 2327
     """
     params = await request.json()
-    session = await get_session(request)
     logger.trace(f"Request params: {params}")
+    session = await get_session(request)
+    assert params["type"] == "offer", "At /offer endpoint, the SDP must be type 'offer'. Error in client.js."  # TODO make this 500 without crashing
     offer = RTCSessionDescription(sdp=params["sdp"], type=params["type"])
+    logger.trace(f"offer: {offer}")
     # ice_config = await ice.get_ice_config(session['turn_token'])
     # pc = RTCPeerConnection(ice_config)
     pc = RTCPeerConnection()
     pcs.add(pc)
-    logger.info(f"Created peer connection and offer for remote: {request.remote}")
-    logger.trace(f"offer: {offer}")
+    logger.info(f"Created peer connection to: {request.remote}")
 
     chatter = core.WebRTCChatter()
 
@@ -201,7 +205,7 @@ async def offer(request):
             @channel.on("message")
             def on_message(message):
                 if isinstance(message, str) and message.startswith("ping"):
-                    channel.send("pong" + message[4:])  # NOTE blocking io
+                    channel.send("pong" + message[4:])  # NOTE io under the hood done with fire-and-forget ensure_future, UDP
         else:
             chatter.add_channel(channel)
 

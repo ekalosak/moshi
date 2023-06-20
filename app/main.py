@@ -5,7 +5,8 @@ from aiohttp import web
 
 from moshi.server import make_app
 
-app = make_app()
+async def app_factory():
+    return await make_app()
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Moshi web app")
@@ -23,6 +24,7 @@ if __name__ == "__main__":
         ssl_context.load_cert_chain(args.cert_file, args.key_file)
     else:
         ssl_context = None
+    app = asyncio.run(app_factory())
     web.run_app(
         app, access_log=None, host=args.host, port=args.port, ssl_context=ssl_context
     )

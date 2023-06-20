@@ -5,7 +5,7 @@
 # Source: https://cloud.google.com/appengine/docs/standard/python3/building-app/writing-web-service
 
 runtime: python310
-entrypoint: gunicorn --bind :$PORT --workers 1 --threads 1 --timeout 5 --worker-class aiohttp.GunicornWebWorker main:app
+entrypoint: gunicorn main:app_factory --bind :$PORT --workers 1 --threads 1 --timeout 5 --worker-class aiohttp.GunicornWebWorker
 env_variables:
   LOGURU_LEVEL: "TRACE"
   MOSHICONNECTIONTIMEOUT: 30

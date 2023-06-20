@@ -138,16 +138,24 @@ def require_authentication(http_endpoint_handler):
         return await http_endpoint_handler(request)
     return auth_wrapper
 
-# Define application HTTP endpoints
 @require_authentication
 async def index(request):
     """HTTP endpoint for index.html"""
     logger.info(request)
+    session = await get_session(request)
+    http_client = session['http_client']
+    with ice.client(http_client):
+        if turn_token := session.get('turn_token'):
+            valid = await ice.user_token_valid(turn_token)
+        if not turn_token or not valid:
+            logger.debug("Refreshing TURN server token...")
+            session['turn_token'] = await ice.get_turn_token(session['user_id'])
+        logger.info("TURN server token refreshed.")
     template = env.get_template('templates/index.html')
     html = template.render(version=f"alpha-{moshi.__version__}")
     return web.Response(text=html, content_type="text/html")
 
-# Define resource HTTP endpoints
+
 async def favicon(request):
     """HTTP endpoint for the favicon"""
     fp = os.path.join(ROOT, "static/favicon.ico")
@@ -167,7 +175,7 @@ async def javascript(request):
     return web.Response(content_type="application/javascript", text=content)
 
 
-# Create WebRTC handler
+# Create WebRTC handler; offer is called by client.js on index.html;
 @util.async_with_pcid
 async def offer(request):
     """In WebRTC, there's an initial offer->answer exchange that negotiates the connection parameters.
@@ -175,10 +183,11 @@ async def offer(request):
     Moreover, it sets up the PeerConnection (pc) and the event listeners on the connection.
     """
     params = await request.json()
+    session = await get_session(request)
     logger.trace(f"Request params: {params}")
     offer = RTCSessionDescription(sdp=params["sdp"], type=params["type"])
-    ice_config = ice.make_ice_config()
-    pc = RTCPeerConnection()
+    ice_config = await ice.get_ice_config(session['turn_token'])
+    pc = RTCPeerConnection(ice_config)
     pcs.add(pc)
     logger.info(f"Created peer connection and offer for remote: {request.remote}")
     logger.trace(f"offer: {offer}")
@@ -264,9 +273,6 @@ async def on_startup(app):
     speech._setup_client()
     secrets._setup_client()
     logger.info("API clients created.")
-    logger.debug("Getting ICE configuration...")
-    await ice._setup_ice_config()
-    logger.info("ICE configuration created.")
     logger.success("Set up!")
 
 @logger.catch
@@ -291,4 +297,6 @@ async def make_app() -> 'web.Application':
     app.router.add_get("/client.js", javascript)
     app.router.add_get("/style.css", css)
     app.router.add_post("/offer", offer)
-    return app
+    async with aiohttp.ClientSession() as aiohttp_client:
+        app['http_client'] = aiohttp_client
+        yield app

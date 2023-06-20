@@ -37,6 +37,7 @@ dependencies = [
 tests = [
   'pytest',
   'pytest-asyncio',
+  'pytest-aiohttp',
   'scipy',
 ]
 dev = [

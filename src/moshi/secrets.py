@@ -28,6 +28,7 @@ def _get_client() -> secretmanager.SecretManagerServiceAsyncClient:
     _setup_client()
     return gsecretclient.get()
 
+# TODO this should be a singularly cached function (secrets don't turn over that fast)
 async def get_secret(
     secret_id: str,
     project_id=gcloud.GOOGLE_PROJECT,

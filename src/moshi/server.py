@@ -278,7 +278,7 @@ async def on_startup(app):
     logger.success("Set up!")
 
 @logger.catch
-def make_app() -> 'web.Application':
+async def make_app() -> 'web.Application':
     """Initialize the """
     app = web.Application()
     if SECURE_COOKIE:

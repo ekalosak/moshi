@@ -31,7 +31,7 @@ class TestICE:
         import sys; sys.exit(1)
 
     async def test_get_ice_secret(self):
-        secret = await ice._get_turn_server_api_secret()
+        secret = await ice._get_api_secret()
         assert isinstance(secret, str)
         assert len(secret) > 16
 

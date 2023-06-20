@@ -1,4 +1,4 @@
-__version__ = "23.6.17"
+__version__ = "23.6.18"
 
 import os
 

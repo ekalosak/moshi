@@ -12,6 +12,10 @@ So CE.
 - Cloud NAT
 - Cloud VPC
 
+# I bought a domain
+1. Get a domain from Google Domains
+2. Import it into Cloud Domains
+
 # Spin up an instance
 From the [console](https://console.cloud.google.com/compute/instancesAdd?project=moshi-002), I launched this:
 ```sh

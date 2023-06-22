@@ -1,4 +1,6 @@
 #!/bin/bash
+eval "$(pyenv init -)" && \
+pyenv activate moshi && \
 LOGURU_LEVEL=TRACE \
 MOSHICONNECTIONTIMEOUT=30 \
 gunicorn main:app_factory \

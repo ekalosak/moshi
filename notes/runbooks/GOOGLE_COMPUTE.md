@@ -73,16 +73,27 @@ Make sure the venv and moshi are all gucci.
 1. Take a snapshot of the VM
 2. Create image from VM from the snapshot
 
-## Create the instance template from the image
-```bash
-```
-
-# IAM
+## IAM
 Make a Service Account with the following Roles:
 - Arifact Registry Reader
 - Secret Manager Secret Accessor
 
 Shut down the VM and apply the Role in the edit menu.
+
+## Create the instance template from the image
+Super easy just make sure to edit the boot disk to point to the Image created from the Snapshot.
+```bash
+gcloud compute instance-templates create instance-template-2 --project=moshi-002 --machine-type=e2-micro --network-interface=network=default,network-tier=PREMIUM --maintenance-policy=MIGRATE --provisioning-model=STANDARD --service-account=gce-1-326@moshi-002.iam.gserviceaccount.com --scopes=https://www.googleapis.com/auth/cloud-platform --tags=allow-health-check --create-disk=auto-delete=yes,boot=yes,device-name=instance-template-2,image=projects/moshi-002/global/images/image-2,mode=rw,size=10,type=pd-balanced --no-shielded-secure-boot --shielded-vtpm --shielded-integrity-monitoring --reservation-affinity=any
+```
+Note that I am using the allow-health-check network tag as the guide specifies.
+
+## Create instance group
+https://cloud.google.com/load-balancing/docs/https/setup-global-ext-https-compute
+1. Easy, defaults except add named port `http` with number `80`.
+
+## Reserve and external IP
+https://console.cloud.google.com/networking/addresses/
+1. Easy, make sure it's "global"
 
 # Port forward and try it out
 
@@ -144,3 +155,8 @@ gcloud compute ssh --project=moshi-002 \
 
 # CE setup
 See ops/setup.sh for Deterministic Instance Template setup script.
+```
+./setup.sh
+source .bashrc
+nohup ./install.sh &
+```

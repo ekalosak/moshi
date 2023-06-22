@@ -56,7 +56,7 @@ NAME=instance-003 \
 gcloud compute scp ./ops/*.sh $NAME:/home/eric
 ```
 
-## Build the image
+## Build the image's prototype VM
 ssh and:
 ```bash
 ./setup.sh
@@ -67,8 +67,22 @@ Walk away, let Python compile.
 Check is it running: `ps aux | grep install.sh`
 Check logs: `tail -f nohup.out`
 
-## Install Python requirements
-...
+Make sure the venv and moshi are all gucci.
+
+## Create the image
+1. Take a snapshot of the VM
+2. Create image from VM from the snapshot
+
+## Create the instance template from the image
+```bash
+```
+
+# IAM
+Make a Service Account with the following Roles:
+- Arifact Registry Reader
+- Secret Manager Secret Accessor
+
+Shut down the VM and apply the Role in the edit menu.
 
 # Port forward and try it out
 

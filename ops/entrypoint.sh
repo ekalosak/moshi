@@ -1,6 +1,6 @@
 #!/bin/bash
-LOGURU_LEVEL: "TRACE" \
-MOSHICONNECTIONTIMEOUT: 30 \
+LOGURU_LEVEL=TRACE \
+MOSHICONNECTIONTIMEOUT=30 \
 gunicorn main:app_factory \
   --bind :8080 \
   --workers 1 \

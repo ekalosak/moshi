@@ -8,7 +8,7 @@ from loguru import logger
 from moshi import gcloud
 
 SECRET_TIMEOUT = os.getenv("MOSHISECRETTIMEOUT", 2)
-logger.info("Using SECRET_TIMEOUT={SECRET_TIMEOUT}")
+logger.info(f"Using SECRET_TIMEOUT={SECRET_TIMEOUT}")
 
 gsecretclient = contextvars.ContextVar("gsecretclient")
 

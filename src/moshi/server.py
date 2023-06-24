@@ -18,7 +18,7 @@ import jinja2
 from loguru import logger
 
 import moshi
-from moshi import secrets, core, gcloud, lang, speech, util, UserAuthenticationError
+from moshi import secrets, core, gcloud, lang, speech, think, util, UserAuthenticationError
 
 NO_SECURITY = bool(os.getenv("MOSHINOSECURITY", False))
 if NO_SECURITY:
@@ -277,8 +277,9 @@ async def on_startup(app):
     speech._setup_client()
     secrets._setup_client()
     logger.info("API clients created.")
-    # logger.debug("Setting up aiohttp_client...")
-    # app['http_client'] = aiohttp.ClientSession()
+    logger.debug("Setting up OpenAI...")
+    await think._setup_api_key()
+    logger.info("OpenAI setup complete.")
     logger.success("Set up!")
 
 @logger.catch

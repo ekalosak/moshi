@@ -9,15 +9,19 @@ from typing import NewType
 import openai
 from loguru import logger
 
-from moshi import Message, Model, ModelType
+from moshi import Message, Model, ModelType, secrets
 
 OPENAI_COMPLETION_MODEL = Model(
     os.getenv("OPENAI_COMPLETION_MODEL", "text-davinci-002")
 )
 logger.info(f"Using completion model: {OPENAI_COMPLETION_MODEL}")
+OPENAI_APIKEY_SECRET = os.getenv("OPENAI_APIKEY_SECRET", "openai-api-key-001")
+logger.info(f"Using API key from: {OPENAI_APIKEY_SECRET}")
 
 logger.success("Loaded!")
 
+async def _setup_api_key():
+    openai.api_key = await secrets.get_secret(OPENAI_APIKEY_SECRET)
 
 def _get_type_of_model(model: Model) -> ModelType:
     """Need to know the type of model for endpoint compatibility.

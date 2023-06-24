@@ -41,8 +41,6 @@ if not SECURE_COOKIE:
 else:
     logger.info(f"SECURE_COOKIE={SECURE_COOKIE}")
 # NOTE DEBUG cloud deployment database
-# with open('secret/user-whitelist.csv', 'r') as f:
-#     whitelisted_emails = [em.strip() for em in f.readlines()]
 whitelisted_emails = [
     "helloateric@gmail.com",
     "JKenyon@umich.edu",
@@ -55,6 +53,7 @@ whitelisted_emails = [
     "james.ryan.hennessy@gmail.com",
     "lucasdf13@gmail.com",
     "brian.r.guest@gmail.com",
+    "yoshi141@gmail.com",
 ]
 whitelisted_emails = [em.lower() for em in whitelisted_emails]
 _es = '\n\t'.join(whitelisted_emails)  # note, \ not allowed in f-string {} terms

@@ -188,7 +188,7 @@ class WebRTCChatter:
             channel.send(status)
         else:
             logger.debug(f"channels: {self.__channels}")
-            logger.warning(f"Dropping status because channel not yet initialized: {status}")
+            logger.warning(f"Dropping message because status channel not yet initialized: {status}")
 
     def __send_transcript(self, msg: Message):
         logger.debug(f"Sending transcript: {msg}")
@@ -204,7 +204,7 @@ class WebRTCChatter:
             logger.debug(f"Sending transcript: \"{msg_str}\"")
             channel.send(msg_str)
         else:
-            logger.warning(f"Dropping transcript because channel not yet initialized: {status}")
+            logger.warning(f"Dropping message because transcript channel not yet initialized: {msg}")
 
     async def __synth_speech(self, text: str=None) -> AudioFrame:
         msg = self.messages[-1]

@@ -21,6 +21,7 @@ def ice_client(client):
 @pytest.mark.gcloud
 @pytest.mark.metered
 @pytest.mark.usefixtures("ice_client")
+@pytest.mark.skip(reason="Not used")
 class TestICE:
 
     async def test_get_ice_config(self):

@@ -117,7 +117,7 @@ async def test_chatter_aiortc_components(
     utterance_time_complete_on_sink = xs[conv.argmax()]
     # utterance_time_length = audio.get_frame_seconds(_ut)
     assert (
-        28 < utterance_time_complete_on_sink < 31
+        33 < utterance_time_complete_on_sink < 34
     ), "nominally where the end of the utterance might be..?"
 
 

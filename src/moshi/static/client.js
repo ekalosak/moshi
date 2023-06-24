@@ -270,16 +270,16 @@ function escapeRegExp(string) {
     return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // $& means the whole matched string
 }
 
-// // show/hide nerd stuff
-// var showNerdStuffButton = document.getElementById('showNerdStuff');
-// var showNerdStuffDiv = document.getElementById('nerd-stuff');
-//
-// showNerdStuffButton.addEventListener('click', function() {
-//   if (showNerdStuffDiv.style.display === 'none') {
-//     showNerdStuffDiv.style.display = 'block';
-//     showNerdStuffButton.textContent = 'Hide diagnostics';
-//   } else {
-//     showNerdStuffDiv.style.display = 'none';
-//     showNerdStuffButton.textContent = 'Show diagnostics';
-//   }
-// });
+// show/hide nerd stuff
+var showNerdStuffButton = document.getElementById('showNerdStuff');
+var showNerdStuffDiv = document.getElementById('nerd-stuff');
+
+showNerdStuffButton.addEventListener('click', function() {
+  if (showNerdStuffDiv.style.display === 'block') {
+    showNerdStuffDiv.style.display = 'none';
+    showNerdStuffButton.textContent = 'Show diagnostics';
+  } else {
+    showNerdStuffDiv.style.display = 'block';
+    showNerdStuffButton.textContent = 'Hide diagnostics';
+  }
+});

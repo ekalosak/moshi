@@ -2,14 +2,17 @@
 su - eric -c '
   export PYENV_ROOT="$HOME/.pyenv"
   export PATH="$PYENV_ROOT/bin:$PATH"
-  echo "STARTUP"
+  echo "STARTUP ✅"
   echo "WHOAMI: $(whoami)"
-  echo "PATH=$PATH"
+  echo "PATH: $PATH"
   echo "PYENV: $(command -v pyenv)"
   eval "$(pyenv init -)" && \
   eval "$(pyenv virtualenv-init -)" && \
   pyenv activate moshi && \
-  pip install --upgrade moshi && \
+  pip install \
+    --upgrade \
+    --extra-index-url https://us-east1-python.pkg.dev/moshi-002/moshi-002-repo/simple \
+    moshi && \
   LOGURU_LEVEL=DEBUG \
   MOSHICONNECTIONTIMEOUT=30 \
   gunicorn main:app_factory \

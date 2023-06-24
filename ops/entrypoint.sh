@@ -15,6 +15,8 @@ su - eric -c '
     moshi && \
   LOGURU_LEVEL=DEBUG \
   MOSHICONNECTIONTIMEOUT=30 \
+  MOSHILOGSTDOUT=0 \
+  MOSHILOGCLOUD=1 \
   gunicorn main:app_factory \
     --bind :8080 \
     --workers 1 \

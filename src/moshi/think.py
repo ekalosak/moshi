@@ -157,7 +157,7 @@ def completion_from_assistant(
         https://platform.openai.com/docs/api-reference/chat/create
     """
     assert n > 0 and isinstance(n, int)
-    if n > 5:
+    if n > 1:
         logger.warning(f"Generating many responses at once can be costly: n={n}")
     msg_contents = []
     if _get_type_of_model(model) == ModelType.CHAT:

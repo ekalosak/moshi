@@ -33,7 +33,7 @@ publish: bump build
 		 --repository-url $(GOOGLE_CLOUD_PYPI_URL) \
 		 "dist/*" \
 		 --verbose
-	@echo "✅ Published $(cat pyproject.toml | grep version)."
+	@echo "✅ Published."
 
 precheck:
 	@python3 -c 'import sys; assert sys.version_info >= (3, 10), f"Python version >= 3.10 required, found {sys.version_info}"' \

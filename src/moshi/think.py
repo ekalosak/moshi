@@ -1,5 +1,6 @@
 """ This module abstracts specific chatbot implementations for use in the ChitChat app. """
 import os
+import re
 import textwrap
 from dataclasses import asdict
 from enum import Enum
@@ -9,7 +10,7 @@ from typing import NewType
 import openai
 from loguru import logger
 
-from moshi import Message, Model, ModelType, secrets
+from moshi import Message, Model, ModelType, Role, secrets
 
 OPENAI_COMPLETION_MODEL = Model(
     os.getenv("OPENAI_COMPLETION_MODEL", "text-davinci-002")
@@ -33,6 +34,18 @@ def _get_type_of_model(model: Model) -> ModelType:
     else:
         return ModelType.COMP
 
+def _clean_completion(msg: str) -> str:
+    """Remove all the formatting the completion model thinks it should give."""
+    # 1. only keep first response, remove its prefix
+    pattern = r"(?:\n|^)([A-Za-z]+: )(.+)"
+    match = re.search(pattern, msg)
+    if match:
+        first_response = match.group(2)
+        logger.debug(f"Regex matched: {first_response}")
+        result = first_response
+    else:
+        result = msg
+    return result
 
 ChatCompletionPayload = NewType("ChatCompletionPayload", list[dict[str, str]])
 CompletionPayload = NewType("CompletionPayload", str)
@@ -58,10 +71,25 @@ def _completion_payload_from_messages(messages: list[Message]) -> CompletionPayl
     Source:
         - https://platform.openai.com/docs/api-reference/completions/create
     """
-    payload = ""
+    payload = ["INSTRUCTIONS"]
+    instructions = 1
+    instr = f"{instructions}. You are the 'assistant', the human participant is the 'user'."  # chat_completion has this notion natively
+    payload.append(instr)
+    sys_done = False
     for msg in messages:
-        msgstr = f"{msg.role}: {msg.content}"
-        payload = payload + "\n" + msgstr
+        if msg.role == Role.SYS:
+            if sys_done:
+                logger.warning(f"System message out of place, skipping:\n{msg}\n{[msg.role for msg in messages]}")
+                continue
+            instructions += 1
+            msgstr = f"{instructions}. {msg.content}"
+        else:
+            if not sys_done:
+                payload.append("CONVERSATION")
+            sys_done = True
+            msgstr = f"{msg.role}: {msg.content}"
+        payload.append(msgstr)
+    payload = "\n".join(payload)
     logger.debug(f"payload:\n{pformat(payload)}")
     return payload
 
@@ -83,7 +111,10 @@ def _chat_completion(
     for choice in response.choices:
         if reason := choice["finish_reason"] != "stop":
             logger.warning(f"Got finish_reason: {reason}")
+        if n > 1:
+            logger.warning(f"n={n}, using only first completion")
         msg_contents.append(choice.message.content)
+        break
     return msg_contents
 
 
@@ -103,7 +134,12 @@ def _completion(
     for choice in response.choices:
         if reason := choice["finish_reason"] != "stop":
             logger.warning(f"Got finish_reason: {reason}")
-        msg_contents.append(choice.text.strip())
+        msg = choice.text.strip()
+        if n > 1:
+            logger.warning(f"n={n}, using only first completion")
+        break
+    msg = _clean_completion(msg)
+    msg_contents.append(msg)
     return msg_contents
 
 

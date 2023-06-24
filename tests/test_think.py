@@ -27,3 +27,18 @@ def test_completion(model):
     assert len(resps) == n
     resp = resps[0]
     assert isinstance(resp, str)
+
+
+parameters = [
+    (
+        """
+        \n\nThIsIsAlSoAmAtCh: extract me
+        DontMatchMe: don't extract this
+        user: some other response
+        """,
+        "extract me"
+    ),
+]
+@pytest.mark.parametrize("response,desired", parameters)
+def test_completion_scrub(response, desired):
+    assert think._clean_completion(response) == desired

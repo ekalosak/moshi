@@ -114,7 +114,7 @@ class WebRTCChatter:
         try:
             await asyncio.wait_for(self.__connected.wait(), timeout=CONNECTION_TIMEOUT)
         except asyncio.TimeoutError:
-            logger.error("TimeoutError: CONNECTION_TIMEOUT={CONNECTION_TIMEOUT}")
+            logger.error(f"TimeoutError: CONNECTION_TIMEOUT={CONNECTION_TIMEOUT}")
             await self.__send_status("Timed out while establishing connection, try refreshing the page.")
         for i in itertools.count():
             if i == MAX_LOOPS and MAX_LOOPS != 0:

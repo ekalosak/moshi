@@ -72,7 +72,11 @@ async def test_chatter_aiortc_components(
     ):
         print("chatter and sink initialized, starting them now...")
         await asyncio.gather(chatter.start(), sink.start())
-        print(f"chatter and sink started, sleeping {sleep}")
+        print("chatter and sink started")
+        await asyncio.sleep(2)
+        print("spoofing 'datachannels connected' signal")
+        chatter._WebRTCChatter__connected.set()
+        print(f"sleeping {sleep}")
         await asyncio.sleep(sleep)  # sec
     chat_task = chatter._WebRTCChatter__task
     print(f"chatter.__task: {chat_task}")

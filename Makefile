@@ -21,6 +21,9 @@ build-install:
 bump:
 	./scripts/bump_version.sh
 
+confirm:
+	@echo -n "Are you sure? [y/N] " && read ans && [ $${ans:-N} = y ]
+
 dev-install: auth-install build-install
 	mkdir build 2>/dev/null || echo "build/ exists" && \
     pip install -e .[dev,test]

@@ -43,7 +43,15 @@ else:
 # NOTE DEBUG cloud deployment database
 # with open('secret/user-whitelist.csv', 'r') as f:
 #     whitelisted_emails = [em.strip() for em in f.readlines()]
-whitelisted_emails = ["helloateric@gmail.com", "JKenyon@umich.edu", "Triciak@umich.edu", "benkalosakenyon@gmail.com", "natekenyon3@gmail.com", "leahpom@gmail.com"]
+whitelisted_emails = [
+    "helloateric@gmail.com",
+    "JKenyon@umich.edu",
+    "Triciak@umich.edu",
+    "benkalosakenyon@gmail.com",
+    "natekenyon3@gmail.com",
+    "leahpom@gmail.com",
+    "ross.schibler@gmail.com ",
+]
 whitelisted_emails = [em.lower() for em in whitelisted_emails]
 _es = '\n\t'.join(whitelisted_emails)  # note, \ not allowed in f-string {} terms
 logger.info(f"Allowed users:\n\t{_es}")

@@ -10,7 +10,12 @@ from loguru import logger
 
 from moshi import (Message, Role, UserResetError, character, detector, lang, responder, speech, think, util)
 
+STOP_TOKENS = ["user:"]
+logger.info(f"Using STOP_TOKENS={STOP_TOKENS}")
+MAX_RESPONSE_TOKENS = int(os.getenv("MOSHIMAXTOKENS", 64))
+logger.info(f"Using MAX_RESPONSE_TOKENS={MAX_RESPONSE_TOKENS}")
 CONNECTION_TIMEOUT = int(os.getenv("MOSHICONNECTIONTIMEOUT", 5))
+logger.info(f"Using (WebRTC session) CONNECTION_TIMEOUT={CONNECTION_TIMEOUT}")
 MAX_LOOPS = int(os.getenv("MOSHIMAXLOOPS", 10))
 assert MAX_LOOPS >= 0
 logger.info(f"Using MAX_LOOPS={MAX_LOOPS}")
@@ -228,7 +233,9 @@ class WebRTCChatter:
             think.completion_from_assistant,
             self.messages,
             n=1,
-        )
+            max_tokens=MAX_RESPONSE_TOKENS,
+            stop=STOP_TOKENS,
+        )  # TODO add user=session["user id"] to help moderation
         assert len(ast_txts) == 1
         ast_txt = ast_txts[0]
         logger.info(f"Got assistant response: {textwrap.shorten(ast_txt, 64)}")

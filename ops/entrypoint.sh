@@ -1,7 +1,12 @@
 #!/bin/bash
+echo "STARTING UP"
+su -l eric
+echo "AS ERIC, PATH=$PATH"
 eval "$(pyenv init -)" && \
+eval "$(pyenv virtualenv-init -)" && \
 pyenv activate moshi && \
-LOGURU_LEVEL=TRACE \
+pip install --upgrade moshi \
+LOGURU_LEVEL=DEBUG \
 MOSHICONNECTIONTIMEOUT=30 \
 gunicorn main:app_factory \
   --bind :8080 \

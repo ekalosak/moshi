@@ -54,6 +54,7 @@ whitelisted_emails = [
     "lucasdf13@gmail.com",
     "brian.r.guest@gmail.com",
     "yoshi141@gmail.com",
+    "mjmcnulty7@gmail.com",
 ]
 whitelisted_emails = [em.lower() for em in whitelisted_emails]
 _es = '\n\t'.join(whitelisted_emails)  # note, \ not allowed in f-string {} terms

@@ -36,14 +36,16 @@ def _get_type_of_model(model: Model) -> ModelType:
 
 def _clean_completion(msg: str) -> str:
     """Remove all the formatting the completion model thinks it should give."""
+    logger.debug("Cleaning response...")
     # 1. only keep first response, remove its prefix
-    pattern = r"(?:\n|^)([A-Za-z]+: )(.+)"
+    pattern = r"(?:\n|^)([A-Za-z]+:)(?:[ \n\t]*)([^\n\t]+)"
     match = re.search(pattern, msg)
     if match:
         first_response = match.group(2)
         logger.debug(f"Regex matched: {first_response}")
         result = first_response
     else:
+        logger.debug("Regex did not match.")
         result = msg
     return result
 

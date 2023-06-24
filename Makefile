@@ -1,4 +1,4 @@
-.PHONY: auth build login pypi-publish dev-setup build-install precheck deploy
+.PHONY: auth build dev publish precheck
 # Source: https://web.mit.edu/gnu/doc/html/make_6.html
 
 GOOGLE_CLOUD_PROJECT = moshi-002
@@ -21,18 +21,6 @@ build-install:
 bump:
 	./scripts/bump_version.sh
 
-deploy-nopub: deploy-nobrowse
-	gcloud app browse
-
-deploy-nobrowse:
-	(cd app/ && gcloud -q app deploy)
-
-deploy-nologs: bump build publish deploy-nopub
-	@echo "✅ Deployed."
-
-deploy: deploy-nologs logs
-	@echo "Getting logs..."
-
 dev-install: auth-install build-install
 	mkdir build 2>/dev/null || echo "build/ exists" && \
     pip install -e .[dev,test]
@@ -40,15 +28,12 @@ dev-install: auth-install build-install
 dev:
 	ls **/*py | MOSHINOSECURITY=1 entr -rc python app/main.py --port 8080
 
-
-logs:
-	gcloud app logs tail -s default
-
-publish: build
+publish: bump build
 	python3 -m twine upload \
 		 --repository-url $(GOOGLE_CLOUD_PYPI_URL) \
 		 "dist/*" \
 		 --verbose
+	@echo "✅ Published $(cat pyproject.toml | grep version)."
 
 precheck:
 	@python3 -c 'import sys; assert sys.version_info >= (3, 10), f"Python version >= 3.10 required, found {sys.version_info}"' \

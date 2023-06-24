@@ -23,6 +23,7 @@ dependencies = [
   "aiohttp_session",
   "av",
   "google-auth",
+  "google-cloud-logging",
   "google-cloud-translate",
   "google-cloud-texttospeech",
   "google-cloud-secret-manager",

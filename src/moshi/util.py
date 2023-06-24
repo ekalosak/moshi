@@ -6,20 +6,50 @@ import sys
 from textwrap import shorten
 import uuid
 
-import pyfiglet
+from google.cloud import logging
+from google.protobuf.json_format import ParseError
 from loguru import logger
 from loguru._defaults import LOGURU_FORMAT
+import pyfiglet
 
-FILE_LOGS = os.getenv("MOSHILOGTODISK", 0)
+FILE_LOGS = int(os.getenv("MOSHILOGDISK", 0))
+STDOUT_LOGS = int(os.getenv("MOSHILOGSTDOUT", 1))
+CLOUD_LOGS = int(os.getenv("MOSHILOGCLOUD", 0))
+
+def _gcp_log_severity_map(level: str) -> str:
+    """Convert loguru custom levels to GCP allowed severity level.
+    Source:
+        - https://cloud.google.com/logging/docs/reference/v2/rest/v2/LogEntry#LogSeverity
+    """
+    match level:
+        case "SUCCESS":
+            return "INFO"
+        case "INSTRUCTION":
+            return "DEBUG"
+        case "SPLASH":
+            return None
+        case _:
+            return level
 
 def _setup_loguru():
+    # Loguru
+    logger.level("INSTRUCTION", no=15, color="<light-yellow><bold>")
+    logger.level("SPLASH", no=13, color="<light-magenta><bold>")
     LOG_FORMAT = LOGURU_FORMAT + " | <g><d>{extra}</d></g>"
     logger.remove()
-    logger.add(sink=sys.stderr, format=LOG_FORMAT, colorize=True)
+    if STDOUT_LOGS:
+        logger.add(sink=sys.stderr, format=LOG_FORMAT, colorize=True)
     if FILE_LOGS:
         logger.add("logs/server.log", rotation="10 MB")
-    logger.level("INSTRUCTION", no=38, color="<light-yellow><bold>")
-    logger.level("SPLASH", no=39, color="<light-magenta><bold>")
+    # Google logging  (https://github.com/Delgan/loguru/issues/789)
+    if CLOUD_LOGS:
+        logging_client = logging.Client()
+        gcp_logger = logging_client.logger("gcp-logger")
+        def log_to_gcp(message):
+            severity = _gcp_log_severity_map(message.record["level"].name)
+            if severity is not None:
+                gcp_logger.log_text(message, severity=severity)
+        logger.add(log_to_gcp)
 
 def async_with_pcid(f):
     """Decorator for contextualizing the logger with a PeerConnection uid."""

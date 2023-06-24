@@ -1,7 +1,10 @@
 #!/bin/bash
-echo "STARTING UP"
 su -l eric
+export PYENV_ROOT="$HOME/.pyenv"
+export PATH="$PYENV_ROOT/bin:$PATH"
+echo "STARTUP"
 echo "AS ERIC, PATH=$PATH"
+echo "PYENV: $(command -v pyenv)"
 eval "$(pyenv init -)" && \
 eval "$(pyenv virtualenv-init -)" && \
 pyenv activate moshi && \

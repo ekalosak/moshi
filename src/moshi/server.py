@@ -268,7 +268,7 @@ async def on_startup(app):
     logger.debug("Setting up OpenAI...")
     await think._setup_api_key()
     logger.info("OpenAI setup complete.")
-    logger.success("Set up!")
+    logger.success(f"Set up moshi version: {moshi.__version__}")
 
 @logger.catch
 async def make_app() -> 'web.Application':

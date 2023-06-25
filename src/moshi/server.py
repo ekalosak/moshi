@@ -18,7 +18,7 @@ import jinja2
 from loguru import logger
 
 import moshi
-from moshi import secrets, core, gcloud, lang, speech, think, util, UserAuthenticationError
+from moshi import auth, secrets, core, gcloud, lang, speech, think, util, UserAuthenticationError
 
 NO_SECURITY = bool(os.getenv("MOSHINOSECURITY", False))
 if NO_SECURITY:
@@ -98,7 +98,7 @@ async def login_callback(request):
         logger.debug(f'user_email={user_email}')
         authorized = await auth.is_email_authorized(user_email)
         if not authorized:
-            raise UserAuthenticationError('Unrecognized user')
+            raise UserAuthenticationError('Unrecognized user')  # TODO beta: please reach out to moshi.feedback@gmail.com for access
         user_id = id_info['sub']
         session['user_id'] = user_id
         session['user_given_name'] = id_info['given_name']
@@ -119,14 +119,9 @@ def require_authentication(http_endpoint_handler):
         session = await get_session(request)
         user_email = session.get('user_email')
         logger.debug(f"Checking authentication for user_email: {user_email}")
-        try:
-            if user_email is None:
-                logger.debug("No user_email in session cookie, user not logged in.")
-                raise web.HTTPFound(f"/login")
-            if not session["authorized"]:
-                raise UserAuthenticationError(f"Unrecognized user: {user_email}")
-        except UserAuthenticationError as e:
-            _handle_auth_error(e)
+        if user_email is None:
+            logger.debug("No user_email in session cookie, user not logged in.")
+            raise web.HTTPFound(f"/login")
         logger.debug(f"User {user_email} is authenticated!")
         return await http_endpoint_handler(request)
     return auth_wrapper

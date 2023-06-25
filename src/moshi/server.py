@@ -63,14 +63,14 @@ async def login(request: web_request.Request):
     logger.info(request)
     error_message = request.query.get('error', '')
     template = env.get_template('templates/login.html')
-    logger.debug(f"Request originating IP address: {request.remote}")
+    logger.trace(f"Request originating IP address: {request.remote}")
     scheme = 'https' if HTTPS else 'http'
     if scheme == 'http':
         logger.warning("Using HTTP, no SSL - insecure!")
     # NOTE for google login button to appear, login_uri must be https on public site "[GSI_LOGGER]: Error parsing
     # configuration from HTML: Unsecured login_uri provided. client:44:322" otherwise;
     login_uri = request.url.with_scheme(scheme)
-    logger.debug(f"Using login_uri for Google auth: {login_uri}")
+    logger.trace(f"Using login_uri for Google auth: {login_uri}")
     html = template.render(
         client_id=CLIENT_ID,
         login_uri=login_uri,

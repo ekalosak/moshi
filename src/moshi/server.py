@@ -79,8 +79,7 @@ async def login(request: web_request.Request):
     logger.info(request)
     error_message = request.query.get('error', '')
     template = env.get_template('templates/login.html')
-    origin = request.url.origin()
-    logger.debug(f"request origin: {str(origin)}")
+    logger.debug(f"Request originating IP address: {request.remote}")
     scheme = 'https' if HTTPS else 'http'
     if scheme == 'http':
         logger.warning("Using HTTP, no SSL - insecure!")

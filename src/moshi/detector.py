@@ -173,7 +173,8 @@ class UtteranceDetector:
         logger.debug(f"Detected background_energy: {self.__background_energy:.5f}")
         logger.debug("Waiting for utterance to start...")
         fifo = AudioFifo()
-        listening_callback("Listening...")
+        if listening_callback is not None:
+            listening_callback("Listening...")
         first_frame = await asyncio.wait_for(
             self.__utterance_started(),
             timeout=self.__config.utterance_start_timeout_seconds,

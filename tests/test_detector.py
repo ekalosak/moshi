@@ -1,4 +1,5 @@
-import av
+import asyncio
+
 import pytest
 from av import AudioFrame
 
@@ -9,11 +10,13 @@ from moshi import audio, detector
 @pytest.mark.slow
 async def test_utterance_detector(utterance_audio_track):
     """Test that the UtteranceDetector can detect an utterance of speech in an audio track containing speech."""
-    ud = detector.UtteranceDetector()
+    connected = asyncio.Event()
+    ud = detector.UtteranceDetector(connected)
     print("created UtteranceDetector")
     ud.setTrack(utterance_audio_track)
     print("set track, starting...")
     await ud.start()
+    connected.set()
     print("started! getting_utterance...")
     utterance = await ud.get_utterance()
     print("got_utterance! stopping...")

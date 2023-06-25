@@ -1,7 +1,7 @@
 from google.cloud import firestore
 from loguru import logger
 
-from gcloud import GOOGLE_PROJECT
+from moshi.gcloud import GOOGLE_PROJECT
 
 db = firestore.AsyncClient(project=GOOGLE_PROJECT)
 users_ref = db.collection("authorized_users")

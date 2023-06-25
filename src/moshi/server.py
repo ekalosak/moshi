@@ -18,7 +18,7 @@ import jinja2
 from loguru import logger
 
 import moshi
-from moshi import secrets, core, gcloud, lang, speech, think, util, UserAuthenticationError
+from moshi import auth, secrets, core, gcloud, lang, speech, think, util, UserAuthenticationError
 
 NO_SECURITY = bool(os.getenv("MOSHINOSECURITY", False))
 if NO_SECURITY:
@@ -40,25 +40,6 @@ if not SECURE_COOKIE:
     logger.warning(f"SECURE_COOKIE={SECURE_COOKIE}")
 else:
     logger.info(f"SECURE_COOKIE={SECURE_COOKIE}")
-# NOTE DEBUG cloud deployment database
-whitelisted_emails = [
-    "helloateric@gmail.com",
-    "JKenyon@umich.edu",
-    "Triciak@umich.edu",
-    "benkalosakenyon@gmail.com",
-    "natekenyon3@gmail.com",
-    "leahpom@gmail.com",
-    "ross.schibler@gmail.com ",
-    "thatcoffeewater@gmail.com",
-    "james.ryan.hennessy@gmail.com",
-    "lucasdf13@gmail.com",
-    "brian.r.guest@gmail.com",
-    "yoshi141@gmail.com",
-    "mjmcnulty7@gmail.com",
-]
-whitelisted_emails = [em.lower() for em in whitelisted_emails]
-_es = '\n\t'.join(whitelisted_emails)  # note, \ not allowed in f-string {} terms
-logger.info(f"Allowed users:\n\t{_es}")
 
 # DEBUG print files
 _files = [Path(p).name for p in Path(ROOT).iterdir()]
@@ -115,8 +96,9 @@ async def login_callback(request):
             raise UserAuthenticationError('Authentication failed')
         user_email = id_info['email'].lower()
         logger.debug(f'user_email={user_email}')
-        if user_email not in whitelisted_emails:
-            raise UserAuthenticationError('Unrecognized user')
+        authorized = await auth.is_email_authorized(user_email)
+        if not authorized:
+            raise UserAuthenticationError('Unrecognized user')  # TODO beta: please reach out to moshi.feedback@gmail.com for access
         user_id = id_info['sub']
         session['user_id'] = user_id
         session['user_given_name'] = id_info['given_name']
@@ -137,14 +119,9 @@ def require_authentication(http_endpoint_handler):
         session = await get_session(request)
         user_email = session.get('user_email')
         logger.debug(f"Checking authentication for user_email: {user_email}")
-        try:
-            if user_email is None:
-                logger.debug("No user_email in session cookie, user not logged in.")
-                raise web.HTTPFound(f"/login")
-            if user_email not in whitelisted_emails:
-                raise UserAuthenticationError(f"Unrecognized user: {user_email}")
-        except UserAuthenticationError as e:
-            _handle_auth_error(e)
+        if user_email is None:
+            logger.debug("No user_email in session cookie, user not logged in.")
+            raise web.HTTPFound(f"/login")
         logger.debug(f"User {user_email} is authenticated!")
         return await http_endpoint_handler(request)
     return auth_wrapper

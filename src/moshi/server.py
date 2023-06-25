@@ -55,6 +55,9 @@ env = jinja2.Environment(
 logger.info("Setup peer connection tracker and html templating engine.")
 
 # Define HTTP endpoints and tooling for authentication
+async def healthz(request):
+    return web.Response(text="OK")
+
 async def login(request: web_request.Request):
     """HTTP GET endpoint for login.html"""
     logger.info(request)
@@ -286,6 +289,7 @@ async def make_app() -> 'web.Application':
     app.on_shutdown.append(on_shutdown)
     app.on_startup.append(on_startup)
     app.router.add_get("/", index)
+    app.router.add_get("/healthz", healthz)
     app.router.add_get("/login", login)
     app.router.add_post("/login", login_callback)
     app.router.add_get("/favicon.ico", favicon)

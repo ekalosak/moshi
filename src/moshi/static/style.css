@@ -152,3 +152,12 @@ pre {
 /*     overflow-x: hidden; */
 /*     overflow-y: auto; */
 /* } */
+
+
+a:link {
+  color: #56a7b1;
+}
+
+a:visited {
+  color: #e9a9f5;
+}

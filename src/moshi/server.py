@@ -49,7 +49,7 @@ logger.debug(f"ROOT={ROOT} contains: {_files}")
 # Setup global objects
 pcs = set()
 env = jinja2.Environment(
-    loader=jinja2.FileSystemLoader(ROOT),
+    loader=jinja2.FileSystemLoader(ROOT + '/templates'),
     autoescape=jinja2.select_autoescape(['html', 'xml']),
 )
 logger.info("Setup peer connection tracker and html templating engine.")
@@ -61,8 +61,8 @@ async def healthz(request):
 async def login(request: web_request.Request):
     """HTTP GET endpoint for login.html"""
     logger.info(request)
-    error_message = request.query.get('error', '')
-    template = env.get_template('templates/login.html')
+    error_message = request.query.get('error', '')  # TODO make a render wrapper (#32)
+    template = env.get_template('login.html')
     logger.trace(f"Request originating IP address: {request.remote}")
     scheme = 'https' if HTTPS else 'http'
     if scheme == 'http':
@@ -130,20 +130,23 @@ def require_authentication(http_endpoint_handler):
     return auth_wrapper
 
 @require_authentication
+async def privacy(request: web_request.Request):
+    logger.info(request)
+    template = env.get_template('privacy.html')
+    html = template.render()
+    return web.Response(text=html, content_type='text/html')
+
+@require_authentication
 async def index(request):
     """HTTP endpoint for index.html"""
     logger.info(request)
     session = await get_session(request)
-    # http_client = session['http_client']
-    # with ice.client(http_client):
-    #     if turn_token := session.get('turn_token'):
-    #         valid = await ice.user_token_valid(turn_token)
-    #     if not turn_token or not valid:
-    #         logger.debug("Refreshing TURN server token...")
-    #         session['turn_token'] = await ice.get_turn_token(session['user_id'])
-    #     logger.info("TURN server token refreshed.")
-    template = env.get_template('templates/index.html')
-    html = template.render(version=f"alpha-{moshi.__version__}")
+    template = env.get_template("index.html")
+    privacy_url = str(request.app.router['privacy'].url_for())
+    html = template.render(
+        version=f"alpha-{moshi.__version__}",
+        privacy_url=privacy_url,
+    )
     return web.Response(text=html, content_type="text/html")
 
 
@@ -288,9 +291,10 @@ async def make_app() -> 'web.Application':
     session_setup(app, cookie_storage)
     app.on_shutdown.append(on_shutdown)
     app.on_startup.append(on_startup)
-    app.router.add_get("/", index)
-    app.router.add_get("/healthz", healthz)
-    app.router.add_get("/login", login)
+    app.router.add_get("/", index, name="index")
+    app.router.add_get("/healthz", healthz, name="health")
+    app.router.add_get("/privacy", privacy, name="privacy")
+    app.router.add_get("/login", login, name="login")
     app.router.add_post("/login", login_callback)
     app.router.add_get("/favicon.ico", favicon)
     app.router.add_get("/client.js", javascript)

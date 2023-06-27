@@ -37,7 +37,7 @@ def _format_timedelta(td) -> str:
 
 def _to_log_dict(rec: dict) -> dict:
     """Convert a loguru record to a gcloud structured logging payload."""
-    severity = _gcp_log_severity_map(rec["level"].name)
+    rec['severity'] = _gcp_log_severity_map(rec["level"].name)
     rec.pop('level')
     if not rec['extra']:
         rec.pop('extra')

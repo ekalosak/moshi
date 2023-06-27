@@ -168,9 +168,9 @@ class UtteranceDetector:
             if listening_callback:
                 listening_callback("Detecting background noise level...")
             self.__background_energy = await self.__measure_background_audio_energy()
+            logger.debug(f"Detected background_energy: {self.__background_energy:.5f}")
             self.__background_energy = 30.
             logger.warning("Using fixed background energy: 30")
-        logger.debug(f"Detected background_energy: {self.__background_energy:.5f}")
         logger.debug("Waiting for utterance to start...")
         fifo = AudioFifo()
         if listening_callback is not None:

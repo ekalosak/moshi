@@ -21,7 +21,7 @@ def _setup_client():
         logger.debug("Creating secretmanager client...")
         client = secretmanager.SecretManagerServiceAsyncClient()
         gsecretclient.set(client)
-        logger.info(f"Secretmanager client initialized: {gsecretclient}")
+        logger.info(f"Secretmanager client initialized.")
 
 def _get_client() -> secretmanager.SecretManagerServiceAsyncClient:
     """Get the secrets-manager client."""
@@ -50,6 +50,6 @@ async def get_secret(
         secret = response.payload.data.decode(decode)
     else:
         secret = response.payload.data
-    logger.debug(f"Secret length: {len(secret)}")
-    logger.debug(f"Secret type: {type(secret)}")
+    logger.trace(f"Secret length: {len(secret)}")
+    logger.trace(f"Secret type: {type(secret)}")
     return secret

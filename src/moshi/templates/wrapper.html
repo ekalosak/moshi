@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>~ Moshi ~</title>
+    <link rel="stylesheet" href="/style.css">
+    <style>
+      #nerd-stuff {
+        display: none;
+      }
+    </style>
+</head>
+<body>
+
+  <div class="top-container">
+    <h1>Moshi</h1>
+    <p>Moshi is a language speaking tutor.</p>
+    <img src="/favicon.ico" alt="Moshi" style="width: 32px;" id="moshiIcon" class="dancing-image">
+  </div>
+
+  <div class="main-container">
+    {% block content %}{% endblock %}
+  </div>
+
+</body>
+</html>

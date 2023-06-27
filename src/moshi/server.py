@@ -130,13 +130,22 @@ def require_authentication(http_endpoint_handler):
     return auth_wrapper
 
 @require_authentication
+async def privacy(request: web_request.Request):
+    logger.info(request)
+    template = env.get_template('privacy.html')
+    html = template.render()
+    return web.Response(text=html, content_type='text/html')
+
+@require_authentication
 async def index(request):
     """HTTP endpoint for index.html"""
     logger.info(request)
     session = await get_session(request)
     template = env.get_template("index.html")
+    privacy_url = str(request.app.router['privacy'].url_for())
     html = template.render(
         version=f"alpha-{moshi.__version__}",
+        privacy_url=privacy_url,
     )
     return web.Response(text=html, content_type="text/html")
 
@@ -282,9 +291,10 @@ async def make_app() -> 'web.Application':
     session_setup(app, cookie_storage)
     app.on_shutdown.append(on_shutdown)
     app.on_startup.append(on_startup)
-    app.router.add_get("/", index)
-    app.router.add_get("/healthz", healthz)
-    app.router.add_get("/login", login)
+    app.router.add_get("/", index, name="index")
+    app.router.add_get("/healthz", healthz, name="health")
+    app.router.add_get("/privacy", privacy, name="privacy")
+    app.router.add_get("/login", login, name="login")
     app.router.add_post("/login", login_callback)
     app.router.add_get("/favicon.ico", favicon)
     app.router.add_get("/client.js", javascript)

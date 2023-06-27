@@ -61,7 +61,7 @@ async def healthz(request):
 async def login(request: web_request.Request):
     """HTTP GET endpoint for login.html"""
     logger.info(request)
-    error_message = request.query.get('error', '')
+    error_message = request.query.get('error', '')  # TODO make a render wrapper (#32)
     template = env.get_template('login.html')
     logger.trace(f"Request originating IP address: {request.remote}")
     scheme = 'https' if HTTPS else 'http'

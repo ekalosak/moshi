@@ -5,6 +5,7 @@ import os
 import sys
 from textwrap import shorten
 import uuid
+import warnings
 
 from google.cloud import logging
 from google.protobuf.json_format import ParseError
@@ -12,9 +13,9 @@ from loguru import logger
 from loguru._defaults import LOGURU_FORMAT
 import pyfiglet
 
-FILE_LOGS = int(os.getenv("MOSHILOGDISK", 0))
-STDOUT_LOGS = int(os.getenv("MOSHILOGSTDOUT", 1))
-CLOUD_LOGS = int(os.getenv("MOSHILOGCLOUD", 0))
+FILE_LOGS = bool(os.getenv("MOSHILOGDISK", 0))
+STDOUT_LOGS = bool(os.getenv("MOSHILOGSTDOUT", 1))
+CLOUD_LOGS = bool(os.getenv("MOSHILOGCLOUD", 0))
 
 def _gcp_log_severity_map(level: str) -> str:
     """Convert loguru custom levels to GCP allowed severity level.
@@ -31,25 +32,63 @@ def _gcp_log_severity_map(level: str) -> str:
         case _:
             return level
 
+def _format_timedelta(td) -> str:
+    return f"{td.days}days{td.seconds}secs{td.microseconds}usecs"
+
+def _to_log_dict(rec: dict) -> dict:
+    """Convert a loguru record to a gcloud structured logging payload."""
+    severity = _gcp_log_severity_map(rec["level"].name)
+    rec.pop('level')
+    if not rec['extra']:
+        rec.pop('extra')
+    rec['elapsed'] = _format_timedelta(rec['elapsed'])
+    if rec['exception'] is not None:
+        rec['exception'] = str(rec['exception'])
+    else:
+        rec.pop('exception')
+    rec['file'] = rec['file'].name  # also .path
+    rec['process_id'] = rec['process'].id
+    rec['process_name'] = rec['process'].name
+    rec.pop('process')
+    rec['thread_id'] = rec['thread'].id
+    rec['thread_name'] = rec['thread'].name
+    rec.pop('thread')
+    rec['timestamp'] = str(rec['time'])
+    rec.pop('time')
+    return rec
+
 def _setup_loguru():
     # Loguru
     logger.level("INSTRUCTION", no=15, color="<light-yellow><bold>")
     logger.level("SPLASH", no=13, color="<light-magenta><bold>")
-    LOG_FORMAT = LOGURU_FORMAT + " | <g><d>{extra}</d></g>"
     logger.remove()
+    log_format = LOGURU_FORMAT + " | <g><d>{extra}</d></g>"
     if STDOUT_LOGS:
-        logger.add(sink=sys.stderr, format=LOG_FORMAT, colorize=True)
+        logger.add(
+            sink=sys.stderr,
+            level="DEBUG",
+            format=log_format,
+            colorize=True,
+        )
     if FILE_LOGS:
-        logger.add("logs/server.log", rotation="10 MB")
+        logger.add(
+            "logs/server.log",
+            level="DEBUG",
+            format=log_format,
+            rotation="10 MB",
+        )
     # Google logging  (https://github.com/Delgan/loguru/issues/789)
     if CLOUD_LOGS:
         logging_client = logging.Client()
         gcp_logger = logging_client.logger("gcp-logger")
         def log_to_gcp(message):
-            severity = _gcp_log_severity_map(message.record["level"].name)
-            if severity is not None:
-                gcp_logger.log_text(message, severity=severity)
-        logger.add(log_to_gcp)
+            logdict = _to_log_dict(message.record)
+            gcp_logger.log_struct(logdict)
+        logger.add(
+            sink=log_to_gcp,
+            level="DEBUG",
+            format="{message}",
+        )
 
 def async_with_pcid(f):
     """Decorator for contextualizing the logger with a PeerConnection uid."""

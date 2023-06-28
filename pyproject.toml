@@ -36,6 +36,9 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+server = [
+  'gunicorn',
+]
 tests = [
   'pytest',
   'pytest-asyncio',

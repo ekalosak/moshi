@@ -3,6 +3,7 @@ tracks.
 """
 import asyncio
 from dataclasses import dataclass
+from typing import Callable
 
 from aiortc import MediaStreamTrack
 from aiortc.mediastreams import MediaStreamError
@@ -38,9 +39,14 @@ class ListeningConfig:
 class UtteranceDetector:
     """An audio media sink that detects utterances."""
 
-    def __init__(self, connected_event: asyncio.Event, config=ListeningConfig()):
+    def __init__(self,
+        connected_event: asyncio.Event,
+        send_status: Callable[str, None],
+        config = ListeningConfig(),
+    ):
         self.__track = None
         self.__task = None
+        self.__send_status = send_status
         self.__config = config
         self.__utterance: AudioFrame | None = None
         self.__utterance_lock = (
@@ -168,9 +174,11 @@ class UtteranceDetector:
             if listening_callback:
                 listening_callback("Detecting background noise level...")
             self.__background_energy = await self.__measure_background_audio_energy()
-            logger.debug(f"Detected background_energy: {self.__background_energy:.5f}")
-            self.__background_energy = 30.
-            logger.warning("Using fixed background energy: 30")
+            msg = f"Detected background noise level: {self.__background_energy:.2f}"
+            logger.debug(msg)
+            listening_callback(msg)
+            # self.__background_energy = 30.
+            # logger.warning("Using fixed background energy: 30")
         logger.debug("Waiting for utterance to start...")
         fifo = AudioFifo()
         if listening_callback is not None:

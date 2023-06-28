@@ -2,6 +2,7 @@
 import asyncio
 import os
 import time
+from typing import Callable
 
 from aiortc import MediaStreamTrack
 from aiortc.mediastreams import MediaStreamError
@@ -26,13 +27,19 @@ class ResponsePlayerStream(MediaStreamTrack):
         self.__sent = sent
         self.__start_time = None
         self.__pts = 0
+        # For not flooding traces:
+        self.__recieved_first_frame = False
+        self.__recieved_first_empty_frame = False
+        self.__throttled_first_playback = False
 
     @logger.catch
     async def recv(self) -> AudioFrame:
         """Return audio from the fifo if it exists, otherwise return silence."""
         frame = self.__fifo.read(FRAME_SIZE, partial=False)
         if frame is None:
-            logger.trace("empty frame")
+            if not self.__recieved_first_empty_frame:
+                logger.trace("empty frame")
+                self.__recieved_first_empty_frame = True
             self.__fifo.read(partial=True)  # drop any partial fragment
             frame = audio.empty_frame(
                 length=FRAME_SIZE,
@@ -42,13 +49,14 @@ class ResponsePlayerStream(MediaStreamTrack):
                 pts=None,
             )
             self.__sent.set()  # frame is none means whatever audio was written is flushed
-        else:
+        elif not self.__recieved_first_frame:
             logger.trace("non-empty frame")
+            logger.trace(f"returning frame: {frame}")
+            logger.trace(f"frame energy: {audio.get_frame_energy(frame)}")
+            self.__recieved_first_frame = True
         frame.pts = self.__pts
         self.__pts += frame.samples
         await self.__throttle_playback(frame)
-        logger.trace(f"returning frame: {frame}")
-        logger.trace(f"frame energy: {audio.get_frame_energy(frame)}")
         return frame
 
     @logger.catch
@@ -61,7 +69,9 @@ class ResponsePlayerStream(MediaStreamTrack):
         frame_start_time = self.__start_time + audio.get_frame_start_time(frame)
         delay = frame_start_time - (current_time + max_buf_sec)
         delay = max(0.0, delay)
-        logger.trace(f"Throttling playback, sleeping for delay={delay:.3f} sec")
+        if not self.__throttled_first_playback:
+            logger.trace(f"Throttling playback, sleeping for delay={delay:.3f} sec")
+            self.__throttled_first_playback = True
         await asyncio.sleep(delay)
 
     @logger.catch
@@ -81,9 +91,10 @@ class ResponsePlayerStream(MediaStreamTrack):
 class ResponsePlayer:
     """When audio is set, it is sent over the track."""
 
-    def __init__(self):
+    def __init__(self, send_status: Callable[str, None]):
         self.__sent = asyncio.Event()  # set when the track plays all audio
         self.__track = ResponsePlayerStream(self.__sent)
+        self.__send_status = send_status
         logger.info(f"Initialized player track: {audio.track_str(self.__track)}")
 
     @property

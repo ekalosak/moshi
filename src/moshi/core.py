@@ -53,11 +53,12 @@ class WebRTCChatter:
         self.__channels = {}
         self.__connected = asyncio.Event()
         self.__status_and_transcript_channels_connected = asyncio.Event()
-        self.detector = (
-            detector.UtteranceDetector(self.__connected)
+        self.detector = detector.UtteranceDetector(
+            self.__connected,
+            self.__send_status,
         )  # get_utterance: track -> AudioFrame
-        self.responder = (
-            responder.ResponsePlayer()
+        self.responder = responder.ResponsePlayer(
+            self.__send_status,
         )  # play_response: AudioFrame -> track
 
     @logger.catch

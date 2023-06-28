@@ -13,9 +13,9 @@ from loguru import logger
 from loguru._defaults import LOGURU_FORMAT
 import pyfiglet
 
-FILE_LOGS = bool(os.getenv("MOSHILOGDISK", 0))
-STDOUT_LOGS = bool(os.getenv("MOSHILOGSTDOUT", 1))
-CLOUD_LOGS = bool(os.getenv("MOSHILOGCLOUD", 0))
+FILE_LOGS = int(os.getenv("MOSHILOGDISK", 0))
+STDOUT_LOGS = int(os.getenv("MOSHILOGSTDOUT", 1))
+CLOUD_LOGS = int(os.getenv("MOSHILOGCLOUD", 0))
 
 def _gcp_log_severity_map(level: str) -> str:
     """Convert loguru custom levels to GCP allowed severity level.
@@ -85,7 +85,7 @@ def _setup_loguru():
             logdict = _to_log_dict(message.record)
             gcp_logger.log_struct(logdict)
         logger.add(
-            sink=log_to_gcp,
+            log_to_gcp,
             level="DEBUG",
             format="{message}",
         )

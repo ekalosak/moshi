@@ -12,7 +12,11 @@ jobs:
         with:
           python-version: '3.10'
           cache: 'pip'
-      - run: pip install '.[tests]'
-      - run: pytest -v -m 'not gcloud and not openai'
+      - name: Setup build environment
+        run: mkdir build
+      - name: Install test dependencies
+        run: pip install '.[tests]'
+      - name: Run unit tests
+        run: pytest -v -m 'not gcloud and not openai'
 
 

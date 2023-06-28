@@ -171,6 +171,7 @@ async def javascript(request):
 
 # Create WebRTC handler; offer/ is called by client.js on index.html having created an initial SDP offer;
 @util.async_with_pcid
+@require_authentication
 async def offer(request):
     """In WebRTC, there's an initial offer->answer exchange that negotiates the connection parameters.
     This endpoint accepts an offer request from a client and returns an answer with the SDP (session description protocol).
@@ -191,44 +192,47 @@ async def offer(request):
     pcs.add(pc)
     logger.info(f"Created peer connection to: {request.remote}")
 
-    chatter = core.WebRTCChatter()
+    usremail = session['user_email']  # pass so logging will record user email
+    chatter = core.WebRTCChatter(usremail)
 
-    @pc.on("datachannel")
-    def on_datachannel(channel: RTCDataChannel):
-        if channel.label == "pingpong":
-            @channel.on("message")
-            def on_message(message):
-                if isinstance(message, str) and message.startswith("ping"):
-                    channel.send("pong" + message[4:])  # NOTE io under the hood done with fire-and-forget ensure_future, UDP
-        else:
-            chatter.add_channel(channel)
+    with logger.contextualize(email=usremail):
 
-    @pc.on("connectionstatechange")
-    async def on_connectionstatechange():
-        logger.info(f"Connection state changed to: {pc.connectionState}")
-        if pc.connectionState == "failed":
-            await pc.close()
-            pcs.discard(pc)
-        elif pc.connectionState == "connecting":
-            # on_track should have been called by this point, so start should be ok
-            await chatter.start()
-        elif pc.connectionState == "connected":
-            await chatter.connected()
+        @pc.on("datachannel")
+        def on_datachannel(channel: RTCDataChannel):
+            if channel.label == "pingpong":
+                @channel.on("message")
+                def on_message(message):
+                    if isinstance(message, str) and message.startswith("ping"):
+                        channel.send("pong" + message[4:])  # NOTE io under the hood done with fire-and-forget ensure_future, UDP
+            else:
+                chatter.add_channel(channel)
 
-    @pc.on("track")
-    def on_track(track):
-        logger.info(f"Track {track.kind} received")
-        if track.kind != "audio":
-            raise TypeError(
-                f"Track kind not supported, expected 'audio', got: '{track.kind}'"
-            )
-        chatter.detector.setTrack(track)  # must be called before start()
-        pc.addTrack(chatter.responder.audio)
+        @pc.on("connectionstatechange")
+        async def on_connectionstatechange():
+            logger.info(f"Connection state changed to: {pc.connectionState}")
+            if pc.connectionState == "failed":
+                await pc.close()
+                pcs.discard(pc)
+            elif pc.connectionState == "connecting":
+                # on_track should have been called by this point, so start should be ok
+                await chatter.start()
+            elif pc.connectionState == "connected":
+                await chatter.connected()
 
-        @track.on("ended")
-        async def on_ended():  # e.g. user disconnects audio
-            await chatter.stop()
-            logger.info(f"Track {track.kind} ended")
+        @pc.on("track")
+        def on_track(track):
+            logger.info(f"Track {track.kind} received")
+            if track.kind != "audio":
+                raise TypeError(
+                    f"Track kind not supported, expected 'audio', got: '{track.kind}'"
+                )
+            chatter.detector.setTrack(track)  # must be called before start()
+            pc.addTrack(chatter.responder.audio)
+
+            @track.on("ended")
+            async def on_ended():  # e.g. user disconnects audio
+                await chatter.stop()
+                logger.info(f"Track {track.kind} ended")
 
     await pc.setRemoteDescription(offer)
 

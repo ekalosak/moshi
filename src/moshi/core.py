@@ -45,7 +45,8 @@ class WebRTCChatter:
     2. Adapts the moshi.CliChatter for use in the WebRTC server.
     """
 
-    def __init__(self):
+    def __init__(self, user_email: str):
+        self.user_email = user_email
         self.messages = _init_messages()
         self.character: character.Character = None
         self.__task = None
@@ -120,23 +121,24 @@ class WebRTCChatter:
     async def __run(self):
         """Run the main program loop."""
         util.splash("moshi")
-        try:
-            await asyncio.wait_for(self.__connected.wait(), timeout=CONNECTION_TIMEOUT)
-        except asyncio.TimeoutError:
-            logger.error(f"TimeoutError: CONNECTION_TIMEOUT={CONNECTION_TIMEOUT}")
-            await self.__send_status("Timed out while establishing connection, try refreshing the page.")
-        for i in itertools.count():
-            if i == MAX_LOOPS and MAX_LOOPS != 0:
-                logger.info(f"Reached MAX_LOOPS: {MAX_LOOPS}, i={i}")
-                self.__send_status("Error: maximum conversation lenght reached, please refresh the page.")
-                break
-            logger.debug(f"Starting loop number: i={i}")
+        with logger.contextualize(email=self.user_email):
             try:
-                await self.__main()
-            except UserResetError as e:
-                self.__send_status(f"Error: {str(e)}\n\tPlease refresh the page")
-                break
-        util.splash("bye")
+                await asyncio.wait_for(self.__connected.wait(), timeout=CONNECTION_TIMEOUT)
+            except asyncio.TimeoutError:
+                logger.error(f"TimeoutError: CONNECTION_TIMEOUT={CONNECTION_TIMEOUT}")
+                await self.__send_status("Timed out while establishing connection, try refreshing the page.")
+            for i in itertools.count():
+                if i == MAX_LOOPS and MAX_LOOPS != 0:
+                    logger.info(f"Reached MAX_LOOPS: {MAX_LOOPS}, i={i}")
+                    self.__send_status("Error: maximum conversation lenght reached, please refresh the page.")
+                    break
+                logger.debug(f"Starting loop number: i={i}")
+                try:
+                    await self.__main()
+                except UserResetError as e:
+                    self.__send_status(f"Error: {str(e)}\n\tPlease refresh the page")
+                    break
+            util.splash("bye")
 
     async def __main(self):
         """Run one loop of the main program."""

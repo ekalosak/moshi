@@ -267,6 +267,7 @@ async def on_startup(app):
     await gcloud.authenticate()
     logger.info(f"Authenticated to Google Cloud.")
     logger.debug("Creating API clients...")
+    auth._setup_client()
     lang._setup_client()  # doing this here to avoid waiting when first request happens
     speech._setup_client()
     secrets._setup_client()

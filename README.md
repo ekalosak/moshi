@@ -1,6 +1,11 @@
 # 🧑💬🤖 moshi
 Moshi is a spoken language tutor.
 
+# Summary
+Moshi is deployed as an HTTP server exposed to end users over the public internet. It provides an HTML/Javascript interface used to establish audio connections over WebRTC.
+
+Code is un
+
 # Build
 Uses `setuptools` and `build` to package Python code.
 

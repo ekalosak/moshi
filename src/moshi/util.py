@@ -82,6 +82,8 @@ def _setup_loguru():
         logging_client = logging.Client()
         gcp_logger = logging_client.logger("gcp-logger")
         def log_to_gcp(message):
+            if message.record['level'] == "SPLASH":
+                return
             logdict = _to_log_dict(message.record)
             gcp_logger.log_struct(logdict)
         logger.add(

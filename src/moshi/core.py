@@ -5,6 +5,7 @@ import os
 import textwrap
 
 from aiortc import RTCDataChannel
+from aiortc.mediastreams import MediaStreamError
 from av import AudioFrame
 from loguru import logger
 
@@ -142,7 +143,10 @@ class WebRTCChatter:
 
     async def __main(self):
         """Run one loop of the main program."""
-        usr_audio: AudioFrame = await self.__detect_user_utterance()
+        try:
+            usr_audio: AudioFrame = await self.__detect_user_utterance()
+        except TimeoutError:
+            ...
         self.__send_status("Transcribing...")
         usr_text: str = await self.__transcribe_audio(usr_audio)
         usr_msg = self.__add_message(usr_text, Role.USR)
@@ -172,9 +176,21 @@ class WebRTCChatter:
         self.logger.info(f"Initialized character: {self.character}")
 
     async def __detect_user_utterance(self) -> AudioFrame:
+        """
+        Raises:
+            - MediaStreamError
+            - TimeoutError
+        """
         self.logger.debug("Detecting user utterance...")
         listening_callback = lambda msg: self.__send_status(msg)
-        usr_audio: AudioFrame = await self.detector.get_utterance(listening_callback)
+        try:
+            usr_audio: AudioFrame = await self.detector.get_utterance(listening_callback)
+        except MediaStreamError:
+            breakpoint()
+            a=1
+        except TimeoutError:
+            breakpoint()
+            a=1
         self.logger.info(f"Detected user utterance: {usr_audio}")
         return usr_audio
 

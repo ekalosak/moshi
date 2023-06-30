@@ -66,12 +66,12 @@ async def test_responder_track_pts(short_audio_frame):
 
 
 @pytest.mark.asyncio
-async def test_responder(short_audio_frame, Sink):
+async def test_responder(short_audio_frame, Sink, status_fn):
     """Check that the ResponsePlayer writes audio to the Sink when it receives the audio and silence while it waits."""
     empty_seconds = 1.0
     audible_seconds = audio.get_frame_seconds(short_audio_frame)
     total_seconds = empty_seconds + audible_seconds
-    player = responder.ResponsePlayer()
+    player = responder.ResponsePlayer(status_fn)
     sink = Sink(player.audio)
     await sink.start()  # starts pulling silence (and audio when available) from player stream
     await asyncio.sleep(empty_seconds)

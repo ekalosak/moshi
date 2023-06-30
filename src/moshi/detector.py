@@ -138,6 +138,7 @@ class UtteranceDetector:
                 try:
                     await self.__track.recv()
                 except MediaStreamError:
+                    logger.debug("User audio disconnected while dumping frame.")
                     raise
             else:
                 raise ValueError("Track not set!")
@@ -203,6 +204,7 @@ class UtteranceDetector:
         silence_time_sec = 0.0
         silence_broken_time = 0.0
         total_utterance_sec = 0.0
+        # utterance not over until silence for > config'd end-of-utterance.
         while silence_time_sec < self.__config.utterance_end_silence_seconds:
             try:
                 frame = await self.__track.recv()

@@ -3,6 +3,7 @@ import itertools
 import logging
 import os
 from pathlib import Path
+from typing import Callable
 
 import av
 import pytest
@@ -114,3 +115,8 @@ def Sink() -> "Sink":
             self.stream_ended.set()
 
     return Sink
+
+@pytest.fixture
+def status_fn() -> Callable[str, None]:
+    fn = lambda x: print(f"Status: {x}")
+    return fn

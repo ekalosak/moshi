@@ -38,9 +38,8 @@ sleeps = [
 ]
 @pytest.mark.asyncio
 @pytest.mark.parametrize("sleepsec", sleeps)
-async def test_disconnect_bug_15(sleepsec, utterance_audio_track, Sink):
+async def test_disconnect_bug_15(sleepsec, utterance_audio_track, Sink, status_fn):
     connected = asyncio.Event()
-    status_fn = lambda x: print(f"Status: {x}")
     ud = detector.UtteranceDetector(connected, status_fn)
     print("created UtteranceDetector")
     ud.setTrack(utterance_audio_track)

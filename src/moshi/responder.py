@@ -28,18 +28,14 @@ class ResponsePlayerStream(MediaStreamTrack):
         self.__start_time = None
         self.__pts = 0
         # For not flooding traces:
-        self.__recieved_first_frame = False
-        self.__recieved_first_empty_frame = False
         self.__throttled_first_playback = False
 
-    @logger.catch
     async def recv(self) -> AudioFrame:
-        """Return audio from the fifo if it exists, otherwise return silence."""
+        """Return audio from the fifo if it exists, otherwise return silence.
+        This track should never raise a MediaStreamError.
+        """
         frame = self.__fifo.read(FRAME_SIZE, partial=False)
         if frame is None:
-            if not self.__recieved_first_empty_frame:
-                logger.trace("empty frame")
-                self.__recieved_first_empty_frame = True
             self.__fifo.read(partial=True)  # drop any partial fragment
             frame = audio.empty_frame(
                 length=FRAME_SIZE,
@@ -49,17 +45,11 @@ class ResponsePlayerStream(MediaStreamTrack):
                 pts=None,
             )
             self.__sent.set()  # frame is none means whatever audio was written is flushed
-        elif not self.__recieved_first_frame:
-            logger.trace("non-empty frame")
-            logger.trace(f"returning frame: {frame}")
-            logger.trace(f"frame energy: {audio.get_frame_energy(frame)}")
-            self.__recieved_first_frame = True
         frame.pts = self.__pts
         self.__pts += frame.samples
         await self.__throttle_playback(frame)
         return frame
 
-    @logger.catch
     async def __throttle_playback(self, frame: AudioFrame, max_buf_sec=0.1):
         """Ensure client buffer isn't overfull by sleeping until max_buf_sec before the frame should be played relative
         to the start of the stream."""
@@ -74,7 +64,6 @@ class ResponsePlayerStream(MediaStreamTrack):
             self.__throttled_first_playback = True
         await asyncio.sleep(delay)
 
-    @logger.catch
     def write_audio(self, frame: AudioFrame):
         logger.debug(f"Got frame to write to fifo: {frame}")
         if frame.rate != SAMPLE_RATE:
@@ -101,7 +90,6 @@ class ResponsePlayer:
     def audio(self):
         return self.__track
 
-    @logger.catch
     async def send_utterance(self, frame: AudioFrame):
         """Flush the audio frame to the track and send it real-time then return.
         It's important that it be realtime because we need to be relatively on time for switching from listening to

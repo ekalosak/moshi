@@ -178,7 +178,8 @@ class UtteranceDetector:
         """
         if self.__background_energy is None:
             logger.debug("Detecting background energy...")
-            self.__send_status("Detecting background noise level...")
+            self.__send_status("Detecting background noise level for "
+                f"{self.__config.ambient_noise_measurement_seconds:.2f} seconds")
             self.__background_energy = await self.__measure_background_audio_energy()
             msg = f"Detected background noise level: {self.__background_energy:.2f}"
             logger.debug(msg)

@@ -144,7 +144,7 @@ class WebRTCChatter:
             for i in itertools.count():
                 if i == MAX_LOOPS and MAX_LOOPS != 0:
                     self.logger.info(f"Reached MAX_LOOPS={MAX_LOOPS}, i={i}")
-                    self.__send_status("Maximum conversation lenght reached."
+                    self.__send_status("Maximum conversation length reached."
                         "\n\tThanks for using Moshi!\n\tPlease feel free to start a new conversation.")
                     break
                 self.logger.debug(f"Starting loop number: i={i}")
@@ -156,6 +156,7 @@ class WebRTCChatter:
                     break
                 except MediaStreamError:
                     logger.info("MediaStreamError, interpreting as a hangup, exiting.")
+                    break
         util.splash("bye")
 
     async def __main(self):

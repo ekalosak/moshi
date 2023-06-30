@@ -32,17 +32,22 @@ async def test_utterance_detector(utterance_audio_track):
 @pytest.mark.parametrize("sleepsec", [1, 2, 5, 8])
 async def test_disconnect_bug_15(sleepsec, utterance_audio_track, Sink):
     connected = asyncio.Event()
-    ud = detector.UtteranceDetector(connected)
+    status_fn = lambda x: print(f"Status: {x}")
+    ud = detector.UtteranceDetector(connected, status_fn)
     print("created UtteranceDetector")
     ud.setTrack(utterance_audio_track)
     print("set track, starting...")
     await ud.start()
     connected.set()
-    print("started! getting_utterance...")
-    task = await asyncio.create_task(ud.get_utterance())
+    print("started! starting getting_utterance task...")
+    task = asyncio.create_task(ud.get_utterance())
+    print(f"sleeping sec: {sleepsec}")
     await asyncio.sleep(sleepsec)
-    utterance_audio_track.stop()
-    breakpoint()
-    a=1
+    try:
+        utterance_audio_track.stop()
+        await asyncio.sleep(0.5)  # to let event loop get to every timeout etc.
+    except MediaStreamError:
+        breakpoint()
+        a=1
     # TODO clean up the excessive try/catch that just raise the MediaStreamError and TimeoutError (only need to log at
     # top catch)

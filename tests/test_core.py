@@ -56,7 +56,7 @@ async def test_chatter_disconnect_bug_15(utterance_audio_track, Sink):
     print("chatter and sink started")
     await asyncio.sleep(2)
     print("spoofing 'datachannels connected' signal")
-    chatter._WebRTCChatter__connected.set()
+    chatter._WebRTCChatter__all_connected.set()
     await asyncio.sleep(3)
     print("interrupting detector track")
     utterance_audio_track.stop()

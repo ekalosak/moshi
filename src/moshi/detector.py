@@ -126,9 +126,6 @@ class UtteranceDetector:
                     f"Timed out waiting to dump a frame after {self.__config.utterance_timeout_seconds} sec."
                 )
                 raise
-            except MediaStreamError:
-                logger.error("MediaStreamError: User audio track disconnected.")
-                raise
 
     async def __dump_frame(self):
         """Dump a single frame. Requires __utterance_lock.
@@ -164,7 +161,7 @@ class UtteranceDetector:
                 logger.error(f"Timed out waiting for an utterance to be detected: {e}")
                 raise
             except MediaStreamError:
-                logger.error("User disconnect while detecting utterance.")
+                logger.debug("User disconnect while detecting utterance.")
                 raise
         utterance_time = audio.get_frame_seconds(self.__utterance)
         logger.info(f"Detected utterance that is {utterance_time:.3f} sec long")
@@ -182,11 +179,7 @@ class UtteranceDetector:
         if self.__background_energy is None:
             logger.debug("Detecting background energy...")
             self.__send_status("Detecting background noise level...")
-            try:
-                self.__background_energy = await self.__measure_background_audio_energy()
-            except MediaStreamError:
-                logger.error("User disconnected audio while detecting background energy.")
-                raise
+            self.__background_energy = await self.__measure_background_audio_energy()
             msg = f"Detected background noise level: {self.__background_energy:.2f}"
             logger.debug(msg)
             self.__send_status(msg)
@@ -201,9 +194,6 @@ class UtteranceDetector:
                 self.__utterance_started(),
                 timeout=timeout,
             )
-        except MediaStreamError:
-            logger.error("User disconnected audio while waiting for utterance to start.")
-            raise
         except TimeoutError:
             logger.error("Timed out waiting for user to start speaking.")
             self.__send_status(f"Timed out waiting for you to start speaking after {timeout}sec.")
@@ -217,7 +207,7 @@ class UtteranceDetector:
             try:
                 frame = await self.__track.recv()
             except MediaStreamError:
-                logger.error("User disconnected audio while we are detecting utterance.")
+                logger.debug("User disconnected audio while we are detecting utterance.")
                 raise
             frame.pts = (
                 None  # required for fifo.write(), not sending over network so OK
@@ -251,7 +241,7 @@ class UtteranceDetector:
             try:
                 frame = await self.__track.recv()
             except MediaStreamError:
-                logger.error("User disconnect while measuring background energy.")
+                logger.debug("User disconnect while measuring background energy.")
                 raise
             time_elapsed_sec += audio.get_frame_seconds(frame)
             frame.pts = None  # or the fifo will complain, we aren't scheduling frames from this fifo so pts=None is OK
@@ -261,7 +251,6 @@ class UtteranceDetector:
         ambient_noise_energy = max(ambient_noise_energy, 30.0)  # heuristic
         return ambient_noise_energy
 
-    @logger.catch
     async def __utterance_started(self) -> AudioFrame:
         """Hold off until audio energy is high enough for long enough."""
         # all time is mesured relative to the track's audio frames, not wall clock time.
@@ -273,7 +262,7 @@ class UtteranceDetector:
             try:
                 frame = await self.__track.recv()
             except MediaStreamError:
-                logger.error("Audio track disconnect while waiting for utterance to start.")
+                logger.debug("Audio track disconnect while waiting for utterance to start.")
                 raise
             frame_energy = audio.get_frame_energy(frame)
             frame_time = audio.get_frame_seconds(frame)

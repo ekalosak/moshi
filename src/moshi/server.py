@@ -226,7 +226,11 @@ async def offer(request):
                 # on_track should have been called by this point, so start should be ok
                 await chatter.start()
             elif pc.connectionState == "connected":
-                await chatter.connected()
+                try:
+                    await chatter.connected()
+                except TimeoutError as e:
+                    logger.error(f"Timed out waiting for datachannels to be established: {e}")
+                    raise
 
         @pc.on("track")
         def on_track(track):

@@ -56,7 +56,6 @@ class UtteranceDetector:
         logger.debug(f"Using config: {self.__config}")
         self.__connected = connected_event
 
-    @logger.catch
     async def start(self):
         """Start detecting speech."""
         if self.__track is None:
@@ -68,19 +67,18 @@ class UtteranceDetector:
             name=f"Main utterance detection frame dump task from track: {audio.track_str(self.__track)}",
         )
 
-    @logger.catch
     async def stop(self):
         """Cancel the background task and free up the track."""
         if self.__task is None:
             return
-        self.__task.cancel()
+        self.__task.cancel(f"{self.__class__.__name__}.stop() called")
         try:
             await self.__task  # this should sleep until the __task is cancelled
         except asyncio.CancelledError as e:
-            logger.error(e)
-        self.__task = None
+            logger.debug("asyncio.CancelledError indicating the detection task did not crash but was cancelled")
+        finally:
+            self.__task = None
 
-    @logger.catch
     def setTrack(self, track: MediaStreamTrack):
         """Add a track to the class after initialization. Allows for initialization of the object before receiving a
         WebRTC offer, but can be forgotten by user - causing, in all likelihood, await self.start() to fail.

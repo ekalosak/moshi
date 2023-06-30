@@ -76,9 +76,14 @@ class WebRTCChatter:
 
     async def stop(self):
         await self.detector.stop()
-        await self.__send_status("Disconnecting...")
+        self.__send_status("Disconnecting...")
         self.__task.cancel(f"{self.__class__.__name__}.stop() called")
-        self.__task = None
+        try:
+            await self.__task  # this should sleep until the __task is cancelled
+        except asyncio.CancelledError as e:
+            logger.debug("asyncio.CancelledError indicating the chatter's main task was cancelled, not crashed.")
+        finally:
+            self.__task = None
 
     # TODO make sure to alert user on client side if timeout connecting, try again to connect
     async def connected(self):
@@ -129,12 +134,12 @@ class WebRTCChatter:
         """Run the main program loop."""
         util.splash("moshi")
         try:
-            await asyncio.wait_for(self.__connected.wait(), timeout=CONNECTION_TIMEOUT)
+            await asyncio.wait_for(self.__all_connected.wait(), timeout=CONNECTION_TIMEOUT)
         except asyncio.TimeoutError:
             self.logger.error(f"TimeoutError: CONNECTION_TIMEOUT={CONNECTION_TIMEOUT}")
-            # send status is best effort, it could be that status channel isn't connected (but that is to be handled on
-            # client.js).
-            await self.__send_status("Timed out while establishing connection, try refreshing the page.")
+            # NOTE send status is best effort, it could be that status channel isn't connected (but that is to be
+            # handled on client.js).
+            self.__send_status("Timed out while establishing stream, try refreshing the page.")
         for i in itertools.count():
             if i == MAX_LOOPS and MAX_LOOPS != 0:
                 self.logger.info(f"Reached MAX_LOOPS={MAX_LOOPS}, i={i}")
@@ -195,12 +200,11 @@ class WebRTCChatter:
             - TimeoutError
         """
         self.logger.debug("Detecting user utterance...")
-        listening_callback = lambda msg: self.__send_status(msg)
         try:
-            usr_audio: AudioFrame = await self.detector.get_utterance(listening_callback)
+            usr_audio: AudioFrame = await self.detector.get_utterance()
         except MediaStreamError:
-            breakpoint()
-            a=1
+            logger.debug("MediaStreamError: user disconnect while detecting utterance.")
+            raise
         except TimeoutError:
             breakpoint()
             a=1

@@ -9,10 +9,10 @@ from moshi import audio, detector
 
 @pytest.mark.asyncio
 @pytest.mark.slow
-async def test_utterance_detector(utterance_audio_track):
+async def test_utterance_detector(utterance_audio_track, status_fn):
     """Test that the UtteranceDetector can detect an utterance of speech in an audio track containing speech."""
     connected = asyncio.Event()
-    ud = detector.UtteranceDetector(connected)
+    ud = detector.UtteranceDetector(connected, status_fn)
     print("created UtteranceDetector")
     ud.setTrack(utterance_audio_track)
     print("set track, starting...")

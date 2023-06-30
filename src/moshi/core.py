@@ -154,7 +154,7 @@ class WebRTCChatter:
                 self.__send_status(f"{str(e)}\n\tPlease refresh the page")
                 break
             except MediaStreamError:
-                logger.error("MediaStreamError, interpreting as a hangup, exiting.")
+                logger.info("MediaStreamError, interpreting as a hangup, exiting.")
         util.splash("bye")
 
     async def __main(self):

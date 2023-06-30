@@ -2,6 +2,8 @@ build/
 dist/
 logs/
 credentials/
+htmlcov/
+.coverage
 *creds.js
 *.egg-info/
 *.pyc

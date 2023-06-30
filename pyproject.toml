@@ -65,7 +65,6 @@ markers = [
   "asyncio: uses async and await"
 ]
 addopts = [
-  "--cov=moshi",
-  "--cov-report=html"
+  "--cov=moshi"
 ]
 

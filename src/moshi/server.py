@@ -229,8 +229,7 @@ async def offer(request):
                 try:
                     await chatter.connected()
                 except asyncio.TimeoutError as e:
-                    logger.error(f"Timed out waiting for datachannels to be established: {e}")
-                    raise
+                    logger.error("Timed out waiting for datachannels to be established.")
 
         @pc.on("track")
         def on_track(track):

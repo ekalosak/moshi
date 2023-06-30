@@ -137,24 +137,25 @@ class WebRTCChatter:
             await asyncio.wait_for(self.__all_connected.wait(), timeout=CONNECTION_TIMEOUT)
         except asyncio.TimeoutError:
             self.logger.error(f"TimeoutError: CONNECTION_TIMEOUT={CONNECTION_TIMEOUT}")
-            # NOTE send status is best effort, it could be that status channel isn't connected (but that is to be
-            # handled on client.js).
+            # kind of a pipedream to think status channel is connected if __all_connected times out...
+            # TODO #43 Alert user on client.js if there's a timeout waiting for connection to be established.
             self.__send_status("Timed out while establishing stream, try refreshing the page.")
-        for i in itertools.count():
-            if i == MAX_LOOPS and MAX_LOOPS != 0:
-                self.logger.info(f"Reached MAX_LOOPS={MAX_LOOPS}, i={i}")
-                self.__send_status("Maximum conversation lenght reached."
-                    "\n\tThanks for using Moshi!\n\tPlease feel free to start a new conversation.")
-                break
-            self.logger.debug(f"Starting loop number: i={i}")
-            self.__send_status(f"Starting call-and-response {i} of {MAX_LOOPS}")
-            try:
-                await self.__main()
-            except UserResetError as e:
-                self.__send_status(f"{str(e)}\n\tPlease refresh the page")
-                break
-            except MediaStreamError:
-                logger.info("MediaStreamError, interpreting as a hangup, exiting.")
+        else:
+            for i in itertools.count():
+                if i == MAX_LOOPS and MAX_LOOPS != 0:
+                    self.logger.info(f"Reached MAX_LOOPS={MAX_LOOPS}, i={i}")
+                    self.__send_status("Maximum conversation lenght reached."
+                        "\n\tThanks for using Moshi!\n\tPlease feel free to start a new conversation.")
+                    break
+                self.logger.debug(f"Starting loop number: i={i}")
+                self.__send_status(f"Starting call-and-response {i} of {MAX_LOOPS}")
+                try:
+                    await self.__main()
+                except UserResetError as e:
+                    self.__send_status(f"{str(e)}\n\tPlease refresh the page")
+                    break
+                except MediaStreamError:
+                    logger.info("MediaStreamError, interpreting as a hangup, exiting.")
         util.splash("bye")
 
     async def __main(self):

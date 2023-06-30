@@ -1,6 +1,7 @@
 import asyncio
 
 import pytest
+from aiortc.mediastreams import MediaStreamError
 from av import AudioFrame
 
 from moshi import audio, detector
@@ -28,8 +29,15 @@ async def test_utterance_detector(utterance_audio_track):
         8.0 <= utterance_time <= 9.0
     ), f"{str(utterance_audio_track)} is nominally 8.56 seconds of speech"
 
+sleeps = [
+    pytest.param(1),
+    pytest.param(2),
+    pytest.param(5, marks=pytest.mark.slow),
+    pytest.param(8, marks=pytest.mark.slow),
+    pytest.param(11, marks=pytest.mark.slow),
+]
 @pytest.mark.asyncio
-@pytest.mark.parametrize("sleepsec", [1, 2, 5, 8])
+@pytest.mark.parametrize("sleepsec", sleeps)
 async def test_disconnect_bug_15(sleepsec, utterance_audio_track, Sink):
     connected = asyncio.Event()
     status_fn = lambda x: print(f"Status: {x}")
@@ -43,11 +51,7 @@ async def test_disconnect_bug_15(sleepsec, utterance_audio_track, Sink):
     task = asyncio.create_task(ud.get_utterance())
     print(f"sleeping sec: {sleepsec}")
     await asyncio.sleep(sleepsec)
-    try:
-        utterance_audio_track.stop()
-        await asyncio.sleep(0.5)  # to let event loop get to every timeout etc.
-    except MediaStreamError:
-        breakpoint()
-        a=1
-    # TODO clean up the excessive try/catch that just raise the MediaStreamError and TimeoutError (only need to log at
-    # top catch)
+    utterance_audio_track.stop()
+    await asyncio.sleep(0.5)  # to let event loop get to every timeout etc.
+    assert task.done(), "MediaStreamError didn't end up cancelling task."
+    assert isinstance(task.exception(), MediaStreamError)

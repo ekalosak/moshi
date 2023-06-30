@@ -228,7 +228,7 @@ async def offer(request):
             elif pc.connectionState == "connected":
                 try:
                     await chatter.connected()
-                except TimeoutError as e:
+                except asyncio.TimeoutError as e:
                     logger.error(f"Timed out waiting for datachannels to be established: {e}")
                     raise
 

@@ -108,8 +108,8 @@ class UtteranceDetector:
         frames from the track to remain 'real-time'. Otherwise those audio frames would back up and we'd be processing
         e.g. synthesized speech feedback.
         Raises:
-            - MediaStreamError
-            - TimeoutError
+            - aiortc.MediaStreamError
+            - asyncio.TimeoutError
         """
         logger.debug("Awaiting ICE connection completion and establishment of all datachannels...")
         await self.__connected.wait()
@@ -120,7 +120,7 @@ class UtteranceDetector:
                     self.__dump_frame(), timeout=self.__config.utterance_timeout_seconds
                 )
             except asyncio.TimeoutError:
-                logger.error(
+                logger.debug(
                     f"Timed out waiting to dump a frame after {self.__config.utterance_timeout_seconds} sec."
                 )
                 raise
@@ -147,17 +147,18 @@ class UtteranceDetector:
         track's frames are not dumped but instead are available to __utterance_detected and the coroutines it awaits on
         down.
         Raises:
-            - MediaStreamError
-            - TimeoutError
+            - aiortc.MediaStreamError
+            - asyncio.TimeoutError
         """
         logger.info("Detecting utterance...")
         async with self.__utterance_lock:
+            logger.debug("Acquired lock, awaiting __detect_utterance...")
             try:
                 await asyncio.wait_for(
                     self.__detect_utterance(), self.__config.utterance_timeout_seconds
                 )
             except asyncio.TimeoutError as e:
-                logger.error(f"Timed out waiting for an utterance to be detected: {e}")
+                logger.debug(f"Timed out waiting for an utterance to be detected")
                 raise
             except MediaStreamError:
                 logger.debug("User disconnect while detecting utterance.")
@@ -173,7 +174,7 @@ class UtteranceDetector:
         event.
         Raises:
             - aiortc.MediaStreamError (user disconnect, end of track, etc.)
-            - TimeoutError (user didn't start speaking)
+            - asyncio.TimeoutError (user didn't start speaking)
         """
         if self.__background_energy is None:
             logger.debug("Detecting background energy...")
@@ -193,7 +194,7 @@ class UtteranceDetector:
                 self.__utterance_started(),
                 timeout=timeout,
             )
-        except TimeoutError:
+        except asyncio.TimeoutError:
             logger.debug("Timed out waiting for user to start speaking.")
             self.__send_status(f"Timed out waiting for you to start speaking after {timeout}sec.")
             raise

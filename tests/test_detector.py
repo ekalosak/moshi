@@ -39,7 +39,7 @@ sleeps = [
 ]
 @pytest.mark.asyncio
 @pytest.mark.parametrize("sleepsec", sleeps)
-async def test_disconnect_bug_15(sleepsec, utterance_audio_track, Sink, status_fn):
+async def test_disconnect_bug_15(sleepsec, utterance_audio_track, status_fn):
     """Test user (audio) disconnects throughout the detection flow."""
     connected = asyncio.Event()
     ud = detector.UtteranceDetector(connected, status_fn)
@@ -59,10 +59,11 @@ async def test_disconnect_bug_15(sleepsec, utterance_audio_track, Sink, status_f
 
 
 @pytest.mark.asyncio
-async def test_timeout_bug_15_user_not_start_speaking(silent_audio_track, Sink, status_fn):
+async def test_timeout_bug_15_user_not_start_speaking(silent_audio_track, status_fn):
     """Test timeout while detecting user utterance due to user not starting speaking."""
     connected = asyncio.Event()
     config = detector.ListeningConfig(
+        ambient_noise_measurement_seconds=0.1,
         utterance_start_timeout_seconds=0.5,
     )
     ud = detector.UtteranceDetector(connected, status_fn, config)
@@ -72,22 +73,23 @@ async def test_timeout_bug_15_user_not_start_speaking(silent_audio_track, Sink, 
     await ud.start()
     connected.set()
     print("started! starting getting_utterance task...")
-    # with pytest.raises(TimeoutError):
-    utframe = await ud.get_utterance()
+    with pytest.raises(asyncio.TimeoutError):
+        utframe = await ud.get_utterance()
 
-# @pytest.mark.asyncio
-# async def test_timeout_bug_15_user_speak_too_long(silent_audio_track, Sink, status_fn):
-#     """Test timeout while detecting user utterance due to user being too chatty."""
-#     connected = asyncio.Event()
-#     config = detector.ListeningConfig(
-#         utterance_start_timeout_seconds=0.5,
-#     )
-#     ud = detector.UtteranceDetector(connected, status_fn)
-#     print("created UtteranceDetector")
-#     ud.setTrack(silent_audio_track)
-#     print("set track, starting...")
-#     await ud.start()
-#     connected.set()
-#     print("started! starting getting_utterance task...")
-#     with pytest.raises(TimeoutError):
-#         utframe = ud.get_utterance()
+@pytest.mark.asyncio
+async def test_timeout_bug_15_user_speak_too_long(utterance_audio_track, status_fn):
+    """Test timeout while detecting user utterance due to user being too chatty."""
+    connected = asyncio.Event()
+    config = detector.ListeningConfig(
+        utterance_timeout_seconds=6.,  # NOTE utterance_audio_track starts at ~2sec, has ~8sec speaking, ~13sec total
+    )
+    ud = detector.UtteranceDetector(connected, status_fn, config=config)
+    print("created UtteranceDetector")
+    ud.setTrack(utterance_audio_track)
+    print("set track, starting...")
+    await ud.start()
+    await asyncio.sleep(0.1)
+    connected.set()
+    print("started! starting getting_utterance task...")
+    with pytest.raises(asyncio.TimeoutError):
+        utframe = await ud.get_utterance()

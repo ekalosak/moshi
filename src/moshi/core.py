@@ -89,7 +89,7 @@ class WebRTCChatter:
     async def connected(self):
         """Server calls this when the peer connection enters state 'connected'.
         Raises:
-            - TimeoutError
+            - asyncio.TimeoutError
         """
         self.logger.debug("RTCPeerConnection status 'connected', waiting for status and transcript channels...")
         await asyncio.wait_for(
@@ -158,10 +158,14 @@ class WebRTCChatter:
         util.splash("bye")
 
     async def __main(self):
-        """Run one loop of the main program."""
+        """Run one loop of the main program.
+        Raises:
+            - UserResetError when chatter entered into a state that requires reset by user.
+            - MediaStreamError when connection error or user hangup (disconnect).
+        """
         try:
             usr_audio: AudioFrame = await self.__detect_user_utterance()
-        except TimeoutError as e:
+        except asyncio.TimeoutError as e:
             logger.error(f"Timed out getting user utterance: {e}")
             self.__send_status("Sorry, Moshi timed out waiting for your speech. We'll try again!")
             return  # skip to next loop
@@ -197,7 +201,7 @@ class WebRTCChatter:
         """
         Raises:
             - MediaStreamError
-            - TimeoutError
+            - asyncio.TimeoutError
         """
         self.logger.debug("Detecting user utterance...")
         try:
@@ -205,7 +209,7 @@ class WebRTCChatter:
         except MediaStreamError:
             logger.debug("MediaStreamError: user disconnect while detecting utterance.")
             raise
-        except TimeoutError as e:
+        except asyncio.TimeoutError as e:
             logger.debug(f"Timed out waiting for user utterance: {e}")
             raise
         self.logger.info(f"Detected user utterance: {usr_audio}")

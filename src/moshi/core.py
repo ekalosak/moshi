@@ -205,9 +205,9 @@ class WebRTCChatter:
         except MediaStreamError:
             logger.debug("MediaStreamError: user disconnect while detecting utterance.")
             raise
-        except TimeoutError:
-            breakpoint()
-            a=1
+        except TimeoutError as e:
+            logger.debug(f"Timed out waiting for user utterance: {e}")
+            raise
         self.logger.info(f"Detected user utterance: {usr_audio}")
         return usr_audio
 

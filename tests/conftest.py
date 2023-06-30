@@ -13,7 +13,7 @@ from aiortc.mediastreams import MediaStreamError
 from av import AudioFifo, AudioFrame, AudioResampler
 from loguru import logger
 
-from moshi import AUDIO_FORMAT, AUDIO_LAYOUT, SAMPLE_RATE, util
+from moshi import AUDIO_FORMAT, AUDIO_LAYOUT, SAMPLE_RATE, audio, util
 
 RESOURCEDIR = Path(__file__).parent / "resources"
 logging.getLogger("asyncio").setLevel(logging.CRITICAL)
@@ -65,6 +65,25 @@ def utterance_audio_track(utterance_wav_file) -> MediaStreamTrack:
     yield player.audio
     player._stop(player.audio)
 
+@pytest.fixture
+def silent_audio_track() -> MediaStreamTrack:
+    class SilentTrack(MediaStreamTrack):
+        kind="audio"
+        _pts=0
+        _fl=1024
+        _slp=float(_fl) / SAMPLE_RATE
+        async def recv(self) -> AudioFrame:
+            frame = audio.empty_frame(
+                length=self._fl,
+                rate=SAMPLE_RATE,
+                format=AUDIO_FORMAT,
+                layout=AUDIO_LAYOUT,
+                pts=self._pts,
+            )
+            self._pts += self._fl
+            await asyncio.sleep(self._slp)
+            return frame
+    return SilentTrack()
 
 @pytest.fixture
 def Sink() -> "Sink":

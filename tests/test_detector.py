@@ -1,4 +1,5 @@
 import asyncio
+from unittest import mock
 
 import pytest
 from aiortc.mediastreams import MediaStreamError
@@ -39,6 +40,7 @@ sleeps = [
 @pytest.mark.asyncio
 @pytest.mark.parametrize("sleepsec", sleeps)
 async def test_disconnect_bug_15(sleepsec, utterance_audio_track, Sink, status_fn):
+    """Test user (audio) disconnects throughout the detection flow."""
     connected = asyncio.Event()
     ud = detector.UtteranceDetector(connected, status_fn)
     print("created UtteranceDetector")
@@ -54,3 +56,38 @@ async def test_disconnect_bug_15(sleepsec, utterance_audio_track, Sink, status_f
     await asyncio.sleep(0.5)  # to let event loop get to every timeout etc.
     assert task.done(), "MediaStreamError didn't end up cancelling task."
     assert isinstance(task.exception(), MediaStreamError)
+
+
+@pytest.mark.asyncio
+async def test_timeout_bug_15_user_not_start_speaking(silent_audio_track, Sink, status_fn):
+    """Test timeout while detecting user utterance due to user not starting speaking."""
+    connected = asyncio.Event()
+    config = detector.ListeningConfig(
+        utterance_start_timeout_seconds=0.5,
+    )
+    ud = detector.UtteranceDetector(connected, status_fn, config)
+    print("created UtteranceDetector")
+    ud.setTrack(silent_audio_track)
+    print("set track, starting...")
+    await ud.start()
+    connected.set()
+    print("started! starting getting_utterance task...")
+    # with pytest.raises(TimeoutError):
+    utframe = await ud.get_utterance()
+
+# @pytest.mark.asyncio
+# async def test_timeout_bug_15_user_speak_too_long(silent_audio_track, Sink, status_fn):
+#     """Test timeout while detecting user utterance due to user being too chatty."""
+#     connected = asyncio.Event()
+#     config = detector.ListeningConfig(
+#         utterance_start_timeout_seconds=0.5,
+#     )
+#     ud = detector.UtteranceDetector(connected, status_fn)
+#     print("created UtteranceDetector")
+#     ud.setTrack(silent_audio_track)
+#     print("set track, starting...")
+#     await ud.start()
+#     connected.set()
+#     print("started! starting getting_utterance task...")
+#     with pytest.raises(TimeoutError):
+#         utframe = ud.get_utterance()

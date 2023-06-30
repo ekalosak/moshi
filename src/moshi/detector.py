@@ -194,7 +194,7 @@ class UtteranceDetector:
                 timeout=timeout,
             )
         except TimeoutError:
-            logger.error("Timed out waiting for user to start speaking.")
+            logger.debug("Timed out waiting for user to start speaking.")
             self.__send_status(f"Timed out waiting for you to start speaking after {timeout}sec.")
             raise
         first_frame.pts = None

@@ -19,7 +19,7 @@ from loguru import logger
 
 import moshi
 from moshi import auth, secrets, core, gcloud, lang, speech, think, util, UserAuthenticationError
-from moshi import server_util as sutil
+from . import util as sutil
 
 NO_SECURITY = bool(os.getenv("MOSHINOSECURITY", False))
 if NO_SECURITY:

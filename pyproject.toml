@@ -43,6 +43,7 @@ tests = [
   'pytest',
   'pytest-asyncio',
   'pytest-aiohttp',
+  'pytest-cov',
   'scipy',
 ]
 dev = [
@@ -63,3 +64,7 @@ markers = [
   "metered: access to the _paid_ Metered.ca TURN server",
   "asyncio: uses async and await"
 ]
+# addopts = [
+#   "--cov=moshi"
+# ]
+

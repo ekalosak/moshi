@@ -48,3 +48,9 @@ precheck:
 	@test -n "$GOOGLE_SDK_ROOT" \
         && echo "✅ GOOGLE_SDK_ROOT present in env" \
         || echo "❌ GOOGLE_SDK_ROOT missing in env"
+
+test:
+	pytest -v --cov=moshi
+
+test-cov:
+	coverage report --format=total

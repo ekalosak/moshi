@@ -1,33 +1,13 @@
 {% extends 'wrapper.html' %}
 {% block content %}
 
-<div id="privacy-blurb">
-  <h2>Privacy</h2>
-  <p>
-    Moshi is committed to your privacy and the security of both your voice and transcript data.
-    Please refer to the <a href="{{ privacy_url }}">privacy policy</a> for details.
-  <p>
-</div>
-
-<div id="news-blurb">
-  <h2>News</h2>
-  <p>
-    Moshi is under rapid development,
-    I do my best to record updates on the <a href="{{ news_url }}">news page</a>.
-  <p>
-</div>
-
 <h2>Instructions</h2>
 <ol>
-  <li>Click the Start button</li>
-  <li>Wait for the Status to progress from "Ready." to "Listening..."</li>
-  <li>Start speaking in the language you'd like to learn</li>
+  <li>Click the Start button.</li>
+  <li>Wait for the Status to tell you that Moshi is listening.</li>
+  <li>Start speaking in the language you'd like to learn.</li>
 </ol>
 <br>
-<p>
-  For example, when you see "Listening...", say: "Hola, mi nombre es Jeff".<br>
-  Then, wait for Moshi to respond - and continue your conversation!
-</p>
 
 <div id="start-stop-buttons" style="display: flex; justify-content: center;">
   <p>
@@ -38,7 +18,7 @@
 
 <h2>Status</h2>
 <p>
-  <pre id="status-channel" style="height: 65px;"></pre>
+  <pre id="status-channel" style="height: 200px;"></pre>
 </p>
 
 <h2>Transcript</h2>
@@ -60,17 +40,34 @@
 </p>
 <hr>
 
-<br>
-<h2>Troubleshooting</h2>
-<ul>
-  <li>Your microphone must be enabled for Moshi to hear you.<br>
-  Press "Allow" when your web browser asks for permission.</li>
-  <li>The AI can have trouble sometimes speaking some languages.
-  If it doesn't recognize your language, try up to 5 times.</li>
-  <li>If something breaks, try restarting the session by clicking Stop, then Restart.</li>
-  <li>If it stays broken after restarting the session, try refreshing the page.</li>
-  <li>If it stays broken after refreshing the page, send feedback including as many details as you can.</li>
-</ul>
+
+<div id="privacy-blurb">
+  <br>
+  <h2>Privacy</h2>
+  <p>
+    Moshi is committed to your privacy and the security of both your voice and transcript data.
+    Please refer to the <a href="{{ privacy_url }}">privacy policy</a> for details.
+  <p>
+</div>
+
+<div id="news-blurb">
+  <br>
+  <h2>News</h2>
+  <p>
+    Moshi is under rapid development,
+    I do my best to record updates on the <a href="{{ news_url }}">news page</a>.
+  <p>
+</div>
+
+<div id="troubleshooting">
+  <br>
+  <h2>Troubleshooting</h2>
+  <ul>
+    <li>Your microphone must be enabled for Moshi to hear you.<br>
+    Press "Allow" when your web browser asks for permission.</li>
+    <li>If the conversation goes off the rails, Moshi is repeating itself, etc., refresh the page.</li>
+  </ul>
+</div>
 
 <br>
 <h2>Known bugs</h2>
@@ -85,9 +82,9 @@
   While I am in the process of fixing this bug, please refresh your conversation a couple times -
   Moshi should respond in your language often, as well!
   </li>
-  <li>Moshi can stall out while thinking, and when it does, it disrupts every user session.<br>
-  While I am in the process of fixing this bug, please refresh your conversation when Moshi stalls -
-  This is a high priority so I should have it fixed soon.
+  <li>Moshi may "hang" while waiting for you to speak, leaving the status on "Listening...".<br>
+  I've tried to fix this in <a href="{{ news_url }}"><tt>v23.6.31</tt></a>, but please let me know if the issue
+  continues.
   </li>
 </ul>
 

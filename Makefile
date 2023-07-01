@@ -31,7 +31,9 @@ dev-install: auth-install build-install
 dev:
 	ls **/*py | MOSHINOSECURITY=1 entr -rc python app/main.py --port 8080
 
-publish: bump build
+publish: bump publish-nobump
+
+publish-nobump: build
 	python3 -m twine upload \
 		 --repository-url $(GOOGLE_CLOUD_PYPI_URL) \
 		 "dist/*" \

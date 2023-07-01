@@ -17,7 +17,7 @@ MAX_RESPONSE_TOKENS = int(os.getenv("MOSHIMAXTOKENS", 64))
 logger.info(f"Using MAX_RESPONSE_TOKENS={MAX_RESPONSE_TOKENS}")
 CONNECTION_TIMEOUT = int(os.getenv("MOSHICONNECTIONTIMEOUT", 5))
 logger.info(f"Using (WebRTC session) CONNECTION_TIMEOUT={CONNECTION_TIMEOUT}")
-MAX_LOOPS = int(os.getenv("MOSHIMAXLOOPS", 10))
+MAX_LOOPS = int(os.getenv("MOSHIMAXLOOPS", 30))
 assert MAX_LOOPS >= 0
 logger.info(f"Using MAX_LOOPS={MAX_LOOPS}")
 

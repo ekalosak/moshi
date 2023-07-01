@@ -1,7 +1,21 @@
+import functools
+
+from .. import util as sutil
+
+def async_with_pcid(f):
+    """Decorator for contextualizing the logger with a PeerConnection uid."""
+
+    @functools.wraps(f)
+    async def wrapped(*a, **k):
+        pcid = uuid.uuid4()
+        with logger.contextualize(PeerConnection=str(pcid)):
+            return await f(*a, **k)
+
+    return wrapped
 
 # Create WebRTC handler; offer/ is called by client.js on index.html having created an initial SDP offer;
-@util.async_with_pcid
-@require_authentication
+@async_with_pcid
+@sutil.require_authentication
 async def offer(request):
     """In WebRTC, there's an initial offer->answer exchange that negotiates the connection parameters.
     This endpoint accepts an offer request from a client and returns an answer with the SDP (session description protocol).

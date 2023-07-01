@@ -20,26 +20,20 @@ import moshi
 from moshi import auth, secrets, core, gcloud, lang, speech, think, util
 from . import util as sutil
 from .routes.healthz import healthz
+from .routes.index import index
 from .routes.login import login, login_callback
 from .routes.news import news
+from .routes.offer import offer
 from .routes.privacy import privacy
-
-NO_SECURITY = bool(os.getenv("MOSHINOSECURITY", False))
-if NO_SECURITY:
-    logger.warning(f"NO_SECURITY={NO_SECURITY}")
-HTTPS = not NO_SECURITY
-if not HTTPS:
-    logger.warning(f"HTTPS={HTTPS}")
 
 # Setup constants
 ROOT = os.path.dirname(__file__)
 ALLOWED_ISS = ['accounts.google.com', 'https://accounts.google.com']
 COOKIE_NAME = "MOSHI-002"
 # Client id is for Google OAuth2
-CLIENT_ID = "462213871057-tsn4b76f24n40i7qrdrhflc7tp5hdqu2.apps.googleusercontent.com"
 SESSION_KEY_SECRET_ID = "session-key-001"  # for HTTP cookie encryption
 logger.info(f"Using SESSION_KEY_SECRET_ID={SESSION_KEY_SECRET_ID}")
-SECURE_COOKIE = not NO_SECURITY
+SECURE_COOKIE = not sutil.NO_SECURITY
 if not SECURE_COOKIE:
     logger.warning(f"SECURE_COOKIE={SECURE_COOKIE}")
 else:
@@ -61,12 +55,11 @@ async def css(request):
     return web.Response(content_type="text/css", text=content)
 
 
-@require_authentication
+@sutil.require_authentication
 async def javascript(request):
     """HTTP endpoint for client.js"""
     content = open(os.path.join(ROOT, "static/client.js"), "r").read()
     return web.Response(content_type="application/javascript", text=content)
-
 
 
 @logger.catch
@@ -77,6 +70,7 @@ async def on_shutdown(app):
     await asyncio.gather(*coros)
     pcs.clear()
     logger.success("Shut down gracefully!")
+
 
 @logger.catch
 async def on_startup(app):
@@ -107,7 +101,6 @@ async def make_app() -> 'web.Application':
     app = web.Application()
     if SECURE_COOKIE:
         secret_key = await secrets.get_secret(SESSION_KEY_SECRET_ID, decode=None)
-        # secret_key = os.urandom(32)
         cookie_storage = EncryptedCookieStorage(secret_key, cookie_name=COOKIE_NAME)
         logger.success("Setup encrypted cookie storage.")
     else:

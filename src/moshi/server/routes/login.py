@@ -2,15 +2,17 @@ from aiohttp import web, web_request
 from loguru import logger
 
 from moshi import UserAuthenticationError
-from .core import env
+from .. import util as sutil
+
+CLIENT_ID = "462213871057-tsn4b76f24n40i7qrdrhflc7tp5hdqu2.apps.googleusercontent.com"
 
 async def login(request: web_request.Request):
     """HTTP GET endpoint for login.html"""
     logger.info(request)
     error_message = request.query.get('error', '')  # TODO make a render wrapper (#32)
-    template = env.get_template('login.html')
+    template = sutil.env.get_template('login.html')
     logger.trace(f"Request originating IP address: {request.remote}")
-    scheme = 'https' if HTTPS else 'http'
+    scheme = 'https' if sutil.HTTPS else 'http'
     if scheme == 'http':
         logger.warning("Using HTTP, no SSL - insecure!")
     # NOTE for google login button to appear, login_uri must be https on public site "[GSI_LOGGER]: Error parsing

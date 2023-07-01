@@ -1,10 +1,22 @@
+import os
+from pathlib import Path
+
 import jinja2
 from loguru import logger
 
 from moshi import __version__, util
 
+NO_SECURITY = bool(os.getenv("MOSHINOSECURITY", False))
+if NO_SECURITY:
+    logger.warning(f"NO_SECURITY={NO_SECURITY}")
+HTTPS = not NO_SECURITY
+if not HTTPS:
+    logger.warning(f"HTTPS={HTTPS}")
+
+TEMPLATE_DIR = Path(__file__).parent / 'templates'
+
 env = jinja2.Environment(
-    loader=jinja2.FileSystemLoader(ROOT + '/templates'),
+    loader=jinja2.FileSystemLoader(TEMPLATE_DIR),
     autoescape=jinja2.select_autoescape(['html', 'xml']),
 )
 

@@ -1,5 +1,4 @@
 import asyncio
-import functools
 from http.cookies import SimpleCookie
 import os
 import sys
@@ -92,16 +91,6 @@ def _setup_loguru():
             format="{message}",
         )
 
-def async_with_pcid(f):
-    """Decorator for contextualizing the logger with a PeerConnection uid."""
-
-    @functools.wraps(f)
-    async def wrapped(*a, **k):
-        pcid = uuid.uuid4()
-        with logger.contextualize(PeerConnection=str(pcid)):
-            return await f(*a, **k)
-
-    return wrapped
 
 
 def aio_exception_handler(loop: "EventLoop", context: dict[str, ...]):

@@ -19,6 +19,7 @@ from loguru import logger
 
 import moshi
 from moshi import auth, secrets, core, gcloud, lang, speech, think, util, UserAuthenticationError
+from moshi import server_util as sutil
 
 NO_SECURITY = bool(os.getenv("MOSHINOSECURITY", False))
 if NO_SECURITY:
@@ -149,13 +150,7 @@ async def index(request):
     logger.info(request)
     session = await get_session(request)
     template = env.get_template("index.html")
-    privacy_url = str(request.app.router['privacy'].url_for())
-    news_url = str(request.app.router['news'].url_for())
-    html = template.render(
-        version=f"alpha-{moshi.__version__}",
-        privacy_url=privacy_url,
-        news_url=news_url,
-    )
+    html = sutil.render(template, request)
     return web.Response(text=html, content_type="text/html")
 
 

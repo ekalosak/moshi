@@ -125,7 +125,7 @@ class UtteranceDetector:
                     f"Timed out waiting to dump a frame after {timeout} sec."
                 )
                 self.__send_status(f"Sorry, Moshi will only listen for up to {timeout:.2f} sec per utterance.\n\tWe'll try again!")
-                await asyncio.sleep(1.)
+                await asyncio.sleep(0.3)
                 raise
 
     async def __dump_frame(self):
@@ -187,8 +187,6 @@ class UtteranceDetector:
             msg = f"Detected background noise level: {self.__background_energy:.2f}"
             logger.debug(msg)
             self.__send_status(msg)
-            # self.__background_energy = 30.
-            # logger.warning("Using fixed background energy: 30")
         logger.debug("Waiting for utterance to start...")
         fifo = AudioFifo()
         timeout = self.__config.utterance_start_timeout_seconds
@@ -202,6 +200,9 @@ class UtteranceDetector:
             logger.debug("Timed out waiting for user to start speaking.")
             self.__send_status(f"Timed out waiting for you to start speaking after {timeout} sec.")
             raise
+        else:
+            logger.debug("User started speaking.")
+            self.__send_status("Moshi heard you start speaking...")
         first_frame.pts = None
         fifo.write(first_frame)
         silence_time_sec = 0.0
@@ -233,6 +234,7 @@ class UtteranceDetector:
             logger.trace(f"silence_time_sec: {silence_time_sec}")
             total_utterance_sec += frame_time
         logger.debug(f"Utterance stopped after {total_utterance_sec:.3f} seconds")
+        self.__send_status("Moshi heard you stop speaking.")
         self.__utterance: AudioFrame = fifo.read()
 
     async def __measure_background_audio_energy(self) -> float:

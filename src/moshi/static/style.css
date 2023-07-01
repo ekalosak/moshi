@@ -161,3 +161,11 @@ a:link {
 a:visited {
   color: #e9a9f5;
 }
+
+.link-as-h1 {
+  display: block;
+  font-size: 1.5em;
+  font-weight: bold;
+  text-decoration: none;
+  color: inherit;
+}

@@ -169,7 +169,8 @@ class WebRTCChatter:
             usr_audio: AudioFrame = await self.__detect_user_utterance()
         except asyncio.TimeoutError as e:
             logger.error(f"Timed out getting user utterance: {e}")
-            self.__send_status("Sorry, Moshi timed out waiting for your speech. We'll try again!")
+            self.__send_status("Sorry, Moshi timed out waiting for your speech.\n\tWe'll try again!")
+            await asyncio.sleep(1.)
             return  # skip to next loop
         self.__send_status("Transcribing...")  # TODO send the status updates from the private __ methods and in detector / responder
         usr_text: str = await self.__transcribe_audio(usr_audio)

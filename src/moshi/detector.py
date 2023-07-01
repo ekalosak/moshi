@@ -32,7 +32,7 @@ class ListeningConfig:
         0.5  # how long speaking must occur before non-silence is considered a phrase
     )
     utterance_timeout_seconds: float = (
-        20.0  # how long overall to wait for detection before timing out
+        45.  # how long overall to wait for detection before timing out
     )
 
 
@@ -120,9 +120,12 @@ class UtteranceDetector:
                     self.__dump_frame(), timeout=self.__config.utterance_timeout_seconds
                 )
             except asyncio.TimeoutError:
+                timeout = self.__config.utterance_timeout_seconds
                 logger.debug(
-                    f"Timed out waiting to dump a frame after {self.__config.utterance_timeout_seconds} sec."
+                    f"Timed out waiting to dump a frame after {timeout} sec."
                 )
+                self.__send_status(f"Sorry, Moshi will only listen for up to {timeout:.2f} sec per utterance.\n\tWe'll try again!")
+                await asyncio.sleep(1.)
                 raise
 
     async def __dump_frame(self):
@@ -189,7 +192,7 @@ class UtteranceDetector:
         logger.debug("Waiting for utterance to start...")
         fifo = AudioFifo()
         timeout = self.__config.utterance_start_timeout_seconds
-        self.__send_status(f"Listening for up to {timeout}sec for you to start speaking...")
+        self.__send_status(f"Listening for up to {timeout} sec for you to start speaking...")
         try:
             first_frame = await asyncio.wait_for(
                 self.__utterance_started(),
@@ -197,7 +200,7 @@ class UtteranceDetector:
             )
         except asyncio.TimeoutError:
             logger.debug("Timed out waiting for user to start speaking.")
-            self.__send_status(f"Timed out waiting for you to start speaking after {timeout}sec.")
+            self.__send_status(f"Timed out waiting for you to start speaking after {timeout} sec.")
             raise
         first_frame.pts = None
         fifo.write(first_frame)

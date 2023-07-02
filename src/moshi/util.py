@@ -1,5 +1,4 @@
 import asyncio
-import functools
 from http.cookies import SimpleCookie
 import os
 import sys
@@ -59,8 +58,11 @@ def _to_log_dict(rec: dict) -> dict:
 
 def _setup_loguru():
     # Loguru
-    logger.level("INSTRUCTION", no=15, color="<light-yellow><bold>")
-    logger.level("SPLASH", no=13, color="<light-magenta><bold>")
+    try:
+        logger.level("INSTRUCTION", no=15, color="<light-yellow><bold>")
+        logger.level("SPLASH", no=13, color="<light-magenta><bold>")
+    except TypeError:
+        pass  # if INSTRUCTION already exists, raises TypeError
     logger.remove()
     log_format = LOGURU_FORMAT + " | <g><d>{extra}</d></g>"
     if STDOUT_LOGS:
@@ -92,16 +94,6 @@ def _setup_loguru():
             format="{message}",
         )
 
-def async_with_pcid(f):
-    """Decorator for contextualizing the logger with a PeerConnection uid."""
-
-    @functools.wraps(f)
-    async def wrapped(*a, **k):
-        pcid = uuid.uuid4()
-        with logger.contextualize(PeerConnection=str(pcid)):
-            return await f(*a, **k)
-
-    return wrapped
 
 
 def aio_exception_handler(loop: "EventLoop", context: dict[str, ...]):

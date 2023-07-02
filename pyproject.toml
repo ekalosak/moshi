@@ -40,11 +40,13 @@ server = [
   'gunicorn',
 ]
 tests = [
+  'httpx',
   'pytest',
   'pytest-asyncio',
   'pytest-aiohttp',
   'pytest-cov',
   'scipy',
+  'selenium',
 ]
 dev = [
   'black',
@@ -61,8 +63,8 @@ markers = [
   "slow: runs more than a second or two to run",
   "openai: access to the _paid_ OpenAI APIs",
   "gcloud: access to the _paid_ Google Cloud APIs",
-  "metered: access to the _paid_ Metered.ca TURN server",
-  "asyncio: uses async and await"
+  "asyncio: uses async and await",
+  "frontend: uses selenium and various web drivers to test web frontend",
 ]
 # addopts = [
 #   "--cov=moshi"

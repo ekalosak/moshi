@@ -64,12 +64,14 @@ def base_url(server):
     return f"{server.scheme}://{host}:{server.port}"
 
 @pytest.mark.asyncio
+@pytest.mark.gcloud
 async def test_health(server, client):
     res = await client.get('http://localhost:8080/healthz')
     assert res.is_success
 
 @pytest.mark.asyncio
 @pytest.mark.slow
+@pytest.mark.gcloud
 async def test_index_get(server, client):
     res = await client.get('http://localhost:8080/')
     assert res.status_code==302, "Expected non-logged-in / to redirect to /login"
@@ -87,6 +89,7 @@ async def test_login_get(server, client):
 @pytest.mark.asyncio
 @pytest.mark.slow
 @pytest.mark.frontend
+@pytest.mark.gcloud
 async def test_login_flow(base_url, drv, wait):
     url = f"{base_url}/login"
     print(f"GET {url}")
@@ -106,6 +109,7 @@ async def test_login_flow(base_url, drv, wait):
 @pytest.mark.asyncio
 @pytest.mark.slow
 @pytest.mark.frontend
+@pytest.mark.gcloud
 @mock.patch('moshi.server.util.NO_SECURITY', True)
 async def test_privacy(base_url, drv, wait):
     url = f"{base_url}/privacy"
@@ -118,6 +122,7 @@ async def test_privacy(base_url, drv, wait):
 @pytest.mark.asyncio
 @pytest.mark.slow
 @pytest.mark.frontend
+@pytest.mark.gcloud
 @mock.patch('moshi.server.util.NO_SECURITY', True)
 async def test_news(base_url, drv, wait):
     url = f"{base_url}/news"

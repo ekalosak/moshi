@@ -9,7 +9,7 @@ import ssl
 import urllib.parse
 
 from aiohttp import web, web_request
-from aiohttp_session import get_session, new_session, setup as session_setup, SimpleCookieStorage
+from aiohttp_session import setup as session_setup, SimpleCookieStorage
 from aiohttp_session.cookie_storage import EncryptedCookieStorage
 from aiortc import RTCPeerConnection, RTCSessionDescription, RTCDataChannel
 from google.oauth2 import id_token
@@ -29,7 +29,6 @@ from .routes.privacy import privacy
 # Setup constants
 ROOT = os.path.dirname(__file__)
 ALLOWED_ISS = ['accounts.google.com', 'https://accounts.google.com']
-COOKIE_NAME = "MOSHI-002"
 # Client id is for Google OAuth2
 SESSION_KEY_SECRET_ID = "session-key-001"  # for HTTP cookie encryption
 logger.info(f"Using SESSION_KEY_SECRET_ID={SESSION_KEY_SECRET_ID}")
@@ -100,10 +99,10 @@ async def make_app() -> 'web.Application':
     app = web.Application()
     if SECURE_COOKIE:
         secret_key = await secrets.get_secret(SESSION_KEY_SECRET_ID, decode=None)
-        cookie_storage = EncryptedCookieStorage(secret_key, cookie_name=COOKIE_NAME)
+        cookie_storage = EncryptedCookieStorage(secret_key, cookie_name=sutil.COOKIE_NAME)
         logger.success("Setup encrypted cookie storage.")
     else:
-        cookie_storage = SimpleCookieStorage(cookie_name=COOKIE_NAME)
+        cookie_storage = SimpleCookieStorage(cookie_name=sutil.COOKIE_NAME)
         logger.warning("Using insecure cookie storage.")
     session_setup(app, cookie_storage)
     app.on_shutdown.append(on_shutdown)

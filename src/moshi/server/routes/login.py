@@ -25,7 +25,11 @@ async def login(request: web_request.Request):
         login_uri=login_uri,
         error=error_message,
     )
+    # headers = {
+    #     'Cross-Origin-Opener-Policy': 'same-origin-allow-popups'
+    # }
     return web.Response(text=html, content_type='text/html')
+    # return web.Response(text=html, content_type='text/html', headers=headers)
 
 def _handle_auth_error(e: UserAuthenticationError):
     """Raise the UserAuthenticationError to the user, redirecting them to the login page."""

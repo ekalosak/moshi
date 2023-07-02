@@ -1,6 +1,8 @@
 import os
 from pathlib import Path
 
+from aiohttp import web
+from aiohttp_session import get_session
 import jinja2
 from loguru import logger
 
@@ -13,6 +15,7 @@ HTTPS = not NO_SECURITY
 if not HTTPS:
     logger.warning(f"HTTPS={HTTPS}")
 
+COOKIE_NAME = "com.chatmoshi"
 TEMPLATE_DIR = Path(__file__).parent / 'templates'
 
 env = jinja2.Environment(

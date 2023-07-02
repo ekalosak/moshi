@@ -9,7 +9,7 @@ from aiortc.mediastreams import MediaStreamTrack
 from av import AudioFifo, AudioFormat, AudioFrame, AudioLayout, AudioResampler
 from loguru import logger
 
-SAMPLE_RATE = int(os.getenv("MOSHISAMPLERATE", 48000))
+SAMPLE_RATE = int(os.getenv("MOSHISAMPLERATE", 22050))
 AUDIO_FORMAT = os.getenv("MOSHIAUDIOFORMAT", "s16")
 AUDIO_LAYOUT = os.getenv("MOSHIAUDIOLAYOUT", "stereo")
 logger.info(f"Using sample rate: {SAMPLE_RATE}")

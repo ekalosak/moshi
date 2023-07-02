@@ -10,5 +10,3 @@ async def index(request):
     template = env.get_template("index.html")
     html = sutil.render(template, request)
     return web.Response(text=html, content_type="text/html")
-
-

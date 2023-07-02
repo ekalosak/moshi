@@ -83,6 +83,7 @@ async def test_login_get(server, client):
 
 @pytest.mark.asyncio
 @pytest.mark.slow
+@pytest.mark.frontend
 async def test_login_flow(base_url, drv, wait):
     url = f"{base_url}/login"
     print(f"GET {url}")
@@ -98,3 +99,36 @@ async def test_login_flow(base_url, drv, wait):
     finally:
         drv.close()  # close the popup
         drv.switch_to.window(drv.window_handles[0])
+
+@pytest.mark.asyncio
+@pytest.mark.slow
+@pytest.mark.frontend
+@mock.patch('moshi.server.util.NO_SECURITY', True)
+async def test_privacy(base_url, drv, wait):
+    url = f"{base_url}/privacy"
+    print(f"GET {url}")
+    await asyncio.to_thread(drv.get, url)
+    h1s = drv.find_elements(By.TAG_NAME, 'h1')
+    assert any(h1.text == "Privacy Policy" for h1 in h1s)
+
+@pytest.mark.asyncio
+@pytest.mark.slow
+@pytest.mark.frontend
+@mock.patch('moshi.server.util.NO_SECURITY', True)
+async def test_news(base_url, drv, wait):
+    url = f"{base_url}/news"
+    print(f"GET {url}")
+    await asyncio.to_thread(drv.get, url)
+    h1s = drv.find_elements(By.TAG_NAME, 'h1')
+    assert any(h1.text == "News" for h1 in h1s)
+
+# @pytest.mark.asyncio
+# @pytest.mark.slow
+# @pytest.mark.frontend
+# @mock.patch('moshi.server.util.NO_SECURITY', True)
+# async def test_index_establish_webrtc(base_url, drv, wait):
+#     url = f"{base_url}/"
+#     print(f"GET {url}")
+#     await asyncio.to_thread(drv.get, url)
+#     breakpoint()
+#     a=1

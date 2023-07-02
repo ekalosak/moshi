@@ -45,7 +45,7 @@ async def javascript(request):
 
 @logger.catch
 async def on_shutdown(app):
-    logger.info(f"Shutting down {len(pcs)} PeerConnections...")
+    logger.info("Shutting down...")
     await offer.shutdown()
     logger.success("Shut down gracefully!")
 

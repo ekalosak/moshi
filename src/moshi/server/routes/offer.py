@@ -25,6 +25,7 @@ def async_with_pcid(f):
 
 async def shutdown():
     """Close peer connections."""
+    logger.debug(f"Closing {len(pcs)} PeerConnections...")
     coros = [pc.close() for pc in pcs]
     await asyncio.gather(*coros)
     pcs.clear()

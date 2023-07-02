@@ -77,6 +77,7 @@ async def test_index_get(server, client):
     assert res.is_success
 
 @pytest.mark.asyncio
+@pytest.mark.gcloud
 async def test_login_get(server, client):
     res = await client.get('http://localhost:8080/login')
     assert res.is_success

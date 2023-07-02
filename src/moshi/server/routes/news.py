@@ -8,6 +8,5 @@ from .. import util as sutil
 async def news(request: web_request.Request):
     logger.info(request)
     template = sutil.env.get_template('news.html')
-    html = template.render()
+    html = sutil.render(template, request)
     return web.Response(text=html, content_type='text/html')
-

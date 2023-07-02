@@ -7,6 +7,6 @@ from .. import util as sutil
 async def privacy(request: web_request.Request):
     logger.info(request)
     template = sutil.env.get_template('privacy.html')
-    html = template.render()
+    html = sutil.render(template, request)
     return web.Response(text=html, content_type='text/html')
 

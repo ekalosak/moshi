@@ -45,10 +45,7 @@ def require_authentication(http_endpoint_handler):
         session = await get_session(request)
         user_email = session.get('user_email')
         logger.debug(f"Checking authentication for user_email: {user_email}")
-        if NO_SECURITY:
-            logger.warning("NO_SECURITY=True so not requiring any authentication")
-            session['user_email'] = "moshi.integration@gmail.com"
-        elif user_email is None:
+        if user_email is None:
             logger.debug("No user_email in session cookie, user not logged in.")
             raise web.HTTPFound(f"/login")
         logger.debug(f"User {user_email} is authenticated!")

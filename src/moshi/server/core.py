@@ -4,16 +4,12 @@ See app/main.py for usage example.
 import asyncio
 import json
 import os
-from pathlib import Path
-import ssl
 import urllib.parse
 
 from aiohttp import web, web_request
 from aiohttp_session import setup as session_setup, SimpleCookieStorage
 from aiohttp_session.cookie_storage import EncryptedCookieStorage
 from aiortc import RTCPeerConnection, RTCSessionDescription, RTCDataChannel
-from google.oauth2 import id_token
-from google.auth.transport import requests
 from loguru import logger
 
 import moshi
@@ -28,8 +24,6 @@ from .routes.privacy import privacy
 
 # Setup constants
 ROOT = os.path.dirname(__file__)
-ALLOWED_ISS = ['accounts.google.com', 'https://accounts.google.com']
-# Client id is for Google OAuth2
 SESSION_KEY_SECRET_ID = "session-key-001"  # for HTTP cookie encryption
 logger.info(f"Using SESSION_KEY_SECRET_ID={SESSION_KEY_SECRET_ID}")
 SECURE_COOKIE = not sutil.NO_SECURITY

@@ -1,11 +1,14 @@
 from aiohttp import web, web_request
 from aiohttp_session import new_session
+from google.oauth2 import id_token
+from google.auth.transport import requests as google_requests
 from loguru import logger
 
-from moshi import UserAuthenticationError
+from moshi import auth, UserAuthenticationError
 from moshi.server import util as sutil
 
 CLIENT_ID = "462213871057-tsn4b76f24n40i7qrdrhflc7tp5hdqu2.apps.googleusercontent.com"
+ALLOWED_ISS = ['accounts.google.com', 'https://accounts.google.com']
 
 async def login(request: web_request.Request):
     """HTTP GET endpoint for login.html"""
@@ -20,16 +23,14 @@ async def login(request: web_request.Request):
     # configuration from HTML: Unsecured login_uri provided. client:44:322" otherwise;
     login_uri = request.url.with_scheme(scheme)
     logger.trace(f"Using login_uri for Google auth: {login_uri}")
-    html = template.render(
+    html = sutil.render(
+        template,
+        request,
         client_id=CLIENT_ID,
         login_uri=login_uri,
         error=error_message,
     )
-    # headers = {
-    #     'Cross-Origin-Opener-Policy': 'same-origin-allow-popups'
-    # }
     return web.Response(text=html, content_type='text/html')
-    # return web.Response(text=html, content_type='text/html', headers=headers)
 
 def _handle_auth_error(e: UserAuthenticationError):
     """Raise the UserAuthenticationError to the user, redirecting them to the login page."""
@@ -47,7 +48,7 @@ async def login_callback(request):
     data = await request.post()
     token = data['credential']
     try:
-        id_info = id_token.verify_oauth2_token(token, requests.Request())
+        id_info = id_token.verify_oauth2_token(token, google_requests.Request())
         if id_info['iss'] not in ALLOWED_ISS:
             raise UserAuthenticationError('Authentication failed')
         user_email = id_info['email'].lower()

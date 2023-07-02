@@ -19,8 +19,8 @@ su - eric -c '
   MOSHILOGCLOUD=1 \
   gunicorn main:app_factory \
     --bind :8080 \
-    --workers 1 \
-    --threads 1 \
+    --workers 3 \
+    --threads 4 \
     --timeout 20 \
     --worker-class aiohttp.GunicornWebWorker
 '

@@ -32,17 +32,18 @@ class ListeningConfig:
         0.5  # how long speaking must occur before non-silence is considered a phrase
     )
     utterance_timeout_seconds: float = (
-        45.  # how long overall to wait for detection before timing out
+        45.0  # how long overall to wait for detection before timing out
     )
 
 
 class UtteranceDetector:
     """An audio media sink that detects utterances."""
 
-    def __init__(self,
+    def __init__(
+        self,
         connected_event: asyncio.Event,
         send_status: Callable[str, None],
-        config = ListeningConfig(),
+        config=ListeningConfig(),
     ):
         self.__track = None
         self.__task = None
@@ -59,9 +60,7 @@ class UtteranceDetector:
     async def start(self):
         """Start detecting speech."""
         if self.__track is None:
-            raise ValueError(
-                "Track not yet set."
-            )
+            raise ValueError("Track not yet set.")
         self.__task = asyncio.create_task(
             self.__dump_frames(),
             name=f"Main utterance detection frame dump task from track: {audio.track_str(self.__track)}",
@@ -75,7 +74,9 @@ class UtteranceDetector:
         try:
             await self.__task  # this should sleep until the __task is cancelled
         except asyncio.CancelledError as e:
-            logger.debug("asyncio.CancelledError indicating the detection task did not crash but was cancelled")
+            logger.debug(
+                "asyncio.CancelledError indicating the detection task did not crash but was cancelled"
+            )
         finally:
             self.__task = None
 
@@ -111,7 +112,9 @@ class UtteranceDetector:
             - aiortc.MediaStreamError
             - asyncio.TimeoutError
         """
-        logger.debug("Awaiting ICE connection completion and establishment of all datachannels...")
+        logger.debug(
+            "Awaiting ICE connection completion and establishment of all datachannels..."
+        )
         await self.__connected.wait()
         logger.debug("ICE connection succeeded!")
         while True:
@@ -121,10 +124,10 @@ class UtteranceDetector:
                 )
             except asyncio.TimeoutError:
                 timeout = self.__config.utterance_timeout_seconds
-                logger.debug(
-                    f"Timed out waiting to dump a frame after {timeout} sec."
+                logger.debug(f"Timed out waiting to dump a frame after {timeout} sec.")
+                self.__send_status(
+                    f"Sorry, Moshi will only listen for up to {timeout:.2f} sec per utterance.\n\tWe'll try again!"
                 )
-                self.__send_status(f"Sorry, Moshi will only listen for up to {timeout:.2f} sec per utterance.\n\tWe'll try again!")
                 await asyncio.sleep(0.3)
                 raise
 
@@ -181,8 +184,10 @@ class UtteranceDetector:
         """
         if self.__background_energy is None:
             logger.debug("Detecting background energy...")
-            self.__send_status("Detecting background noise level for "
-                f"{self.__config.ambient_noise_measurement_seconds:.2f} seconds")
+            self.__send_status(
+                "Detecting background noise level for "
+                f"{self.__config.ambient_noise_measurement_seconds:.2f} seconds"
+            )
             self.__background_energy = await self.__measure_background_audio_energy()
             msg = f"Detected background noise level: {self.__background_energy:.2f}"
             logger.debug(msg)
@@ -190,7 +195,9 @@ class UtteranceDetector:
         logger.debug("Waiting for utterance to start...")
         fifo = AudioFifo()
         timeout = self.__config.utterance_start_timeout_seconds
-        self.__send_status(f"Listening for up to {timeout} sec for you to start speaking...")
+        self.__send_status(
+            f"Listening for up to {timeout} sec for you to start speaking..."
+        )
         try:
             first_frame = await asyncio.wait_for(
                 self.__utterance_started(),
@@ -198,7 +205,9 @@ class UtteranceDetector:
             )
         except asyncio.TimeoutError:
             logger.debug("Timed out waiting for user to start speaking.")
-            self.__send_status(f"Timed out waiting for you to start speaking after {timeout} sec.")
+            self.__send_status(
+                f"Timed out waiting for you to start speaking after {timeout} sec."
+            )
             raise
         else:
             logger.debug("User started speaking.")
@@ -213,7 +222,9 @@ class UtteranceDetector:
             try:
                 frame = await self.__track.recv()
             except MediaStreamError:
-                logger.debug("User disconnected audio while we are detecting utterance.")
+                logger.debug(
+                    "User disconnected audio while we are detecting utterance."
+                )
                 raise
             frame.pts = (
                 None  # required for fifo.write(), not sending over network so OK
@@ -269,7 +280,9 @@ class UtteranceDetector:
             try:
                 frame = await self.__track.recv()
             except MediaStreamError:
-                logger.debug("Audio track disconnect while waiting for utterance to start.")
+                logger.debug(
+                    "Audio track disconnect while waiting for utterance to start."
+                )
                 raise
             frame_energy = audio.get_frame_energy(frame)
             frame_time = audio.get_frame_seconds(frame)

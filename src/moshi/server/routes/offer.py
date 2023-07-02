@@ -13,6 +13,7 @@ from .. import util as sutil
 
 pcs = set()
 
+
 def async_with_pcid(f):
     """Decorator for contextualizing the logger with a PeerConnection uid."""
 
@@ -24,12 +25,14 @@ def async_with_pcid(f):
 
     return wrapped
 
+
 async def shutdown():
     """Close peer connections."""
     logger.debug(f"Closing {len(pcs)} PeerConnections...")
     coros = [pc.close() for pc in pcs]
     await asyncio.gather(*coros)
     pcs.clear()
+
 
 # Create WebRTC handler; offer/ is called by client.js on index.html having created an initial SDP offer;
 @async_with_pcid
@@ -45,7 +48,9 @@ async def offer(request):
     params = await request.json()
     logger.trace(f"Request params: {params}")
     session = await get_session(request)
-    assert params["type"] == "offer", "At /offer endpoint, the SDP must be type 'offer'. Error in client.js."  # TODO make this 500 without crashing
+    assert (
+        params["type"] == "offer"
+    ), "At /offer endpoint, the SDP must be type 'offer'. Error in client.js."  # TODO make this 500 without crashing
     offer = RTCSessionDescription(sdp=params["sdp"], type=params["type"])
     logger.trace(f"offer: {offer}")
     # ice_config = await ice.get_ice_config(session['turn_token'])
@@ -54,7 +59,7 @@ async def offer(request):
     pcs.add(pc)
     logger.info(f"Created peer connection to: {request.remote}")
 
-    usremail = session['user_email']  # pass so logging will record user email
+    usremail = session["user_email"]  # pass so logging will record user email
     chatter = mcore.WebRTCChatter(usremail)
 
     with logger.contextualize(email=usremail):
@@ -62,10 +67,14 @@ async def offer(request):
         @pc.on("datachannel")
         def on_datachannel(channel: RTCDataChannel):
             if channel.label == "pingpong":
+
                 @channel.on("message")
                 def on_message(message):
                     if isinstance(message, str) and message.startswith("ping"):
-                        channel.send("pong" + message[4:])  # NOTE io under the hood done with fire-and-forget ensure_future, UDP
+                        channel.send(
+                            "pong" + message[4:]
+                        )  # NOTE io under the hood done with fire-and-forget ensure_future, UDP
+
             else:
                 chatter.add_channel(channel)
 
@@ -82,7 +91,9 @@ async def offer(request):
                 try:
                     await chatter.connected()
                 except asyncio.TimeoutError as e:
-                    logger.error("Timed out waiting for datachannels to be established.")
+                    logger.error(
+                        "Timed out waiting for datachannels to be established."
+                    )
 
         @pc.on("track")
         def on_track(track):
@@ -111,4 +122,3 @@ async def offer(request):
             {"sdp": pc.localDescription.sdp, "type": pc.localDescription.type}
         ),
     )
-

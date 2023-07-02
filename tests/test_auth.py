@@ -4,6 +4,7 @@ import pytest
 
 from moshi import auth
 
+
 @pytest.mark.asyncio
 @pytest.mark.gcloud
 async def test_authenticated_email():

@@ -20,6 +20,7 @@ logging.getLogger("asyncio").setLevel(logging.CRITICAL)
 
 util._setup_loguru()
 
+
 @pytest.fixture(autouse=True)
 def _print_blank_line():
     print()
@@ -65,13 +66,15 @@ def utterance_audio_track(utterance_wav_file) -> MediaStreamTrack:
     yield player.audio
     player._stop(player.audio)
 
+
 @pytest.fixture
 def silent_audio_track() -> MediaStreamTrack:
     class SilentTrack(MediaStreamTrack):
-        kind="audio"
-        _pts=0
-        _fl=1024
-        _slp=float(_fl) / SAMPLE_RATE
+        kind = "audio"
+        _pts = 0
+        _fl = 1024
+        _slp = float(_fl) / SAMPLE_RATE
+
         async def recv(self) -> AudioFrame:
             frame = audio.empty_frame(
                 length=self._fl,
@@ -83,7 +86,9 @@ def silent_audio_track() -> MediaStreamTrack:
             self._pts += self._fl
             await asyncio.sleep(self._slp)
             return frame
+
     return SilentTrack()
+
 
 @pytest.fixture
 def Sink() -> "Sink":
@@ -134,6 +139,7 @@ def Sink() -> "Sink":
             self.stream_ended.set()
 
     return Sink
+
 
 @pytest.fixture
 def status_fn() -> Callable[str, None]:

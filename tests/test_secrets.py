@@ -5,6 +5,7 @@ from moshi import gcloud, secrets
 TEST_SECRET_ID = "test-secret-001"
 SESSION_KEY_ID = "session-key-001"
 
+
 @pytest.mark.asyncio
 @pytest.mark.gcloud
 async def test_secrets():

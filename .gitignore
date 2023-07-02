@@ -9,3 +9,4 @@ htmlcov/
 *.pyc
 *node_modules/
 *.js.*
+*.log

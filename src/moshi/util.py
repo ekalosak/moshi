@@ -58,8 +58,11 @@ def _to_log_dict(rec: dict) -> dict:
 
 def _setup_loguru():
     # Loguru
-    logger.level("INSTRUCTION", no=15, color="<light-yellow><bold>")
-    logger.level("SPLASH", no=13, color="<light-magenta><bold>")
+    try:
+        logger.level("INSTRUCTION", no=15, color="<light-yellow><bold>")
+        logger.level("SPLASH", no=13, color="<light-magenta><bold>")
+    except TypeError:
+        pass  # if INSTRUCTION already exists, raises TypeError
     logger.remove()
     log_format = LOGURU_FORMAT + " | <g><d>{extra}</d></g>"
     if STDOUT_LOGS:

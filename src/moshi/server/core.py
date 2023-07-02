@@ -95,7 +95,6 @@ async def on_startup(app):
     logger.info("OpenAI setup complete.")
     logger.success(f"Set up moshi version: {moshi.__version__}")
 
-@logger.catch
 async def make_app() -> 'web.Application':
     """Initialize the """
     app = web.Application()

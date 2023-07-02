@@ -2,25 +2,17 @@
 See app/main.py for usage example.
 """
 import asyncio
-import json
 import os
-import urllib.parse
 
 from aiohttp import web, web_request
 from aiohttp_session import setup as session_setup, SimpleCookieStorage
 from aiohttp_session.cookie_storage import EncryptedCookieStorage
-from aiortc import RTCPeerConnection, RTCSessionDescription, RTCDataChannel
 from loguru import logger
 
 import moshi
-from moshi import auth, secrets, core, gcloud, lang, speech, think, util
+from moshi import auth, secrets, gcloud, lang, speech, think, util
 from . import util as sutil
-from .routes.healthz import healthz
-from .routes.index import index
-from .routes.login import login, login_callback
-from .routes.news import news
-from .routes.offer import offer
-from .routes.privacy import privacy
+from .routes import healthz, index, login, news, offer, privacy
 
 # Setup constants
 ROOT = os.path.dirname(__file__)
@@ -31,10 +23,6 @@ if not SECURE_COOKIE:
     logger.warning(f"SECURE_COOKIE={SECURE_COOKIE}")
 else:
     logger.info(f"SECURE_COOKIE={SECURE_COOKIE}")
-
-# Setup global objects
-pcs = set()
-logger.info("Setup peer connection tracker and html templating engine.")
 
 async def favicon(request):
     """HTTP endpoint for the favicon"""
@@ -58,10 +46,7 @@ async def javascript(request):
 @logger.catch
 async def on_shutdown(app):
     logger.info(f"Shutting down {len(pcs)} PeerConnections...")
-    # close peer connections
-    coros = [pc.close() for pc in pcs]
-    await asyncio.gather(*coros)
-    pcs.clear()
+    await offer.shutdown()
     logger.success("Shut down gracefully!")
 
 
@@ -101,14 +86,14 @@ async def make_app() -> 'web.Application':
     session_setup(app, cookie_storage)
     app.on_shutdown.append(on_shutdown)
     app.on_startup.append(on_startup)
-    app.router.add_get("/", index, name="index")
-    app.router.add_get("/healthz", healthz, name="health")
-    app.router.add_get("/privacy", privacy, name="privacy")
-    app.router.add_get("/news", news, name="news")
-    app.router.add_get("/login", login, name="login")
-    app.router.add_post("/login", login_callback)
+    app.router.add_get("/", index.index, name="index")
+    app.router.add_get("/healthz", healthz.healthz, name="health")
+    app.router.add_get("/privacy", privacy.privacy, name="privacy")
+    app.router.add_get("/news", news.news, name="news")
+    app.router.add_get("/login", login.login, name="login")
+    app.router.add_post("/login", login.login_callback)
     app.router.add_get("/favicon.ico", favicon)
     app.router.add_get("/client.js", javascript)
     app.router.add_get("/style.css", css)
-    app.router.add_post("/offer", offer)
+    app.router.add_post("/offer", offer.offer)
     return app

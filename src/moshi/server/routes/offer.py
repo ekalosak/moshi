@@ -1,10 +1,16 @@
 import functools
+import json
 import uuid
 
 from aiohttp import web
+from aiohttp_session import get_session
+from aiortc import RTCPeerConnection, RTCSessionDescription, RTCDataChannel
 from loguru import logger
 
+from moshi import core as mcore
 from .. import util as sutil
+
+pcs = set()
 
 def async_with_pcid(f):
     """Decorator for contextualizing the logger with a PeerConnection uid."""
@@ -16,6 +22,12 @@ def async_with_pcid(f):
             return await f(*a, **k)
 
     return wrapped
+
+async def shutdown():
+    """Close peer connections."""
+    coros = [pc.close() for pc in pcs]
+    await asyncio.gather(*coros)
+    pcs.clear()
 
 # Create WebRTC handler; offer/ is called by client.js on index.html having created an initial SDP offer;
 @async_with_pcid
@@ -41,7 +53,7 @@ async def offer(request):
     logger.info(f"Created peer connection to: {request.remote}")
 
     usremail = session['user_email']  # pass so logging will record user email
-    chatter = core.WebRTCChatter(usremail)
+    chatter = mcore.WebRTCChatter(usremail)
 
     with logger.contextualize(email=usremail):
 

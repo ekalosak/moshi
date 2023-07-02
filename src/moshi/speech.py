@@ -110,8 +110,7 @@ async def transcribe(audio_frame: AudioFrame) -> str:
     logger.debug(f"Transcribing audio from {fp}")
     with open(fp, "rb") as f:
         # TODO timeout I suppose, also async openai
-        transcript = await asyncio.to_thread(
-            openai.Audio.transcribe,
+        transcript = await openai.Audio.atranscribe(
             OPENAI_TRANSCRIPTION_MODEL,
             f,
         )

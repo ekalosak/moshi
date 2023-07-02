@@ -270,8 +270,7 @@ class WebRTCChatter:
         usr_msg = self.messages[-1]
         assert usr_msg.content is self.user_utterance, "State is out of whack"
         self.logger.debug(f"Responding to user message: {usr_msg}")
-        ast_txts: str = await asyncio.to_thread(
-            think.completion_from_assistant,
+        ast_txts: str = await think.completion_from_assistant(
             self.messages,
             n=1,
             max_tokens=MAX_RESPONSE_TOKENS,

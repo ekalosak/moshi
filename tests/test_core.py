@@ -17,7 +17,7 @@ def test_chatter_init():
     chatter = WebRTCChatter()
 
 
-def dummy_response(*a, **k):
+async def dummy_response(*a, **k):
     return [DUMMY_AST_TEXT]
 
 

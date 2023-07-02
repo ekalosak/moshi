@@ -56,7 +56,7 @@ CompletionPayload = NewType("CompletionPayload", str)
 def _chat_completion_payload_from_messages(
     messages: list[Message],
 ) -> ChatCompletionPayload:
-    """Convert a list of messages into a payload for the messages arg of openai.ChatCompletion.create()
+    """Convert a list of messages into a payload for the messages arg of openai.ChatCompletion.acreate()
     Source:
         - https://platform.openai.com/docs/api-reference/chat
     """
@@ -69,7 +69,7 @@ def _chat_completion_payload_from_messages(
 
 
 def _completion_payload_from_messages(messages: list[Message]) -> CompletionPayload:
-    """Convert a list of message into a payload for the prompt art of openai.Completion.create()
+    """Convert a list of message into a payload for the prompt art of openai.Completion.acreate()
     Source:
         - https://platform.openai.com/docs/api-reference/completions/create
     """
@@ -96,14 +96,13 @@ def _completion_payload_from_messages(messages: list[Message]) -> CompletionPayl
     return payload
 
 
-# TODO async openai
-def _chat_completion(
+async def _chat_completion(
     payload: ChatCompletionPayload, n: int, model: Model, **kwargs
 ) -> list[str]:
     """Get the message"""
     msg_contents = []
     assert _get_type_of_model(model) == ModelType.CHAT
-    response = openai.ChatCompletion.create(
+    response = await openai.ChatCompletion.acreate(
         model=model,
         messages=payload,
         n=n,
@@ -120,13 +119,12 @@ def _chat_completion(
     return msg_contents
 
 
-# TODO async openai
-def _completion(
+async def _completion(
     payload: CompletionPayload, n: int, model: Model, **kwargs
 ) -> list[str]:
     assert _get_type_of_model(model) == ModelType.COMP
     msg_contents = []
-    response = openai.Completion.create(
+    response = await openai.Completion.acreate(
         model=model,
         prompt=payload,
         n=n,
@@ -145,8 +143,7 @@ def _completion(
     return msg_contents
 
 
-# TODO async
-def completion_from_assistant(
+async def completion_from_assistant(
     messages: list[Message], n: int = 1, model=Model.TEXTDAVINCI002, **kwargs
 ) -> list[str]:
     """Get the conversational response from the LLM.
@@ -162,10 +159,10 @@ def completion_from_assistant(
     msg_contents = []
     if _get_type_of_model(model) == ModelType.CHAT:
         payload = _chat_completion_payload_from_messages(messages)
-        msg_contents = _chat_completion(payload, n, model, **kwargs)
+        msg_contents = await _chat_completion(payload, n, model, **kwargs)
     elif _get_type_of_model(model) == ModelType.COMP:
         payload = _completion_payload_from_messages(messages)
-        msg_contents = _completion(payload, n, model, **kwargs)
+        msg_contents = await _completion(payload, n, model, **kwargs)
     else:
         raise TypeError(f"Model not supported: {MODEL}")
     assert isinstance(msg_contents, list)

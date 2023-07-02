@@ -40,6 +40,7 @@ server = [
   'gunicorn',
 ]
 tests = [
+  'httpx',
   'pytest',
   'pytest-asyncio',
   'pytest-aiohttp',

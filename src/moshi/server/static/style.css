@@ -143,16 +143,12 @@ button:hover {
 
 pre {
   /* height: 100px; */
-  overflow: auto;
   display: flex;
   flex-direction: column-reverse;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  overflow: auto;
 }
-
-/* pre { */
-/*     overflow-x: hidden; */
-/*     overflow-y: auto; */
-/* } */
-
 
 a:link {
   color: #56a7b1;

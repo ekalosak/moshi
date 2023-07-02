@@ -82,6 +82,8 @@ async def test_login_get(server, client):
     res = await client.get('http://localhost:8080/login')
     assert res.is_success
 
+# NOTE can do the following once email/password auth is implemented (rather than just google oauth)
+
 @pytest.mark.asyncio
 @pytest.mark.slow
 @pytest.mark.frontend
@@ -109,8 +111,9 @@ async def test_privacy(base_url, drv, wait):
     url = f"{base_url}/privacy"
     print(f"GET {url}")
     await asyncio.to_thread(drv.get, url)
-    h1s = drv.find_elements(By.TAG_NAME, 'h1')
-    assert any(h1.text == "Privacy Policy" for h1 in h1s)
+    assert drv.title == "Moshi"
+    # NOTE privacy requires auth and google oauth can't be part of integration test so this redirects to /login
+
 
 @pytest.mark.asyncio
 @pytest.mark.slow
@@ -120,8 +123,10 @@ async def test_news(base_url, drv, wait):
     url = f"{base_url}/news"
     print(f"GET {url}")
     await asyncio.to_thread(drv.get, url)
-    h1s = drv.find_elements(By.TAG_NAME, 'h1')
-    assert any(h1.text == "News" for h1 in h1s)
+    assert drv.title == "Moshi"
+    # NOTE privacy requires auth and google oauth can't be part of integration test so this redirects to /login
+    # h1s = drv.find_elements(By.TAG_NAME, 'h1')
+    # assert any([h1.text == "News" for h1 in h1s])
 
 # @pytest.mark.asyncio
 # @pytest.mark.slow

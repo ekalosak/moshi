@@ -9,6 +9,7 @@ gdbclient = contextvars.ContextVar("gdbclient")
 
 logger.success("Loaded!")
 
+
 def _setup_client():
     """Set the gdbclient ContextVar."""
     try:
@@ -20,10 +21,12 @@ def _setup_client():
         gdbclient.set(client)
         logger.info("Firestore client initialized.")
 
+
 def _get_client() -> "Client":
     """Get the translation client."""
     _setup_client()
     return gdbclient.get()
+
 
 async def is_email_authorized(email: str) -> bool:
     db = _get_client()

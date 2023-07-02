@@ -37,15 +37,17 @@ parameters = [
         DontMatchMe: don't extract this
         user: some other response
         """,
-        "extract me"
+        "extract me",
     ),
     (
         """
         \n\nassistant:\n\n\u305d\u306e\u30ec\u30b9\u30c8\u30e9\u30f3\u306f\u3069
         """,
-        "\u305d\u306e\u30ec\u30b9\u30c8\u30e9\u30f3\u306f\u3069"
-    )
+        "\u305d\u306e\u30ec\u30b9\u30c8\u30e9\u30f3\u306f\u3069",
+    ),
 ]
+
+
 @pytest.mark.parametrize("response,desired", parameters)
 def test_completion_scrub(response, desired):
     cleaned = think._clean_completion(response)

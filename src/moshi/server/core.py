@@ -24,6 +24,7 @@ if not SECURE_COOKIE:
 else:
     logger.info(f"SECURE_COOKIE={SECURE_COOKIE}")
 
+
 async def favicon(request):
     """HTTP endpoint for the favicon"""
     fp = os.path.join(ROOT, "static/favicon.ico")
@@ -73,12 +74,15 @@ async def on_startup(app):
     logger.info("OpenAI setup complete.")
     logger.success(f"Set up moshi version: {moshi.__version__}")
 
-async def make_app() -> 'web.Application':
-    """Initialize the """
+
+async def make_app() -> "web.Application":
+    """Initialize the"""
     app = web.Application()
     if SECURE_COOKIE:
         secret_key = await secrets.get_secret(SESSION_KEY_SECRET_ID, decode=None)
-        cookie_storage = EncryptedCookieStorage(secret_key, cookie_name=sutil.COOKIE_NAME)
+        cookie_storage = EncryptedCookieStorage(
+            secret_key, cookie_name=sutil.COOKIE_NAME
+        )
         logger.success("Setup encrypted cookie storage.")
     else:
         cookie_storage = SimpleCookieStorage(cookie_name=sutil.COOKIE_NAME)

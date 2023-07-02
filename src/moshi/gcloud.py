@@ -13,6 +13,7 @@ gcreds = contextvars.ContextVar("gcreds")
 
 logger.success("Loaded!")
 
+
 async def authenticate():
     """Ensure the gcreds context variable is set.
     Raises:

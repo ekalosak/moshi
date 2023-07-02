@@ -9,7 +9,18 @@ from aiortc.mediastreams import MediaStreamError
 from av import AudioFrame
 from loguru import logger
 
-from moshi import (Message, Role, UserResetError, character, detector, lang, responder, speech, think, util)
+from moshi import (
+    Message,
+    Role,
+    UserResetError,
+    character,
+    detector,
+    lang,
+    responder,
+    speech,
+    think,
+    util,
+)
 
 STOP_TOKENS = ["user:"]
 logger.info(f"Using STOP_TOKENS={STOP_TOKENS}")
@@ -22,6 +33,7 @@ assert MAX_LOOPS >= 0
 logger.info(f"Using MAX_LOOPS={MAX_LOOPS}")
 
 logger.success("Loaded!")
+
 
 def _init_messages() -> list[Message]:
     messages = [
@@ -40,13 +52,14 @@ def _init_messages() -> list[Message]:
     ]
     return messages
 
+
 class WebRTCChatter:
     """This class does two important things:
     1. Coordinates the detector and responder, and
     2. Adapts the moshi.CliChatter for use in the WebRTC server.
     """
 
-    def __init__(self, user_email: str="none"):
+    def __init__(self, user_email: str = "none"):
         self.__all_connected = asyncio.Event()
         self.__bus = asyncio.Queue()  # for sending periodic status updates to user
         self.__channels = {}  # all channels, including audio and datachannesl
@@ -81,7 +94,9 @@ class WebRTCChatter:
         try:
             await self.__task  # this should sleep until the __task is cancelled
         except asyncio.CancelledError as e:
-            logger.debug("asyncio.CancelledError indicating the chatter's main task was cancelled, not crashed.")
+            logger.debug(
+                "asyncio.CancelledError indicating the chatter's main task was cancelled, not crashed."
+            )
         finally:
             self.__task = None
 
@@ -91,7 +106,9 @@ class WebRTCChatter:
         Raises:
             - asyncio.TimeoutError
         """
-        self.logger.debug("RTCPeerConnection status 'connected', waiting for status and transcript channels...")
+        self.logger.debug(
+            "RTCPeerConnection status 'connected', waiting for status and transcript channels..."
+        )
         await asyncio.wait_for(
             self.__datachannels_connected.wait(),
             timeout=CONNECTION_TIMEOUT,
@@ -134,18 +151,24 @@ class WebRTCChatter:
         """Run the main program loop."""
         util.splash("moshi")
         try:
-            await asyncio.wait_for(self.__all_connected.wait(), timeout=CONNECTION_TIMEOUT)
+            await asyncio.wait_for(
+                self.__all_connected.wait(), timeout=CONNECTION_TIMEOUT
+            )
         except asyncio.TimeoutError:
             self.logger.error(f"TimeoutError: CONNECTION_TIMEOUT={CONNECTION_TIMEOUT}")
             # kind of a pipedream to think status channel is connected if __all_connected times out...
             # TODO #43 Alert user on client.js if there's a timeout waiting for connection to be established.
-            self.__send_status("Timed out while establishing stream, try refreshing the page.")
+            self.__send_status(
+                "Timed out while establishing stream, try refreshing the page."
+            )
         else:
             for i in itertools.count():
                 if i == MAX_LOOPS and MAX_LOOPS != 0:
                     self.logger.info(f"Reached MAX_LOOPS={MAX_LOOPS}, i={i}")
-                    self.__send_status("Maximum conversation length reached."
-                        "\n\tThanks for using Moshi!\n\tPlease feel free to start a new conversation.")
+                    self.__send_status(
+                        "Maximum conversation length reached."
+                        "\n\tThanks for using Moshi!\n\tPlease feel free to start a new conversation."
+                    )
                     break
                 self.logger.debug(f"Starting loop number: i={i}")
                 self.__send_status(f"Starting call-and-response {i} of {MAX_LOOPS}")
@@ -169,10 +192,14 @@ class WebRTCChatter:
             usr_audio: AudioFrame = await self.__detect_user_utterance()
         except asyncio.TimeoutError as e:
             logger.error(f"Timed out getting user utterance: {e}")
-            self.__send_status("Sorry, Moshi timed out waiting for your speech.\n\tWe'll try again!")
-            await asyncio.sleep(1.)
+            self.__send_status(
+                "Sorry, Moshi timed out waiting for your speech.\n\tWe'll try again!"
+            )
+            await asyncio.sleep(1.0)
             return  # skip to next loop
-        self.__send_status("Transcribing...")  # TODO send the status updates from the private __ methods and in detector / responder
+        self.__send_status(
+            "Transcribing..."
+        )  # TODO send the status updates from the private __ methods and in detector / responder
         usr_text: str = await self.__transcribe_audio(usr_audio)
         usr_msg = self.__add_message(usr_text, Role.USR)
         self.__send_transcript(usr_msg)
@@ -234,12 +261,14 @@ class WebRTCChatter:
 
     def __send_status(self, status: str):
         if channel := self.__channels.get("status"):
-            self.logger.debug(f"Sending status: \"{status}\"")
+            self.logger.debug(f'Sending status: "{status}"')
             # NOTE channel.send does aio via ensure_future. Source: https://github.com/aiortc/aiortc/blob/main/src/aiortc/rtcsctptransport.py#L1796
             channel.send(status)
         else:
             self.logger.debug(f"channels: {self.__channels}")
-            self.logger.warning(f"Dropping message because status channel not yet initialized: {status}")
+            self.logger.warning(
+                f"Dropping message because status channel not yet initialized: {status}"
+            )
 
     def __send_transcript(self, msg: Message):
         if channel := self.__channels.get("transcript"):
@@ -249,14 +278,18 @@ class WebRTCChatter:
                 case Role.AST:
                     name = "moshi"
                 case _:
-                    raise ValueError(f"role={msg.role} not supported, must be USR or AST")
+                    raise ValueError(
+                        f"role={msg.role} not supported, must be USR or AST"
+                    )
             msg_str = f"{name}: {msg.content}"
-            self.logger.debug(f"Sending transcript: \"{msg_str}\"")
+            self.logger.debug(f'Sending transcript: "{msg_str}"')
             channel.send(msg_str)
         else:
-            self.logger.warning(f"Dropping message because transcript channel not yet initialized: {msg}")
+            self.logger.warning(
+                f"Dropping message because transcript channel not yet initialized: {msg}"
+            )
 
-    async def __synth_speech(self, text: str=None) -> AudioFrame:
+    async def __synth_speech(self, text: str = None) -> AudioFrame:
         msg = self.messages[-1]
         self.logger.debug(f"Synthesizing to speech: {msg}")
         assert msg.role == Role.AST

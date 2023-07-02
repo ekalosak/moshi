@@ -21,8 +21,10 @@ logger.info(f"Using API key from: {OPENAI_APIKEY_SECRET}")
 
 logger.success("Loaded!")
 
+
 async def _setup_api_key():
     openai.api_key = await secrets.get_secret(OPENAI_APIKEY_SECRET)
+
 
 def _get_type_of_model(model: Model) -> ModelType:
     """Need to know the type of model for endpoint compatibility.
@@ -33,6 +35,7 @@ def _get_type_of_model(model: Model) -> ModelType:
         return ModelType.CHAT
     else:
         return ModelType.COMP
+
 
 def _clean_completion(msg: str) -> str:
     """Remove all the formatting the completion model thinks it should give."""
@@ -48,6 +51,7 @@ def _clean_completion(msg: str) -> str:
         logger.debug("Regex did not match.")
         result = msg
     return result
+
 
 ChatCompletionPayload = NewType("ChatCompletionPayload", list[dict[str, str]])
 CompletionPayload = NewType("CompletionPayload", str)
@@ -81,7 +85,9 @@ def _completion_payload_from_messages(messages: list[Message]) -> CompletionPayl
     for msg in messages:
         if msg.role == Role.SYS:
             if sys_done:
-                logger.warning(f"System message out of place, skipping:\n{msg}\n{[msg.role for msg in messages]}")
+                logger.warning(
+                    f"System message out of place, skipping:\n{msg}\n{[msg.role for msg in messages]}"
+                )
                 continue
             instructions += 1
             msgstr = f"{instructions}. {msg.content}"

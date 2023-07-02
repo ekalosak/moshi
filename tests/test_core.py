@@ -6,8 +6,16 @@ import pytest
 from av import AudioResampler
 from scipy import signal
 
-from moshi import (AUDIO_FORMAT, AUDIO_LAYOUT, SAMPLE_RATE, Message, Model,
-                   Role, WebRTCChatter, audio)
+from moshi import (
+    AUDIO_FORMAT,
+    AUDIO_LAYOUT,
+    SAMPLE_RATE,
+    Message,
+    Model,
+    Role,
+    WebRTCChatter,
+    audio,
+)
 
 DUMMY_AST_TEXT = "ast test"
 DUMMY_USR_TEXT = "usr test"
@@ -62,6 +70,7 @@ async def test_chatter_disconnect_bug_15(utterance_audio_track, Sink):
     utterance_audio_track.stop()
     print("waiting for barf")
     await asyncio.sleep(2)
+
 
 @pytest.mark.slow
 @pytest.mark.asyncio

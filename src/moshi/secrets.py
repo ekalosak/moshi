@@ -12,6 +12,7 @@ logger.info(f"Using SECRET_TIMEOUT={SECRET_TIMEOUT}")
 
 gsecretclient = contextvars.ContextVar("gsecretclient")
 
+
 def _setup_client():
     """Set the gtransclient ContextVar."""
     try:
@@ -23,18 +24,20 @@ def _setup_client():
         gsecretclient.set(client)
         logger.info(f"Secretmanager client initialized.")
 
+
 def _get_client() -> secretmanager.SecretManagerServiceAsyncClient:
     """Get the secrets-manager client."""
     _setup_client()
     return gsecretclient.get()
 
+
 # TODO this should be a singularly cached function (secrets don't turn over that fast)
 async def get_secret(
     secret_id: str,
     project_id=gcloud.GOOGLE_PROJECT,
-    version_id: str|None=None,
-    decode: str|None="UTF-8",
-) -> str|bytes:
+    version_id: str | None = None,
+    decode: str | None = "UTF-8",
+) -> str | bytes:
     """Get a secret from the secrets-manager. If version is None, get latest."""
     client = _get_client()
     logger.debug(f"Getting secret: {secret_id}")

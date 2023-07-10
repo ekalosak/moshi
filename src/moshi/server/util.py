@@ -31,11 +31,13 @@ def render(template, request, **kwargs) -> "html":
     index_url = str(request.app.router["index"].url_for())
     news_url = str(request.app.router["news"].url_for())
     privacy_url = str(request.app.router["privacy"].url_for())
+    error_message = request.query.get("error", "")
     html = template.render(
         version=f"alpha-{__version__}",
         index_url=index_url,
         news_url=news_url,
         privacy_url=privacy_url,
+        error=error_message,
         **kwargs,
     )
     return html

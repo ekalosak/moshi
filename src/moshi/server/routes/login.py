@@ -10,7 +10,6 @@ from moshi.server import util as sutil
 async def login(request: web_request.Request):
     """HTTP GET endpoint for login.html"""
     logger.info(request)
-    error_message = request.query.get("error", "")  # TODO make a render wrapper (#32)
     template = sutil.env.get_template("login.html")
     logger.trace(f"Request originating IP address: {request.remote}")
     scheme = "https" if sutil.HTTPS else "http"
@@ -25,7 +24,6 @@ async def login(request: web_request.Request):
         request,
         client_id=sutil.CLIENT_ID,
         login_uri=login_uri,
-        error=error_message,
     )
     return web.Response(text=html, content_type="text/html")
 

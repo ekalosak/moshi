@@ -20,11 +20,14 @@
         const errorMessage = error.message;
         console.log("Error code: " + errorCode);
         console.log("Error: " + errorMessage);
+        const urlParams = new URLSearchParams(window.location.search);
+        urlParams.set('error', errorMessage);
+        const newUrl = `${window.location.pathname}?${urlParams.toString()}`;
+        window.location.href = newUrl;
       });
   }
   // Attach function to global scope
   window.createUser = createUser;
-  {# export {createUser}; #}
 </script>
 
 {% endblock %}

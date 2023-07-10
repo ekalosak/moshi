@@ -12,7 +12,7 @@ from loguru import logger
 import moshi
 from moshi import auth, secrets, gcloud, lang, speech, think, util
 from . import util as sutil
-from .routes import healthz, index, login, news, offer, privacy
+from .routes import healthz, index, login, news, offer, privacy, signup
 
 # Setup constants
 ROOT = os.path.dirname(__file__)
@@ -38,11 +38,15 @@ async def css(request):
 
 
 @sutil.require_authentication
-async def javascript(request):
+async def clientjs(request):
     """HTTP endpoint for client.js"""
     content = open(os.path.join(ROOT, "static/client.js"), "r").read()
     return web.Response(content_type="application/javascript", text=content)
 
+async def firebasejs(request):
+    """HTTP endpoint for firebase.js"""
+    content = open(os.path.join(ROOT, "static/firebase.js"), "r").read()
+    return web.Response(content_type="application/javascript", text=content)
 
 @logger.catch
 async def on_shutdown(app):
@@ -96,8 +100,10 @@ async def make_app() -> "web.Application":
     app.router.add_get("/news", news.news, name="news")
     app.router.add_get("/login", login.login, name="login")
     app.router.add_post("/login", login.login_callback)
+    app.router.add_get("/signup", signup.signup, name="signup")
     app.router.add_get("/favicon.ico", favicon)
-    app.router.add_get("/client.js", javascript)
+    app.router.add_get("/client.js", clientjs)
+    app.router.add_get("/firebase.js", firebasejs)
     app.router.add_get("/style.css", css)
     app.router.add_post("/offer", offer.offer)
     return app

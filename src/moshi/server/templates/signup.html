@@ -1,0 +1,45 @@
+{% extends 'wrapper.html' %}
+
+{% block jsimport %}
+
+<script src="/firebase.js" type="module"></script>
+{# <script src="/signup.js" async defer></script> #}
+
+{% endblock %}
+
+{% block content %}
+
+<div id="signup-form">
+  <form>
+    <label for="email">Email:</label>
+    <input type="email" id="email" name="email" required>
+    <br><br>
+    <label for="password">Password:</label>
+    <input type="password" id="password" name="password" required>
+    <br><br>
+    <input type="button" value="Sign Up" onclick="createUser()">
+  </form>
+</div>
+
+<div id="signup-scripts">
+  <script id="create-user">
+    function createUser() {
+      var email = document.getElementById("email").value;
+      var password = document.getElementById("password").value;
+      // Call your createUserWithEmailAndPassword function with email and password
+      createUserWithEmailAndPassword(auth, email, password)
+        .then((userCredential) => {
+          // Signed in
+          const user = userCredential.user;
+          // ...
+        })
+        .catch((error) => {
+          const errorCode = error.code;
+          const errorMessage = error.message;
+          // ..
+        });
+    }
+  </script>
+</div>
+
+{% endblock %}

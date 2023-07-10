@@ -7,10 +7,6 @@ from loguru import logger
 from moshi import auth, UserAuthenticationError
 from moshi.server import util as sutil
 
-CLIENT_ID = "462213871057-tsn4b76f24n40i7qrdrhflc7tp5hdqu2.apps.googleusercontent.com"
-ALLOWED_ISS = ["accounts.google.com", "https://accounts.google.com"]
-
-
 async def login(request: web_request.Request):
     """HTTP GET endpoint for login.html"""
     logger.info(request)
@@ -27,7 +23,7 @@ async def login(request: web_request.Request):
     html = sutil.render(
         template,
         request,
-        client_id=CLIENT_ID,
+        client_id=sutil.CLIENT_ID,
         login_uri=login_uri,
         error=error_message,
     )
@@ -52,7 +48,7 @@ async def login_callback(request):
     token = data["credential"]
     try:
         id_info = id_token.verify_oauth2_token(token, google_requests.Request())
-        if id_info["iss"] not in ALLOWED_ISS:
+        if id_info["iss"] not in sutil.ALLOWED_ISS:
             raise UserAuthenticationError("Authentication failed")
         user_email = id_info["email"].lower()
         logger.debug(f"user_email={user_email}")

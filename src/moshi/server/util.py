@@ -15,6 +15,8 @@ HTTPS = not NO_SECURITY
 if not HTTPS:
     logger.warning(f"HTTPS={HTTPS}")
 
+CLIENT_ID = "462213871057-tsn4b76f24n40i7qrdrhflc7tp5hdqu2.apps.googleusercontent.com"
+ALLOWED_ISS = ["accounts.google.com", "https://accounts.google.com"]
 COOKIE_NAME = "com.chatmoshi"
 TEMPLATE_DIR = Path(__file__).parent / "templates"
 

@@ -1,11 +1,9 @@
-"""This module implements the core WebRTCChatter class for use in the WebRTC server."""
+"""This module implements the core Chatter class providing the application logic."""
 import asyncio
 import itertools
 import os
 import textwrap
 
-from aiortc import RTCDataChannel
-from aiortc.mediastreams import MediaStreamError
 from av import AudioFrame
 from loguru import logger
 
@@ -14,9 +12,7 @@ from moshi import (
     Role,
     UserResetError,
     character,
-    detector,
     lang,
-    responder,
     speech,
     think,
     util,
@@ -26,8 +22,6 @@ STOP_TOKENS = ["user:"]
 logger.info(f"Using STOP_TOKENS={STOP_TOKENS}")
 MAX_RESPONSE_TOKENS = int(os.getenv("MOSHIMAXTOKENS", 64))
 logger.info(f"Using MAX_RESPONSE_TOKENS={MAX_RESPONSE_TOKENS}")
-CONNECTION_TIMEOUT = int(os.getenv("MOSHICONNECTIONTIMEOUT", 5))
-logger.info(f"Using (WebRTC session) CONNECTION_TIMEOUT={CONNECTION_TIMEOUT}")
 MAX_LOOPS = int(os.getenv("MOSHIMAXLOOPS", 30))
 assert MAX_LOOPS >= 0
 logger.info(f"Using MAX_LOOPS={MAX_LOOPS}")
@@ -53,75 +47,14 @@ def _init_messages() -> list[Message]:
     return messages
 
 
-class WebRTCChatter:
-    """This class does two important things:
-    1. Coordinates the detector and responder, and
-    2. Adapts the moshi.CliChatter for use in the WebRTC server.
-    """
+class Chatter:
+    """This class implements the application logic. That is, the core chat loop."""
 
     def __init__(self, user_email: str = "none"):
-        self.__all_connected = asyncio.Event()
-        self.__bus = asyncio.Queue()  # for sending periodic status updates to user
-        self.__channels = {}  # all channels, including audio and datachannesl
-        self.__datachannels_connected = asyncio.Event()  # status & transcript
-        self.__expected_datachannels = ["status", "transcript"]
         self.__state = None  # for tracking the state machine (setup -> repeat (listen -> transcribe -> think -> say))
-        self.__task = None  # for tracking the main __run task
         self.character: character.Character = None
         self.logger = logger.bind(email=user_email)
         self.messages = _init_messages()
-        self.detector = detector.UtteranceDetector(
-            self.__all_connected,
-            self.__send_status,
-        )  # get_utterance: track -> AudioFrame
-        self.responder = responder.ResponsePlayer(
-            self.__send_status,
-        )  # play_response: AudioFrame -> track
-
-    async def start(self):
-        if self.__task is not None:
-            self.logger.debug("Task already started, no-op")
-            return
-        self.logger.debug("Starting detector...")
-        await self.detector.start()
-        self.logger.info("Detector started!")
-        self.__task = asyncio.create_task(self.__run(), name="Main chat task")
-
-    async def stop(self):
-        await self.detector.stop()
-        self.__send_status("Disconnecting...")
-        self.__task.cancel(f"{self.__class__.__name__}.stop() called")
-        try:
-            await self.__task  # this should sleep until the __task is cancelled
-        except asyncio.CancelledError as e:
-            logger.debug(
-                "asyncio.CancelledError indicating the chatter's main task was cancelled, not crashed."
-            )
-        finally:
-            self.__task = None
-
-    # TODO make sure to alert user on client side if timeout connecting, try again to connect
-    async def connected(self):
-        """Server calls this when the peer connection enters state 'connected'.
-        Raises:
-            - asyncio.TimeoutError
-        """
-        self.logger.debug(
-            "RTCPeerConnection status 'connected', waiting for status and transcript channels..."
-        )
-        await asyncio.wait_for(
-            self.__datachannels_connected.wait(),
-            timeout=CONNECTION_TIMEOUT,
-        )
-        self.__all_connected.set()
-
-    def add_channel(self, channel: RTCDataChannel):
-        self.__channels[channel.label] = channel
-        self.logger.info(f"Added a channel: {channel.label}:{channel.id}")
-        if all(cname in self.__channels for cname in self.__expected_datachannels):
-            self.__datachannels_connected.set()
-            self.logger.success("Status and transcript channels initialized!")
-            self.__send_status("Connected!")
 
     @property
     def voice(self) -> object:

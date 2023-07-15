@@ -1,5 +1,6 @@
 """ Base types. """
 from dataclasses import dataclass
+from datetime import datetime
 from enum import Enum
 
 from loguru import logger
@@ -12,12 +13,17 @@ class Role(str, Enum):
     USR = "user"
     AST = "assistant"
 
-
 @dataclass
 class Message:
     # NOTE .asdict()
     role: Role
     content: str
+
+@dataclass
+class Conversation:
+    uid: str  # user id from FB
+    timestamp: datetime
+    messages: list[Message]
 
 
 # TODO Model(ABC, str, Enum), ChatModel(Model), CompletionModel(Model)

@@ -22,6 +22,8 @@ dependencies = [
   "aiortc",
   "aiohttp_session",
   "av",
+  "fastapi",
+  "firebase-admin",
   "google-auth",
   "google-cloud-firestore",
   "google-cloud-logging",
@@ -38,6 +40,7 @@ dependencies = [
 [project.optional-dependencies]
 server = [
   'gunicorn',
+  'uvicorn',
 ]
 tests = [
   'httpx',

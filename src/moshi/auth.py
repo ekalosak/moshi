@@ -1,31 +1,41 @@
+"""Contains Firebase HTTP auth middleware."""
 import contextvars
 
-from google.cloud import firestore
+# from google.cloud import firestore
+from fastapi import Depends, HTTPException
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from firebase_admin import auth
 from loguru import logger
 
 from moshi.gcloud import GOOGLE_PROJECT
 
-gdbclient = contextvars.ContextVar("gdbclient")
-
+client = auth.AsyncClient(project=GOOGLE_PROJECT)
+# logger.debug("Firestore client initialized.")
+security = HTTPBearer()
 logger.success("Loaded!")
 
-
-def _setup_client():
-    """Set the gdbclient ContextVar."""
+async def firebase_auth(credentials: HTTPAuthorizationCredentials = Depends(security)) -> dict:
+    """Middleware to check Firebase authentication in headers.
+    Raises:
+        - HTTPException 401
+    Returns:
+        - decoded_token: data from auth service corresponding to credentials.
+    """
     try:
-        gdbclient.get()
-        logger.debug("Firestore client already exists.")
-    except LookupError:
-        logger.debug("Creating Firestore client...")
-        client = firestore.AsyncClient(project=GOOGLE_PROJECT)
-        gdbclient.set(client)
-        logger.info("Firestore client initialized.")
-
-
-def _get_client() -> "Client":
-    """Get the translation client."""
-    _setup_client()
-    return gdbclient.get()
+        token = credentials.credentials
+        decoded_token = await to_thread(
+            client.verify_id_token,
+            token,
+        )
+    except auth.InvalidIdTokenError:
+        raise HTTPException(status_code=401, detail="Invalid authentication token")
+    except auth.ExpiredIdTokenError:
+        raise HTTPException(status_code=401, detail="Expired authentication token")
+    uid = decoded_token['uid']
+    print(type(decoded_token))
+    print(decoded_token)
+    logger.debug(f"User authenticated uid: {uid}")
+    return decoded_token
 
 
 async def is_email_authorized(email: str) -> bool:

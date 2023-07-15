@@ -26,9 +26,10 @@ def healthz(request: Request):
     logger.debug(f"Request headers: {request.headers}")
     return "OK"
 
-@app.get("/m/{kind}/new")
+@app.get("/m/new/{kind}")
 async def new_conversation(kind: str, auth: dict = Depends(firebase_auth)):
     """Create a new conversation."""
+    logger.debug(f"Servicing request for new conversation of kind: {kind}")
     collection_ref = firebase_db.collection("conversations")
     convo = Conversation.new(kind=kind)
     logger.info(f"Initializing conversation: {convo}")
@@ -38,9 +39,7 @@ async def new_conversation(kind: str, auth: dict = Depends(firebase_auth)):
     breakpoint()
     return {
         "message": "New conversation created",
-        "detail": {
-            "did": did,
-        }
+        "document_id": did,
     }
 
 logger.success("Loaded!")

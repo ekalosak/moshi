@@ -1,4 +1,5 @@
 """Contains Firebase HTTP auth middleware."""
+import asyncio
 import contextvars
 
 # from google.cloud import firestore
@@ -21,7 +22,7 @@ async def firebase_auth(credentials: HTTPAuthorizationCredentials = Depends(secu
     """
     try:
         token = credentials.credentials
-        decoded_token = await to_thread(
+        decoded_token = await asyncio.to_thread(
             auth.verify_id_token,
             token,
         )

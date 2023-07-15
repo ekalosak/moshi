@@ -9,8 +9,6 @@ from loguru import logger
 
 from moshi.gcloud import GOOGLE_PROJECT
 
-client = auth.AsyncClient(project=GOOGLE_PROJECT)
-# logger.debug("Firestore client initialized.")
 security = HTTPBearer()
 logger.success("Loaded!")
 
@@ -24,7 +22,7 @@ async def firebase_auth(credentials: HTTPAuthorizationCredentials = Depends(secu
     try:
         token = credentials.credentials
         decoded_token = await to_thread(
-            client.verify_id_token,
+            auth.verify_id_token,
             token,
         )
     except auth.InvalidIdTokenError:

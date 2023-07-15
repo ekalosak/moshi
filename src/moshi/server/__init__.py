@@ -1,1 +1,1 @@
-from .core import make_app
+# from .core import make_app

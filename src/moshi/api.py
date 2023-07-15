@@ -4,6 +4,7 @@ from fastapi import FastAPI, Depends, HTTPException
 from loguru import logger
 
 from moshi import Message, Conversation
+from moshi.auth import firebase_auth
 
 app = FastAPI()
 logger.success("Loaded!")

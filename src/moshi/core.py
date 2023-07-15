@@ -8,6 +8,7 @@ from av import AudioFrame
 from loguru import logger
 
 from moshi import (
+    Conversation,
     Message,
     Role,
     UserResetError,
@@ -47,10 +48,10 @@ def _init_messages() -> list[Message]:
     return messages
 
 
-class Chatter:
-    """This class implements the application logic. That is, the core chat loop."""
+class UnstructuredC:
+    """Unstructured conversations."""
 
-    def __init__(self, user_email: str = "none"):
+    def __init__(self):
         self.__state = None  # for tracking the state machine (setup -> repeat (listen -> transcribe -> think -> say))
         self.character: character.Character = None
         self.logger = logger.bind(email=user_email)
@@ -74,7 +75,7 @@ class Chatter:
         """The latest assistant utterance."""
         return self.__latest_msg(Role.AST).content
 
-    def __latest_msg(self, role: Role) -> Message:
+    def latest_msg(self, role: Role) -> Message:
         for msg in self.messages[::-1]:
             if msg.role == role:
                 return msg
@@ -82,18 +83,6 @@ class Chatter:
 
     async def __run(self):
         """Run the main program loop."""
-        util.splash("moshi")
-        try:
-            await asyncio.wait_for(
-                self.__all_connected.wait(), timeout=CONNECTION_TIMEOUT
-            )
-        except asyncio.TimeoutError:
-            self.logger.error(f"TimeoutError: CONNECTION_TIMEOUT={CONNECTION_TIMEOUT}")
-            # kind of a pipedream to think status channel is connected if __all_connected times out...
-            # TODO #43 Alert user on client.js if there's a timeout waiting for connection to be established.
-            self.__send_status(
-                "Timed out while establishing stream, try refreshing the page."
-            )
         else:
             for i in itertools.count():
                 if i == MAX_LOOPS and MAX_LOOPS != 0:
@@ -110,10 +99,6 @@ class Chatter:
                 except UserResetError as e:
                     self.__send_status(f"{str(e)}\n\tPlease refresh the page")
                     break
-                except MediaStreamError:
-                    logger.info("MediaStreamError, interpreting as a hangup, exiting.")
-                    break
-        util.splash("bye")
 
     async def __main(self):
         """Run one loop of the main program.

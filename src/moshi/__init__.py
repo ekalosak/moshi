@@ -10,6 +10,6 @@ from .gcloud import GOOGLE_PROJECT
 from .audio import AUDIO_FORMAT, AUDIO_LAYOUT, SAMPLE_RATE
 from .speech import OPENAI_TRANSCRIPTION_MODEL
 from .think import OPENAI_COMPLETION_MODEL
-from .core import WebRTCChatter
+# from .core import Chatter
 
 logger.success("Loaded!")

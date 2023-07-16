@@ -11,7 +11,7 @@ from google.cloud import texttospeech
 from google.cloud.texttospeech import Voice
 from loguru import logger
 
-from moshi import audio
+from moshi.core import audio
 
 GOOGLE_SPEECH_SYNTHESIS_TIMEOUT = int(os.getenv("GOOGLE_SPEECH_SYNTHESIS_TIMEOUT", 5))
 logger.info(f"Using speech synth timeout: {GOOGLE_SPEECH_SYNTHESIS_TIMEOUT}")

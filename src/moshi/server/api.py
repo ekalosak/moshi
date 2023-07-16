@@ -6,6 +6,7 @@ from loguru import logger
 
 from moshi import Message, Conversation
 from moshi.auth import firebase_auth
+from moshi.storage import firestore_client
 
 app = FastAPI()
 
@@ -23,15 +24,17 @@ def healthz(request: Request):
     """Health check endpoint"""
     from pprint import pprint
     pprint(dict(request.headers))
-    logger.debug(f"Request headers: {request.headers}")
+    logger.debug(f"Request from user-agent: {request.headers.get('user-agent', 'unknown')}")
     return "OK"
 
 @app.get("/m/new/{kind}")
 async def new_conversation(kind: str, auth: dict = Depends(firebase_auth)):
     """Create a new conversation."""
     logger.debug(f"Servicing request for new conversation of kind: {kind}")
-    collection_ref = firebase_db.collection("conversations")
-    convo = Conversation.new(kind=kind)
+    collection_ref = firestore_client.collection("conversations")
+    breakpoint()  # TODO get uid
+    uid = foo
+    convo = Conversation.new(kind=kind, uid=uid)
     logger.info(f"Initializing conversation: {convo}")
     doc_ref = collection_ref.document()
     doc_ref.set(convo.todict())

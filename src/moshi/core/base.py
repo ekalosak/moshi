@@ -25,6 +25,10 @@ class Conversation:
     timestamp: datetime
     messages: list[Message]
 
+    def new(self, kind: ConversationKind) -> Conversation:
+        """Initialize a conversation"""
+
+
 
 # TODO Model(ABC, str, Enum), ChatModel(Model), CompletionModel(Model)
 class ModelType(str, Enum):

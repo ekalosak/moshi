@@ -18,7 +18,7 @@ OPENAI_COMPLETION_MODEL = Model(
 )
 logger.info(f"Using completion model: {OPENAI_COMPLETION_MODEL}")
 OPENAI_APIKEY_SECRET = os.getenv("OPENAI_APIKEY_SECRET", "openai-api-key-001")
-logger.info(f"Using API key from: {OPENAI_APIKEY_SECRET}")
+logger.info(f"Using API key from secret: {OPENAI_APIKEY_SECRET}")
 
 logger.success("Loaded!")
 

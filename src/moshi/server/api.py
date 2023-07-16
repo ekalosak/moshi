@@ -1,4 +1,4 @@
-# TODO make stateles api
+from pprint import pformat
 
 from fastapi import FastAPI, Depends, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -37,14 +37,18 @@ async def new_conversation(kind: str, user: dict = Depends(firebase_auth)):
         logger.debug(f"Making new conversation of kind: {kind}")
         collection_ref = firestore_client.collection("conversations")
         convo = activities.new(kind=kind, uid=uid)
-        logger.info(f"Initializing conversation: {convo}")
         doc_ref = collection_ref.document()
-        doc_ref.set(convo.asdict())
-        # TODO did = doc_ref['id'] etc. to make the new conversation.
-        breakpoint()
+        cid = doc_ref.id
+        with logger.contextualize(cid=cid):
+            doc_data = convo.asdict()
+            logger.debug(f"Creating conversation...")
+            result = await doc_ref.set(doc_data)
+            logger.info(f"Created new conversation document!")
     return {
         "message": "New conversation created",
-        "document_id": did,
+        "detail" : {
+            "conversation_id": cid,
+        }
     }
 
 logger.success("Loaded!")

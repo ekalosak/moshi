@@ -3,6 +3,7 @@ import dataclasses
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
+# from uuid import uuid4
 
 from loguru import logger
 
@@ -24,6 +25,7 @@ class Message:
 class Conversation:
     messages: list[Message]
     uid: str  # user id from FB
+    # cid: str  # unique conversation ID
     timestamp: datetime = None
 
     def asdict(self) -> dict:
@@ -31,6 +33,7 @@ class Conversation:
 
     def __post_init__(self):
         self.timestamp = self.timestamp or datetime.now()
+        # self.cid = self.cid or str(uuid4())
 
 # TODO Model(ABC, str, Enum), ChatModel(Model), CompletionModel(Model)
 class ModelType(str, Enum):

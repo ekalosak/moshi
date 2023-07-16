@@ -60,7 +60,7 @@ def _to_log_dict(rec: dict) -> dict:
     return rec
 
 
-def _setup_loguru():
+def setup_loguru():
     # Loguru
     try:
         logger.level("INSTRUCTION", no=15, color="<light-yellow><bold>")
@@ -99,6 +99,10 @@ def _setup_loguru():
             level="DEBUG",
             format="{message}",
         )
+    logger.info(f"FILE_LOGS: {bool(FILE_LOGS)}")
+    logger.info(f"STDOUT_LOGS: {bool(STDOUT_LOGS)}")
+    logger.info(f"CLOUD_LOGS: {bool(CLOUD_LOGS)}")
+    logger.success("Loguru configured!")
 
 
 def aio_exception_handler(loop: "EventLoop", context: dict[str, ...]):

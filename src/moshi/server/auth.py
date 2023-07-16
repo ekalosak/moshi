@@ -11,7 +11,8 @@ from firebase_admin import auth as fauth
 import firebase_admin
 from loguru import logger
 
-from moshi import storage, GOOGLE_PROJECT
+from moshi.core.config import GOOGLE_PROJECT
+from moshi.core import storage
 
 gcreds = contextvars.ContextVar('gcreds')
 

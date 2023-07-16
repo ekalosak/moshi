@@ -1,4 +1,5 @@
 """ Base types. """
+import dataclasses
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
@@ -21,14 +22,15 @@ class Message:
 
 @dataclass
 class Conversation:
-    uid: str  # user id from FB
-    timestamp: datetime
     messages: list[Message]
+    uid: str  # user id from FB
+    timestamp: datetime = None
 
-    def new(self, kind: ConversationKind) -> Conversation:
-        """Initialize a conversation"""
+    def asdict(self) -> dict:
+        return dataclasses.asdict(self)
 
-
+    def __post_init__(self):
+        self.timestamp = self.timestamp or datetime.now()
 
 # TODO Model(ABC, str, Enum), ChatModel(Model), CompletionModel(Model)
 class ModelType(str, Enum):

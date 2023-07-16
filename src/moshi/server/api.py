@@ -4,9 +4,9 @@ from fastapi import FastAPI, Depends, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from loguru import logger
 
-from moshi import Message, Conversation
-from moshi.auth import firebase_auth
-from moshi.storage import firestore_client
+from moshi import activities, util
+from moshi.core.storage import firestore_client
+from moshi.server.auth import firebase_auth
 
 app = FastAPI()
 
@@ -28,18 +28,20 @@ def healthz(request: Request):
     return "OK"
 
 @app.get("/m/new/{kind}")
-async def new_conversation(kind: str, auth: dict = Depends(firebase_auth)):
+async def new_conversation(kind: str, user: dict = Depends(firebase_auth)):
     """Create a new conversation."""
-    logger.debug(f"Servicing request for new conversation of kind: {kind}")
-    collection_ref = firestore_client.collection("conversations")
-    breakpoint()  # TODO get uid
-    uid = foo
-    convo = Conversation.new(kind=kind, uid=uid)
-    logger.info(f"Initializing conversation: {convo}")
-    doc_ref = collection_ref.document()
-    doc_ref.set(convo.todict())
-    # TODO did = doc_ref['id']
-    breakpoint()
+    unm = user['name']
+    uid = user['uid']
+    uem = user['email']
+    with logger.contextualize(user_name=unm, uid=uid, user_email=uem):
+        logger.debug(f"Making new conversation of kind: {kind}")
+        collection_ref = firestore_client.collection("conversations")
+        convo = activities.new(kind=kind, uid=uid)
+        logger.info(f"Initializing conversation: {convo}")
+        doc_ref = collection_ref.document()
+        doc_ref.set(convo.asdict())
+        # TODO did = doc_ref['id'] etc. to make the new conversation.
+        breakpoint()
     return {
         "message": "New conversation created",
         "document_id": did,

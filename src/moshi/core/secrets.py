@@ -5,7 +5,7 @@ import os
 from google.cloud import secretmanager
 from loguru import logger
 
-from moshi import GOOGLE_PROJECT
+from moshi.core.config import GOOGLE_PROJECT
 
 SECRET_TIMEOUT = os.getenv("MOSHISECRETTIMEOUT", 2)
 logger.info(f"Using SECRET_TIMEOUT={SECRET_TIMEOUT}")

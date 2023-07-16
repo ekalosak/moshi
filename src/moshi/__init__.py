@@ -1,5 +1,8 @@
 __version__ = "23.7.2"
 
+from .util import setup_loguru
+setup_loguru()
+
 import os
 
 from loguru import logger

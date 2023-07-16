@@ -38,14 +38,18 @@ async def firebase_auth(credentials: HTTPAuthorizationCredentials = Depends(secu
             token,
         )
     except fauth.InvalidIdTokenError:
+        logger.error("Invalid authentication token")
         raise HTTPException(status_code=401, detail="Invalid authentication token")
     except fauth.ExpiredIdTokenError:
+        logger.error("Expired authentication token")
         raise HTTPException(status_code=401, detail="Expired authentication token")
-    uid = decoded_token['uid']
-    print(type(decoded_token))
-    print(decoded_token)
-    logger.debug(f"User authenticated uid: {uid}")
-    return decoded_token
+    with logger.contextualize(
+        uid=decoded_token['uid'],
+        uname=decoded_token['name'],
+        uemail=decoded_token['email'],
+    ):
+        logger.debug("User authenticated")
+        yield decoded_token
 
 
 async def is_email_authorized(email: str) -> bool:

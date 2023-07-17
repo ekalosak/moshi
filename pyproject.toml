@@ -35,6 +35,7 @@ dependencies = [
   "numpy",
   "openai",
   "pyfiglet",
+  "python-multipart",
 ]
 
 [project.optional-dependencies]

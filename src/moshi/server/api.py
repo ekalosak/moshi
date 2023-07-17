@@ -1,6 +1,6 @@
-from pprint import pformat
+from pprint import pformat, pprint
 
-from fastapi import FastAPI, Depends, HTTPException, Request
+from fastapi import FastAPI, Depends, HTTPException, Request, File, UploadFile
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.requests import Request
 from starlette.responses import Response
@@ -20,6 +20,7 @@ class LogRequestMiddleware(BaseHTTPMiddleware):
     ) -> Response:
         user_agent = request.headers.get("User-Agent", "Unknown agent")
         logger.debug(f"Request from User-Agent: {user_agent}")
+        pprint(dict(request))  # TODO security problem to print tokens
         response = await call_next(request)
         return response
 
@@ -85,7 +86,7 @@ async def new_conversation(kind: str, user: dict = Depends(firebase_auth)):
     }
 
 @app.post("/m/next/{cid}")
-async def user_utterance(cid: str, user: dict = Depends(firebase_auth)):
+async def user_utterance(cid: str, utterance: UploadFile, user: dict = Depends(firebase_auth)):
     """Submit recorded audio to Moshi."""
     uid = user['uid']
     collection_ref = firestore_client.collection("conversations")
@@ -107,9 +108,10 @@ async def user_utterance(cid: str, user: dict = Depends(firebase_auth)):
             status_code = 500,
             detail = {"message": f"Data format error, 'kind' not found in document."}
         )
-    breakpoint()
     # TODO make chatter/activity
-    # TODO submit audio via activity (activity should in bkd do: transcribe, think, speak)
+    # TODO submit audio via activity
+    # TODO respond with transcripts and utterance
+    breakpoint()
     logger.debug(f"Submitting audio for conversation with cid: {cid}")
     return {
         "message": "Audio submitted",

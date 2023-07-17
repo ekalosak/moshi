@@ -93,23 +93,11 @@ async def user_utterance(
         utterance: UploadFile,
         user: dict = Depends(firebase_auth),
     ):
-    """Submit recorded audio to Moshi."""
-    # headers = {
-    #     "user-utterance": "user said this",
-    #     "assistant-utterance": "moshi responded with that",
-    # }
-    # def audio_iterator():
-    #     utterance.file.seek(0)
-    #     while chunk := utterance.file.read(4096):
-    #         yield chunk
-    # response = StreamingResponse(
-    #     audio_iterator(),
-    #     media_type="audio/m4a",
-    #     headers=headers,
-    # )
-    # return response
-    # # NOTE ^ for debug
-
+    """Submit recorded audio to Moshi.
+    Moshi transcribes audio using Whisper or Google STT.
+        - https://help.openai.com/en/articles/7031512-whisper-api-faq  Supported languages
+    Moshi updates Firebase with the transcript and returns.
+    """
     uid = user['uid']
     with logger.contextualize(cid=cid):
         collection_ref = firestore_client.collection("conversations")

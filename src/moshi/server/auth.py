@@ -43,6 +43,7 @@ async def firebase_auth(credentials: HTTPAuthorizationCredentials = Depends(secu
     except fauth.ExpiredIdTokenError:
         logger.error("Expired authentication token")
         raise HTTPException(status_code=401, detail="Expired authentication token")
+    decoded_token['name'] = decoded_token.get('name', 'Unnamed')
     with logger.contextualize(
         uid=decoded_token['uid'],
         uname=decoded_token['name'],

@@ -7,9 +7,9 @@ class Activity(ABC):
     @abstractmethod
     def _init_messages(self) -> list[Message]:
         ...
-    def new_conversation(self, uid: str) -> Conversation:
+    def new_conversation(self, uid: str, kind: str) -> Conversation:
         msgs = self._init_messages()
-        return Conversation(messages=msgs, uid=uid)
+        return Conversation(messages=msgs, uid=uid, kind=kind)
 
 class Unstructured(Activity):
     def _init_messages(self) -> list[Message]:
@@ -29,14 +29,17 @@ class Unstructured(Activity):
         ]
         return messages
 
+activity_map = {
+    'unstructured': Unstructured,
+}
+
 def new(kind: str, uid: str) -> Conversation:
     """Initialize a conversation.
     Raises:
         - ValueError if the <kind> isn't supported.
     """
-    acts = {'unstructured': Unstructured}
-    Act = acts.get(kind)
+    Act = activity_map.get(kind)
     if Act is None:
         raise ValueError(f"Invalid activity kind: {kind}\n\tMust be one of {list(acts.keys())}.")
     act = Act()
-    return act.new_conversation(uid)
+    return act.new_conversation(uid, kind)

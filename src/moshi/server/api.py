@@ -14,17 +14,6 @@ from moshi.server.auth import firebase_auth
 
 app = FastAPI()
 
-# Configure CORS
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["GET", "POST", "PUT", "DELETE"],
-    allow_headers=["*"],
-)
-logger.warning("Using permissive CORS for development. In production, only allow requests from known origins.")
-
-app = FastAPI()
-
 class LogRequestMiddleware(BaseHTTPMiddleware):
     async def dispatch(
         self, request: Request, call_next: RequestResponseEndpoint
@@ -34,12 +23,17 @@ class LogRequestMiddleware(BaseHTTPMiddleware):
         response = await call_next(request)
         return response
 
+# Configure CORS
+#   NOTE must be last middleware added.
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE"],
+    allow_headers=["*"],
+)
+logger.warning("Using permissive CORS for development. In production, only allow requests from known origins.")
+
 app.add_middleware(LogRequestMiddleware)
-
-
-@app.get("/")
-async def root():
-    return {"message": "Hello, World!"}
 
 @app.get("/healthz")
 def healthz(request: Request):
@@ -68,5 +62,62 @@ async def new_conversation(kind: str, user: dict = Depends(firebase_auth)):
             "conversation_id": cid,
         }
     }
+
+@app.get("/m/new/{kind}")
+async def new_conversation(kind: str, user: dict = Depends(firebase_auth)):
+    """Create a new conversation."""
+    uid = user['uid']
+    logger.debug(f"Making new conversation of kind: {kind}")
+    collection_ref = firestore_client.collection("conversations")
+    convo = activities.new(kind=kind, uid=uid)
+    doc_ref = collection_ref.document()
+    cid = doc_ref.id
+    with logger.contextualize(cid=cid):
+        doc_data = convo.asdict()
+        logger.debug(f"Creating conversation...")
+        result = await doc_ref.set(doc_data)
+        logger.info(f"Created new conversation document!")
+    return {
+        "message": "New conversation created",
+        "detail" : {
+            "conversation_id": cid,
+        }
+    }
+
+@app.post("/m/next/{cid}")
+async def user_utterance(cid: str, user: dict = Depends(firebase_auth)):
+    """Submit recorded audio to Moshi."""
+    uid = user['uid']
+    collection_ref = firestore_client.collection("conversations")
+    doc_ref = collection_ref.document(cid)
+    doc = await doc_ref.get()
+    if not doc:
+        raise HTTPException(
+            status_code = 400,
+            detail = {"message": f"Document not found: {cid}"}
+        )
+    elif doc.get('uid') != uid:
+        raise HTTPException(
+            status_code = 400,
+            detail = {"message": f"Document belongs to different user: {doc.get('uid')}"}
+        )
+    kind = doc.get('kind')
+    if not kind:
+        raise HTTPException(
+            status_code = 500,
+            detail = {"message": f"Data format error, 'kind' not found in document."}
+        )
+    breakpoint()
+    # TODO make chatter/activity
+    # TODO submit audio via activity (activity should in bkd do: transcribe, think, speak)
+    logger.debug(f"Submitting audio for conversation with cid: {cid}")
+    return {
+        "message": "Audio submitted",
+        "detail" : {
+            "conversation_id": cid,
+        }
+    }
+
+
 
 logger.success("Loaded!")

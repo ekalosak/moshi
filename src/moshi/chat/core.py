@@ -13,13 +13,15 @@ from moshi import (
     Message,
     Role,
     UserResetError,
+    util,
+)
+from moshi.chat import (
     character,
     detector,
     lang,
     responder,
     speech,
     think,
-    util,
 )
 
 STOP_TOKENS = ["user:"]

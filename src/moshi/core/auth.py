@@ -3,7 +3,7 @@ import contextvars
 from google.cloud import firestore
 from loguru import logger
 
-from moshi.gcloud import GOOGLE_PROJECT
+from moshi.core.gcloud import GOOGLE_PROJECT
 
 gdbclient = contextvars.ContextVar("gdbclient")
 

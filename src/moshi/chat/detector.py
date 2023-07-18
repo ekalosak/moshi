@@ -10,7 +10,7 @@ from aiortc.mediastreams import MediaStreamError
 from av import AudioFifo, AudioFrame
 from loguru import logger
 
-from moshi import audio
+from moshi.core import audio
 
 logger.success("Loaded!")
 

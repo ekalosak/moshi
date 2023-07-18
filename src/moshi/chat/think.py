@@ -10,7 +10,8 @@ from typing import NewType
 import openai
 from loguru import logger
 
-from moshi import Message, Model, ModelType, Role, secrets
+from moshi import Message, Model, ModelType, Role
+from moshi.core import secrets
 
 OPENAI_COMPLETION_MODEL = Model(
     os.getenv("OPENAI_COMPLETION_MODEL", "text-davinci-002")

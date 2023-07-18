@@ -4,12 +4,9 @@ import os
 
 from loguru import logger
 
-from .exceptions import UserAuthenticationError, UserResetError
-from .base import Message, Model, ModelType, Role
-from .gcloud import GOOGLE_PROJECT
-from .audio import AUDIO_FORMAT, AUDIO_LAYOUT, SAMPLE_RATE
-from .speech import OPENAI_TRANSCRIPTION_MODEL
-from .think import OPENAI_COMPLETION_MODEL
-from .core import WebRTCChatter
+from .core.exceptions import UserAuthenticationError, UserResetError
+from .core.base import Message, Model, ModelType, Role
+from .core.gcloud import GOOGLE_PROJECT
+from .core.audio import AUDIO_FORMAT, AUDIO_LAYOUT, SAMPLE_RATE
 
 logger.success("Loaded!")

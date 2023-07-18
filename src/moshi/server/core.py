@@ -9,10 +9,12 @@ from aiohttp_session import setup as session_setup, SimpleCookieStorage
 from aiohttp_session.cookie_storage import EncryptedCookieStorage
 from loguru import logger
 
-import moshi
-from moshi import auth, secrets, gcloud, lang, speech, think, util
-from . import util as sutil
-from .routes import healthz, index, login, news, offer, privacy
+from moshi import __version__ as moshi_version
+from moshi import util
+from moshi.core import auth, secrets, gcloud
+from moshi.chat import lang, speech, think
+from moshi.server import util as sutil
+from moshi.server.routes import healthz, index, login, news, offer, privacy
 
 # Setup constants
 ROOT = os.path.dirname(__file__)
@@ -72,7 +74,7 @@ async def on_startup(app):
     logger.debug("Setting up OpenAI...")
     await think._setup_api_key()
     logger.info("OpenAI setup complete.")
-    logger.success(f"Set up moshi version: {moshi.__version__}")
+    logger.success(f"Set up moshi version: {moshi_version}")
 
 
 async def make_app() -> "web.Application":

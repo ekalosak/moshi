@@ -4,7 +4,8 @@ from google.oauth2 import id_token
 from google.auth.transport import requests as google_requests
 from loguru import logger
 
-from moshi import auth, UserAuthenticationError
+from moshi import UserAuthenticationError
+from moshi.core import auth
 from moshi.server import util as sutil
 
 CLIENT_ID = "462213871057-tsn4b76f24n40i7qrdrhflc7tp5hdqu2.apps.googleusercontent.com"

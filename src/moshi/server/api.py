@@ -90,7 +90,7 @@ async def new_conversation(kind: str, user: dict = Depends(firebase_auth)):
 @app.post("/m/next/{cid}")
 async def user_utterance(
         cid: str,
-        utterance: UploadFile,
+        usr_utterance: UploadFile,
         user: dict = Depends(firebase_auth),
     ):
     """Submit recorded audio to Moshi.
@@ -121,6 +121,7 @@ async def user_utterance(
                 detail = {"message": f"Data format error, 'kind' not found in document."}
             )
         logger.debug(f"Activity kind: {kind}")
+        usr_text: str = await self.transcribe_audio(usr_audio)
         # TODO make chatter/activity
         # TODO submit audio via activity
         # TODO respond with transcripts and utterance
@@ -133,10 +134,6 @@ async def user_utterance(
         utterance.file.seek(0)
         print(utterance.file.read(128))
 
-        headers = {
-            "user-utterance": "user said this",
-            "assistant-utterance": "moshi responded with that",
-        }
         def audio_iterator():
             utterance.file.seek(0)
             while chunk := utterance.file.read(4096):
@@ -144,7 +141,6 @@ async def user_utterance(
         response = StreamingResponse(
             audio_iterator(),
             media_type="audio/m4a",
-            headers=headers,
         )
         return response
 

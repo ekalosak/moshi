@@ -117,7 +117,7 @@ function start() {
 
     // Status channel
     statusChannel = pc.createDataChannel('status', parameters);
-      statusLog.textContent += 'Trying to connect...\n';
+    statusLog.textContent += 'Trying to connect...\n';
     statusChannel.onclose = function() {
         statusLog.textContent += 'Disconnected.\n';
     };

@@ -8,8 +8,8 @@ from aiohttp_session import get_session
 from aiortc import RTCPeerConnection, RTCSessionDescription, RTCDataChannel
 from loguru import logger
 
-from moshi import core as mcore
-from .. import util as sutil
+from moshi.chat import WebRTCChatter
+from moshi import util as sutil
 
 pcs = set()
 
@@ -36,7 +36,7 @@ async def shutdown():
 
 # Create WebRTC handler; offer/ is called by client.js on index.html having created an initial SDP offer;
 @async_with_pcid
-@sutil.require_authentication
+# @sutil.require_authentication  # NOTE TODO DEBUG
 async def offer(request):
     """In WebRTC, there's an initial offer->answer exchange that negotiates the connection parameters.
     This endpoint accepts an offer request from a client and returns an answer with the SDP (session description protocol).
@@ -45,22 +45,29 @@ async def offer(request):
         - RFC 3264
         - RFC 2327
     """
-    params = await request.json()
+    logger.info("Got offer")
+    logger.debug(f"request: {request}")
+    try:
+        params = await request.json()
+    except json.decoder.JSONDecodeError as e:
+        logger.error("Invalid JSON: {e}")
+        logger.debug(f"Response text: {response.text}")
+        raise web.HTTPUnprocessableEntity(reason="Invalid JSON")
     logger.trace(f"Request params: {params}")
-    session = await get_session(request)
-    assert (
-        params["type"] == "offer"
-    ), "At /offer endpoint, the SDP must be type 'offer'. Error in client.js."  # TODO make this 500 without crashing
+    # session = await get_session(request)
+    if _tp := params.get("type") != "offer":
+        err = f"Invalid offer type, expected 'offer', got: '{_tp}'"
+        logger.error(err)
+        raise web.HTTPBadRequest(reason = err)
     offer = RTCSessionDescription(sdp=params["sdp"], type=params["type"])
     logger.trace(f"offer: {offer}")
-    # ice_config = await ice.get_ice_config(session['turn_token'])
-    # pc = RTCPeerConnection(ice_config)
     pc = RTCPeerConnection()
     pcs.add(pc)
     logger.info(f"Created peer connection to: {request.remote}")
 
-    usremail = session["user_email"]  # pass so logging will record user email
-    chatter = mcore.WebRTCChatter(usremail)
+    # usremail = session["user_email"]  # pass so logging will record user email
+    usremail = "NONE - TEST"
+    chatter = WebRTCChatter(usremail)
 
     with logger.contextualize(email=usremail):
 

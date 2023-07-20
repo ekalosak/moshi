@@ -9,7 +9,8 @@ from aiortc.mediastreams import MediaStreamError
 from av import AudioFifo, AudioFrame
 from loguru import logger
 
-from moshi import AUDIO_FORMAT, AUDIO_LAYOUT, SAMPLE_RATE, audio
+from moshi import AUDIO_FORMAT, AUDIO_LAYOUT, SAMPLE_RATE
+from moshi.core import audio
 
 FRAME_SIZE = int(os.getenv("MOSHIFRAMESIZE", 960))
 assert FRAME_SIZE >= 128 and FRAME_SIZE <= 4096

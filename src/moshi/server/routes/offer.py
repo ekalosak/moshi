@@ -1,6 +1,7 @@
 import asyncio
 import functools
 import json
+import os
 import uuid
 
 from aiohttp import web
@@ -9,10 +10,12 @@ from aiortc import RTCPeerConnection, RTCSessionDescription, RTCDataChannel
 from loguru import logger
 
 from moshi.chat import WebRTCChatter
-from moshi import util as sutil
+from moshi import util
 
 pcs = set()
 
+CONNECTION_TIMEOUT = int(os.getenv("MOSHICONNECTIONTIMEOUT", 5))
+logger.info(f"Using (WebRTC session) CONNECTION_TIMEOUT={CONNECTION_TIMEOUT}")
 
 def async_with_pcid(f):
     """Decorator for contextualizing the logger with a PeerConnection uid."""
@@ -36,7 +39,7 @@ async def shutdown():
 
 # Create WebRTC handler; offer/ is called by client.js on index.html having created an initial SDP offer;
 @async_with_pcid
-# @sutil.require_authentication  # NOTE TODO DEBUG
+# @util.require_authentication  # TODO use Firebase auth
 async def offer(request):
     """In WebRTC, there's an initial offer->answer exchange that negotiates the connection parameters.
     This endpoint accepts an offer request from a client and returns an answer with the SDP (session description protocol).
@@ -63,7 +66,7 @@ async def offer(request):
     logger.trace(f"offer: {offer}")
     pc = RTCPeerConnection()
     pcs.add(pc)
-    logger.info(f"Created peer connection to: {request.remote}")
+    logger.info(f"Created peer connection object for: {request.remote}")
 
     # usremail = session["user_email"]  # pass so logging will record user email
     usremail = "NONE - TEST"
@@ -72,18 +75,16 @@ async def offer(request):
     with logger.contextualize(email=usremail):
 
         @pc.on("datachannel")
-        def on_datachannel(channel: RTCDataChannel):
-            if channel.label == "pingpong":
+        def on_datachannel(dc: RTCDataChannel):
+            logger.info(f"dc received: {dc}")
+            chatter.add_dc(dc)
 
-                @channel.on("message")
-                def on_message(message):
-                    if isinstance(message, str) and message.startswith("ping"):
-                        channel.send(
-                            "pong" + message[4:]
-                        )  # NOTE io under the hood done with fire-and-forget ensure_future, UDP
-
-            else:
-                chatter.add_channel(channel)
+            @dc.on("message")
+            def on_message(message):
+                print('dc: message: ' + message)
+                if isinstance(message, str) and message.startswith("ping "):
+                    # NOTE io under the hood done with fire-and-forget ensure_future, UDP
+                    dc.send("pong " + message[4:])
 
         @pc.on("connectionstatechange")
         async def on_connectionstatechange():
@@ -96,11 +97,10 @@ async def offer(request):
                 await chatter.start()
             elif pc.connectionState == "connected":
                 try:
-                    await chatter.connected()
+                    await asyncio.wait_for(chatter.wait_dc_connected(), timeout=CONNECTION_TIMEOUT)
                 except asyncio.TimeoutError as e:
-                    logger.error(
-                        "Timed out waiting for datachannels to be established."
-                    )
+                    with logger.contextualize(timeout_sec=CONNECTION_TIMEOUT):
+                        logger.error("Timeout waiting for dc connected")
 
         @pc.on("track")
         def on_track(track):

@@ -60,7 +60,7 @@ async def on_startup(app):
     util._setup_loguru()
     logger.info("Logger set up.")
     logger.debug("Setting up error handler...")
-    asyncio.get_event_loop().set_exception_handler(util.aio_exception_handler)
+    # asyncio.get_event_loop().set_exception_handler(util.aio_exception_handler)
     logger.info("Error handler set up.")
     logger.debug("Authenticating to Google Cloud...")
     await gcloud.authenticate()

@@ -28,8 +28,6 @@ STOP_TOKENS = ["user:"]
 logger.info(f"Using STOP_TOKENS={STOP_TOKENS}")
 MAX_RESPONSE_TOKENS = int(os.getenv("MOSHIMAXTOKENS", 64))
 logger.info(f"Using MAX_RESPONSE_TOKENS={MAX_RESPONSE_TOKENS}")
-CONNECTION_TIMEOUT = int(os.getenv("MOSHICONNECTIONTIMEOUT", 5))
-logger.info(f"Using (WebRTC session) CONNECTION_TIMEOUT={CONNECTION_TIMEOUT}")
 MAX_LOOPS = int(os.getenv("MOSHIMAXLOOPS", 30))
 assert MAX_LOOPS >= 0
 logger.info(f"Using MAX_LOOPS={MAX_LOOPS}")
@@ -62,68 +60,50 @@ class WebRTCChatter:
     """
 
     def __init__(self, user_email: str = "none"):
-        self.__all_connected = asyncio.Event()
-        self.__bus = asyncio.Queue()  # for sending periodic status updates to user
-        self.__channels = {}  # all channels, including audio and datachannesl
-        self.__datachannels_connected = asyncio.Event()  # status & transcript
-        self.__expected_datachannels = ["status", "transcript"]
-        self.__state = None  # for tracking the state machine (setup -> repeat (listen -> transcribe -> think -> say))
-        self.__task = None  # for tracking the main __run task
+        self.__dc = None
+        self.__dc_connected = asyncio.Event()
+        self.__tasks = []
         self.character: character.Character = None
         self.logger = logger.bind(email=user_email)
         self.messages = _init_messages()
         self.detector = detector.UtteranceDetector(
-            self.__all_connected,
-            self.__send_status,
+            self.wait_dc_connected,
+            lambda x: self.__send('status ' + x)
         )  # get_utterance: track -> AudioFrame
         self.responder = responder.ResponsePlayer(
-            self.__send_status,
+            lambda x: self.__send('status ' + x)
         )  # play_response: AudioFrame -> track
 
     async def start(self):
-        if self.__task is not None:
-            self.logger.debug("Task already started, no-op")
+        if not self.__tasks:
+            self.logger.debug("Already started, no-op.")
             return
         self.logger.debug("Starting detector...")
         await self.detector.start()
         self.logger.info("Detector started!")
-        self.__task = asyncio.create_task(self.__run(), name="Main chat task")
+        task = asyncio.create_task(self.__run(), name="Main chat task")
+        self.__tasks.append(tasks)
 
     async def stop(self):
         await self.detector.stop()
         self.__send_status("Disconnecting...")
-        self.__task.cancel(f"{self.__class__.__name__}.stop() called")
-        try:
-            await self.__task  # this should sleep until the __task is cancelled
-        except asyncio.CancelledError as e:
-            logger.debug(
-                "asyncio.CancelledError indicating the chatter's main task was cancelled, not crashed."
-            )
-        finally:
-            self.__task = None
+        for task in self.__tasks:
+            task.cancel(f"{self.__class__.__name__}.stop() called")
+        await asyncio.gather(self.__tasks)
+        self.__tasks = []
 
-    # TODO make sure to alert user on client side if timeout connecting, try again to connect
-    async def connected(self):
-        """Server calls this when the peer connection enters state 'connected'.
-        Raises:
-            - asyncio.TimeoutError
-        """
-        self.logger.debug(
-            "RTCPeerConnection status 'connected', waiting for status and transcript channels..."
-        )
-        await asyncio.wait_for(
-            self.__datachannels_connected.wait(),
-            timeout=CONNECTION_TIMEOUT,
-        )
-        self.__all_connected.set()
+    async def wait_dc_connected(self):
+        self.logger.debug("pc connected, awaiting dc...")
+        await self.__dc_connected.wait()
+        self.logger.debug("dc connected.")
 
-    def add_channel(self, channel: RTCDataChannel):
-        self.__channels[channel.label] = channel
-        self.logger.info(f"Added a channel: {channel.label}:{channel.id}")
-        if all(cname in self.__channels for cname in self.__expected_datachannels):
-            self.__datachannels_connected.set()
-            self.logger.success("Status and transcript channels initialized!")
-            self.__send_status("Connected!")
+    def add_dc(self, dc: RTCDataChannel):
+        self.logger.debug("connecting dc to chatter")
+        self.__dc = dc
+        self.logger.success(f"dc connected: {dc.label}:{dc.id}")
+        self.__dc_connected.set()
+        self.logger.debug("sending status hello over dc...")
+        self.__send("status hello")
 
     @property
     def voice(self) -> object:
@@ -152,36 +132,27 @@ class WebRTCChatter:
     async def __run(self):
         """Run the main program loop."""
         util.splash("moshi")
-        try:
-            await asyncio.wait_for(
-                self.__all_connected.wait(), timeout=CONNECTION_TIMEOUT
-            )
-        except asyncio.TimeoutError:
-            self.logger.error(f"TimeoutError: CONNECTION_TIMEOUT={CONNECTION_TIMEOUT}")
-            # kind of a pipedream to think status channel is connected if __all_connected times out...
-            # TODO #43 Alert user on client.js if there's a timeout waiting for connection to be established.
-            self.__send_status(
-                "Timed out while establishing stream, try refreshing the page."
-            )
-        else:
-            for i in itertools.count():
-                if i == MAX_LOOPS and MAX_LOOPS != 0:
-                    self.logger.info(f"Reached MAX_LOOPS={MAX_LOOPS}, i={i}")
-                    self.__send_status(
-                        "Maximum conversation length reached."
-                        "\n\tThanks for using Moshi!\n\tPlease feel free to start a new conversation."
-                    )
-                    break
-                self.logger.debug(f"Starting loop number: i={i}")
-                self.__send_status(f"Starting call-and-response {i} of {MAX_LOOPS}")
-                try:
-                    await self.__main()
-                except UserResetError as e:
-                    self.__send_status(f"{str(e)}\n\tPlease refresh the page")
-                    break
-                except MediaStreamError:
-                    logger.info("MediaStreamError, interpreting as a hangup, exiting.")
-                    break
+        await asyncio.wait_for(self.__dc_connected.wait())  # NOTE server handles timeout, TODO should be session controlling timeout
+        for i in itertools.count():
+            if i == MAX_LOOPS and MAX_LOOPS != 0:
+                self.logger.info(f"Reached MAX_LOOPS={MAX_LOOPS}, i={i}")
+                self.__send("status max conversation length reached")
+                # TODO update client based on this message
+                #     "Maximum conversation length reached."
+                #     "\n\tThanks for using Moshi!\n\tPlease feel free to start a new conversation."
+                # )
+                break
+            with logger.contextualize(i=i):
+                self.logger.debug(f"starting loop")
+            self.__send(f"status starting loop {i} of {MAX_LOOPS}")
+            try:
+                await self.__main()
+            except UserResetError as e:
+                self.__send(f"error {str(e)}")  # TODO update client with \n\tPlease refresh the page
+                break
+            except MediaStreamError:
+                logger.info("MediaStreamError, interpreting as a hangup, exiting.")
+                break
         util.splash("bye")
 
     async def __main(self):
@@ -192,26 +163,23 @@ class WebRTCChatter:
         """
         try:
             usr_audio: AudioFrame = await self.__detect_user_utterance()
-        except asyncio.TimeoutError as e:
+        except asyncio.TimeoutError as e:  # TODO should do timeout here?
             logger.error(f"Timed out getting user utterance: {e}")
-            self.__send_status(
-                "Sorry, Moshi timed out waiting for your speech.\n\tWe'll try again!"
-            )
-            await asyncio.sleep(1.0)
+            # TODO move this to client "Sorry, Moshi timed out waiting for your speech.\n\tWe'll try again!"
+            self.__send("error utterance detection timeout")
+            await asyncio.sleep(0.1)
             return  # skip to next loop
-        self.__send_status(
-            "Transcribing..."
-        )  # TODO send the status updates from the private __ methods and in detector / responder
+        self.__send("status transcribing")
         usr_text: str = await self.__transcribe_audio(usr_audio)
         usr_msg = self.__add_message(usr_text, Role.USR)
-        self.__send_transcript(usr_msg)
+        self.__send("transcript " + usr_msg)
         await self.__init_character(sample_text=usr_text)
-        self.__send_status("Thinking...")
+        self.__send("status thinking")
         ast_text: str = await self.__get_response()
         if ast_text:
             ast_msg = self.__add_message(ast_text, Role.AST)
-            self.__send_transcript(ast_msg)
-            self.__send_status("Speaking...")
+            self.__send("transcript " + ast_msg)
+            self.__send("status speaking")
             ast_audio: AudioFrame = await self.__synth_speech()
             await self.__send_assistant_utterance(ast_audio)
         else:
@@ -261,35 +229,25 @@ class WebRTCChatter:
         self.messages.append(msg)
         return msg
 
-    def __send_status(self, status: str):
-        if channel := self.__channels.get("status"):
-            self.logger.debug(f'Sending status: "{status}"')
-            # NOTE channel.send does aio via ensure_future. Source: https://github.com/aiortc/aiortc/blob/main/src/aiortc/rtcsctptransport.py#L1796
-            channel.send(status)
-        else:
-            self.logger.debug(f"channels: {self.__channels}")
-            self.logger.warning(
-                f"Dropping message because status channel not yet initialized: {status}"
-            )
+    def __send(self, msg: str):
+        # NOTE RTCDataChannel.send() does aio via ensure_future.
+        # source: https://github.com/aiortc/aiortc/blob/main/src/aiortc/rtcsctptransport.py#L1796
+        self.logger.debug('sending: ' + msg)
+        self.__dc.send(msg)
 
-    def __send_transcript(self, msg: Message):
-        if channel := self.__channels.get("transcript"):
-            match msg.role:
-                case Role.USR:
-                    name = "you  "
-                case Role.AST:
-                    name = "moshi"
-                case _:
-                    raise ValueError(
-                        f"role={msg.role} not supported, must be USR or AST"
-                    )
-            msg_str = f"{name}: {msg.content}"
-            self.logger.debug(f'Sending transcript: "{msg_str}"')
-            channel.send(msg_str)
-        else:
-            self.logger.warning(
-                f"Dropping message because transcript channel not yet initialized: {msg}"
-            )
+    def send_transcript(self, msg: Message):
+        match msg.role:
+            case Role.USR:
+                name = "you  "
+            case Role.AST:
+                name = "moshi"
+            case _:
+                raise ValueError(
+                    f"role={msg.role} not supported, must be USR or AST"
+                )
+        msg_str = f"{name}: {msg.content}"
+        self.logger.debug(f'Sending transcript: "{msg_str}"')
+        self.__send('transcript  ' + msg_str)
 
     async def __synth_speech(self, text: str = None) -> AudioFrame:
         msg = self.messages[-1]

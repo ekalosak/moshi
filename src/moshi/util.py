@@ -101,8 +101,8 @@ def _setup_loguru():
         )
 
 
-def aio_exception_handler(loop: "EventLoop", context: dict[str, ...]):
-    logger.error(context)
+# def aio_exception_handler(loop: "EventLoop", context: dict[str, ...]):
+#     logger.error(context)
 
 
 def splash(text: str):

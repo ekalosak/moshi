@@ -12,7 +12,7 @@ su - eric -c '
   pip install \
     --upgrade \
     --extra-index-url https://us-east1-python.pkg.dev/moshi-002/moshi-002-repo/simple \
-    moshi && \
+    moshi==23.7.1 && \
   LOGURU_LEVEL=DEBUG \
   MOSHICONNECTIONTIMEOUT=30 \
   MOSHILOGSTDOUT=0 \

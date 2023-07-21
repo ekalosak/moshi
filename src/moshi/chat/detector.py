@@ -45,15 +45,16 @@ class UtteranceDetector:
         send_status: Callable[str, None],
         config=ListeningConfig(),
     ):
+        self.__background_energy = None
+        self.__config = config
+        self.__connected = wait_connected
+        self.__send_status = send_status
         self.__track = None
         self.__task = None
-        self.__send_status = send_status
-        self.__config = config
         self.__utterance: AudioFrame | None = None
         self.__utterance_lock = (
             asyncio.Lock()
         )  # used to switch between dumping frames from the track and listening to them
-        self.__background_energy = None
         logger.debug(f"Using config: {self.__config}")
 
     async def start(self):
@@ -114,7 +115,7 @@ class UtteranceDetector:
         logger.debug(
             "Awaiting ICE connection completion and establishment of all datachannels..."
         )
-        await self.wait_connected()
+        await self.__connected()
         logger.debug("ICE connection succeeded!")
         while True:
             try:

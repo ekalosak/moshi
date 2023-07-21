@@ -75,7 +75,7 @@ class WebRTCChatter:
         )  # play_response: AudioFrame -> track
 
     async def start(self):
-        if not self.__tasks:
+        if self.__tasks:
             self.logger.debug("Already started, no-op.")
             return
         self.logger.debug("Starting detector...")
@@ -86,10 +86,10 @@ class WebRTCChatter:
 
     async def stop(self):
         await self.detector.stop()
-        self.__send_status("Disconnecting...")
+        self.__send("status disconnecting")
         for task in self.__tasks:
             task.cancel(f"{self.__class__.__name__}.stop() called")
-        await asyncio.gather(self.__tasks)
+        await asyncio.gather(*self.__tasks)
         self.__tasks = []
 
     async def wait_dc_connected(self):
@@ -102,7 +102,6 @@ class WebRTCChatter:
         self.__dc = dc
         self.logger.success(f"dc connected: {dc.label}:{dc.id}")
         self.__dc_connected.set()
-        self.logger.debug("sending status hello over dc...")
         self.__send("status hello")
 
     @property
@@ -132,7 +131,7 @@ class WebRTCChatter:
     async def __run(self):
         """Run the main program loop."""
         util.splash("moshi")
-        await asyncio.wait_for(self.__dc_connected.wait())  # NOTE server handles timeout, TODO should be session controlling timeout
+        await self.__dc_connected.wait()  # NOTE server handles timeout, TODO should be session controlling timeout
         for i in itertools.count():
             if i == MAX_LOOPS and MAX_LOOPS != 0:
                 self.logger.info(f"Reached MAX_LOOPS={MAX_LOOPS}, i={i}")
@@ -172,13 +171,13 @@ class WebRTCChatter:
         self.__send("status transcribing")
         usr_text: str = await self.__transcribe_audio(usr_audio)
         usr_msg = self.__add_message(usr_text, Role.USR)
-        self.__send("transcript " + usr_msg)
+        self.__send("transcript {usr_msg.role} {usr_msg.content}")
         await self.__init_character(sample_text=usr_text)
         self.__send("status thinking")
         ast_text: str = await self.__get_response()
         if ast_text:
             ast_msg = self.__add_message(ast_text, Role.AST)
-            self.__send("transcript " + ast_msg)
+            self.__send("transcript {ast_msg.role} {usr_msg.content}")
             self.__send("status speaking")
             ast_audio: AudioFrame = await self.__synth_speech()
             await self.__send_assistant_utterance(ast_audio)

@@ -76,15 +76,16 @@ async def offer(request):
 
         @pc.on("datachannel")
         def on_datachannel(dc: RTCDataChannel):
-            logger.info(f"dc received: {dc}")
+            logger.debug(f"dc: {dc}")
+            logger.info(f"dc received: {dc.label}:{dc.id}")
             chatter.add_dc(dc)
 
             @dc.on("message")
-            def on_message(message):
-                print('dc: message: ' + message)
-                if isinstance(message, str) and message.startswith("ping "):
+            def on_message(msg):
+                logger.debug(f'dc: msg: {msg}')
+                if isinstance(msg, str) and message.startswith("ping "):
                     # NOTE io under the hood done with fire-and-forget ensure_future, UDP
-                    dc.send("pong " + message[4:])
+                    dc.send("pong " + msg[4:])
 
         @pc.on("connectionstatechange")
         async def on_connectionstatechange():

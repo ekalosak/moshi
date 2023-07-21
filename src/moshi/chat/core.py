@@ -68,11 +68,31 @@ class WebRTCChatter:
         self.messages = _init_messages()
         self.detector = detector.UtteranceDetector(
             self.wait_dc_connected,
-            lambda x: self.__send('status ' + x)
+            self._send_status,
         )  # get_utterance: track -> AudioFrame
         self.responder = responder.ResponsePlayer(
-            lambda x: self.__send('status ' + x)
+            self._send_status,
         )  # play_response: AudioFrame -> track
+
+    def __send(self, msg: str):
+        # NOTE RTCDataChannel.send() does aio via ensure_future.
+        # source: https://github.com/aiortc/aiortc/blob/main/src/aiortc/rtcsctptransport.py#L1796
+        self.logger.debug('sending: ' + msg)
+        self.__dc.send(msg)
+
+    def _send_status(self, status: str):
+        self.__send("status " + status)
+
+    def _send_error(self, err: str):
+        self.logger.error("Sending error to user: " + err)
+        self.__send("error " + msg)
+
+    def _send_transcript(self, msg: Message):
+        if msg.role == Role.SYS:
+            raise ValueError(
+                f"{msg.role} not supported user-facing transcript Role, must be USR or AST"
+            )
+        self.__send('transcript ' + f"{msg.role.value} {msg.content}")
 
     async def start(self):
         if self.__tasks:
@@ -82,11 +102,11 @@ class WebRTCChatter:
         await self.detector.start()
         self.logger.info("Detector started!")
         task = asyncio.create_task(self.__run(), name="Main chat task")
-        self.__tasks.append(tasks)
+        self.__tasks.append(task)
 
     async def stop(self):
         await self.detector.stop()
-        self.__send("status disconnecting")
+        self._send_status("disconnecting")
         for task in self.__tasks:
             task.cancel(f"{self.__class__.__name__}.stop() called")
         await asyncio.gather(*self.__tasks)
@@ -102,7 +122,6 @@ class WebRTCChatter:
         self.__dc = dc
         self.logger.success(f"dc connected: {dc.label}:{dc.id}")
         self.__dc_connected.set()
-        self.__send("status hello")
 
     @property
     def voice(self) -> object:
@@ -132,10 +151,11 @@ class WebRTCChatter:
         """Run the main program loop."""
         util.splash("moshi")
         await self.__dc_connected.wait()  # NOTE server handles timeout, TODO should be session controlling timeout
+        self._send_status("hello")
         for i in itertools.count():
             if i == MAX_LOOPS and MAX_LOOPS != 0:
                 self.logger.info(f"Reached MAX_LOOPS={MAX_LOOPS}, i={i}")
-                self.__send("status max conversation length reached")
+                self._send_status("done max conversation length reached")
                 # TODO update client based on this message
                 #     "Maximum conversation length reached."
                 #     "\n\tThanks for using Moshi!\n\tPlease feel free to start a new conversation."
@@ -143,11 +163,11 @@ class WebRTCChatter:
                 break
             with logger.contextualize(i=i):
                 self.logger.debug(f"starting loop")
-            self.__send(f"status starting loop {i} of {MAX_LOOPS}")
+            self._send_status("loopstart " + i)
             try:
                 await self.__main()
             except UserResetError as e:
-                self.__send(f"error {str(e)}")  # TODO update client with \n\tPlease refresh the page
+                self._send_error(str(e))  # TODO update client with \n\tPlease refresh the page
                 break
             except MediaStreamError:
                 logger.info("MediaStreamError, interpreting as a hangup, exiting.")
@@ -165,20 +185,20 @@ class WebRTCChatter:
         except asyncio.TimeoutError as e:  # TODO should do timeout here?
             logger.error(f"Timed out getting user utterance: {e}")
             # TODO move this to client "Sorry, Moshi timed out waiting for your speech.\n\tWe'll try again!"
-            self.__send("error utterance detection timeout")
+            self._send_error("utterance detection timeout")
             await asyncio.sleep(0.1)
             return  # skip to next loop
-        self.__send("status transcribing")
+        self._send_status("transcribing")
         usr_text: str = await self.__transcribe_audio(usr_audio)
         usr_msg = self.__add_message(usr_text, Role.USR)
-        self.__send("transcript {usr_msg.role} {usr_msg.content}")
+        self._send_transcript(usr_msg)
         await self.__init_character(sample_text=usr_text)
-        self.__send("status thinking")
+        self._send_status("thinking")
         ast_text: str = await self.__get_response()
         if ast_text:
             ast_msg = self.__add_message(ast_text, Role.AST)
-            self.__send("transcript {ast_msg.role} {usr_msg.content}")
-            self.__send("status speaking")
+            self._send_transcript(ast_msg)
+            self._send_status("speaking")
             ast_audio: AudioFrame = await self.__synth_speech()
             await self.__send_assistant_utterance(ast_audio)
         else:
@@ -227,26 +247,6 @@ class WebRTCChatter:
         self.logger.debug(f"Adding message: {msg}")
         self.messages.append(msg)
         return msg
-
-    def __send(self, msg: str):
-        # NOTE RTCDataChannel.send() does aio via ensure_future.
-        # source: https://github.com/aiortc/aiortc/blob/main/src/aiortc/rtcsctptransport.py#L1796
-        self.logger.debug('sending: ' + msg)
-        self.__dc.send(msg)
-
-    def send_transcript(self, msg: Message):
-        match msg.role:
-            case Role.USR:
-                name = "you  "
-            case Role.AST:
-                name = "moshi"
-            case _:
-                raise ValueError(
-                    f"role={msg.role} not supported, must be USR or AST"
-                )
-        msg_str = f"{name}: {msg.content}"
-        self.logger.debug(f'Sending transcript: "{msg_str}"')
-        self.__send('transcript  ' + msg_str)
 
     async def __synth_speech(self, text: str = None) -> AudioFrame:
         msg = self.messages[-1]

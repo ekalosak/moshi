@@ -8,9 +8,9 @@ logger.success("Loaded!")
 
 
 class Role(str, Enum):
-    SYS = "system"
-    USR = "user"
-    AST = "assistant"
+    SYS = "sys"
+    USR = "usr"
+    AST = "ast"
 
 
 @dataclass

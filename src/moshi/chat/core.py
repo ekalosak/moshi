@@ -81,11 +81,11 @@ class WebRTCChatter:
         self.__dc.send(msg)
 
     def _send_status(self, status: str):
-        self.__send("status " + status)
+        self.__send(f"status {status}")
 
     def _send_error(self, err: str):
         self.logger.error("Sending error to user: " + err)
-        self.__send("error " + msg)
+        self.__send("error " + err)
 
     def _send_transcript(self, msg: Message):
         if msg.role == Role.SYS:
@@ -162,8 +162,8 @@ class WebRTCChatter:
                 # )
                 break
             with logger.contextualize(i=i):
-                self.logger.debug(f"starting loop")
-            self._send_status("loopstart " + i)
+                self.logger.debug("starting loop")
+            self._send_status(f"loopstart {i}")
             try:
                 await self.__main()
             except UserResetError as e:

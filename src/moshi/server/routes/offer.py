@@ -39,6 +39,7 @@ async def shutdown():
 
 # Create WebRTC handler; offer/ is called by client.js on index.html having created an initial SDP offer;
 @async_with_pcid
+# NOTE DEBUG auth disabled for local dev.
 # @util.require_authentication  # TODO use Firebase auth
 async def offer(request):
     """In WebRTC, there's an initial offer->answer exchange that negotiates the connection parameters.
@@ -83,7 +84,7 @@ async def offer(request):
             @dc.on("message")
             def on_message(msg):
                 logger.debug(f'dc: msg: {msg}')
-                if isinstance(msg, str) and message.startswith("ping "):
+                if isinstance(msg, str) and msg.startswith("ping "):
                     # NOTE io under the hood done with fire-and-forget ensure_future, UDP
                     dc.send("pong " + msg[4:])
 
@@ -124,6 +125,8 @@ async def offer(request):
     logger.trace(f"answer: {answer}")
     await pc.setLocalDescription(answer)
 
+    # NOTE DEBUG SO WE CAN SEE THE APP RING FOR A MOMENT
+    await asyncio.sleep(1.0)
     return web.Response(
         content_type="application/json",
         text=json.dumps(

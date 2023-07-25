@@ -113,6 +113,7 @@ async def offer(request):
                 )
             chatter.detector.setTrack(track)  # must be called before start()
             pc.addTrack(chatter.responder.audio)
+            logger.success(f"Added audio track: {track.kind}:{track.id}")
 
             @track.on("ended")
             async def on_ended():  # e.g. user disconnects audio

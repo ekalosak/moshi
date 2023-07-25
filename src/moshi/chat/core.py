@@ -69,9 +69,13 @@ class WebRTCChatter:
         self.responder = responder.ResponsePlayer()  # play_response: AudioFrame -> track
 
     def __send(self, msg: str):
+        """Send msg over dc with best effort."""
         # NOTE RTCDataChannel.send() does aio via ensure_future.
         # source: https://github.com/aiortc/aiortc/blob/main/src/aiortc/rtcsctptransport.py#L1796
         self.logger.debug('sending: ' + msg)
+        if not self.__dc:
+            self.logger.warning(f"tried to send before dc connected, discarding message: {msg}")
+            return
         self.__dc.send(msg)
 
     def _send_status(self, status: str):
@@ -96,18 +100,22 @@ class WebRTCChatter:
         await asyncio.sleep(0)
 
     async def start(self):
-        self._send_status("start")
         if self.__task:
             self.logger.debug("Already started, no-op.")
             return
         self.__task = asyncio.create_task(self.__run(), name="Main chat task")
-        await asyncio.sleep(0)
+        await self.wait_dc_connected()
+        self._send_status("start")
+        logger.info("Started")
 
     async def stop(self):
+        if self.__task == None:
+            self.logger.warning("Already stopped, no-op.")
         self._send_status("stop")
         self.__task.cancel(f"{self.__class__.__name__}.stop() called")
         await self.__task
         self.__task = None
+        logger.info("Stopped")
 
     async def wait_dc_connected(self):
         self.logger.debug("pc connected, awaiting dc...")
@@ -145,6 +153,7 @@ class WebRTCChatter:
                 return msg
         raise ValueError(f"No {role.value} utterances in self.messages")
 
+    @logger.catch
     async def __run(self):
         """Run the main program loop."""
         util.splash("moshi")
@@ -156,9 +165,9 @@ class WebRTCChatter:
                 self.logger.info(msg)
                 self._send_status("maxlen", msg)
                 break
-            with logger.contextualize(i=i):
-                self.logger.debug("starting loop")
-                self._send_status("loopstart", str(i))
+            self.logger.debug(f"Starting loop {i}")
+            with self.logger.contextualize(i=i):
+                self._send_status("loopstart")
             try:
                 await self.__main()
             except UserResetError as e:
@@ -166,9 +175,13 @@ class WebRTCChatter:
                 self._send_status("bye")
                 break
             except MediaStreamError:
-                logger.info("User hung up (disconnect).")
-                await self.stop()
+                self.logger.info("User hung up (disconnect).")
                 break
+            except Exception as e:
+                logger.error(e)
+                self._send_error("internal")
+                break
+        await self.stop()
         util.splash("bye")
 
     async def __main(self):
@@ -177,6 +190,7 @@ class WebRTCChatter:
             - UserResetError when chatter entered into a state that requires reset by user.
             - MediaStreamError when connection error or user hangup (disconnect).
         """
+        self.logger.debug("in main")
         self._send_status("listening")
         try:
             # Raises: MediaStreamError, TimeoutError, UtteranceTooLongError
@@ -207,7 +221,7 @@ class WebRTCChatter:
             self._send_transcript(ast_msg)
             self._send_status("speaking")
             ast_audio: AudioFrame = await self.__synth_speech()  # TODO handle network errors
-            await self.__send_assistant_utterance(ast_audio)
+            await self.responder.send_utterance(ast_audio)  # TODO handle: Raises: MediaStreamError, TimeoutError
         else:
             self.logger.warning("Got empty assistant response")
             raise UserResetError("empty assistant response")
@@ -223,12 +237,8 @@ class WebRTCChatter:
         self.character = character.Character(voice, language)
         self.logger.info(f"Initialized character: {self.character}")
 
-    async def __send_assistant_utterance(self, ast_audio: AudioFrame):
-        self.logger.debug(f"Sending assistant utterance: {ast_audio}...")
-        await self.responder.send_utterance(ast_audio)
-        self.logger.info("Sent assistant utterance.")
-
     def __add_message(self, content: str, role: Role) -> Message:
+        # TODO write the message to Firebase
         assert isinstance(content, str)
         if not isinstance(role, Role):
             role = Role(role)

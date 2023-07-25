@@ -28,7 +28,7 @@ class UtteranceDetector:
     def __init__(self):
         self.__fifo = AudioFifo()
         self.__track = None
-        logger.debug(f"Using config: {self.__config}")
+        logger.debug("Initialized")
 
     def setTrack(self, track: MediaStreamTrack):
         """Set the audio track to listen to."""
@@ -43,6 +43,7 @@ class UtteranceDetector:
         if self.__track is not None:
             logger.warning(f"Track already set: {audio.track_str(self.__track)}")
         self.__track = track
+        logger.debug("Track set")
 
     async def get_utterance(self) -> AudioFrame:
         """ Raises:
@@ -68,7 +69,7 @@ class UtteranceDetector:
                 logger.debug("Utterance ended")
                 break
             self.__fifo.write(frame)
-            utt_sec += frame.duration * frame.sample_rate
+            utt_sec += audio.get_frame_seconds(frame)
             if utt_sec > UTT_MAX_LEN_SEC:
                 raise UtteranceTooLongError(
                     f"Utterance too long: {utt_sec:.3f} sec > {UTT_MAX_LEN_SEC} sec"

@@ -24,13 +24,11 @@ from moshi.chat import (
     think,
 )
 
+MAX_RESPONSE_TOKENS = 64
+MAX_LOOPS = 30
 STOP_TOKENS = ["user:"]
-logger.info(f"Using STOP_TOKENS={STOP_TOKENS}")
-MAX_RESPONSE_TOKENS = int(os.getenv("MOSHIMAXTOKENS", 64))
-logger.info(f"Using MAX_RESPONSE_TOKENS={MAX_RESPONSE_TOKENS}")
-MAX_LOOPS = int(os.getenv("MOSHIMAXLOOPS", 30))
+UTT_START_MAX_COUNT = 2
 assert MAX_LOOPS >= 0
-logger.info(f"Using MAX_LOOPS={MAX_LOOPS}")
 
 logger.success("Loaded!")
 
@@ -62,17 +60,13 @@ class WebRTCChatter:
     def __init__(self, user_email: str = "none"):
         self.__dc = None
         self.__dc_connected = asyncio.Event()
-        self.__tasks = []
+        self.__task = None
+        self.__utt_start_count = 0
         self.character: character.Character = None
         self.logger = logger.bind(email=user_email)
         self.messages = _init_messages()
-        self.detector = detector.UtteranceDetector(
-            self.wait_dc_connected,
-            self._send_status,
-        )  # get_utterance: track -> AudioFrame
-        self.responder = responder.ResponsePlayer(
-            self._send_status,
-        )  # play_response: AudioFrame -> track
+        self.detector = detector.UtteranceDetector()  # get_utterance: track -> AudioFrame
+        self.responder = responder.ResponsePlayer()  # play_response: AudioFrame -> track
 
     def __send(self, msg: str):
         # NOTE RTCDataChannel.send() does aio via ensure_future.
@@ -94,23 +88,26 @@ class WebRTCChatter:
             )
         self.__send('transcript ' + f"{msg.role.value} {msg.content}")
 
+    async def _speak_to_user(self, text: str):
+        """Speak to the user over audio channel.
+        Use the user's configured language, and provide some variety in phrasing.
+        """
+        self.logger.warning("TODO")
+        await asyncio.sleep(0)
+
     async def start(self):
-        if self.__tasks:
+        self._send_status("start")
+        if self.__task:
             self.logger.debug("Already started, no-op.")
             return
-        self.logger.debug("Starting detector...")
-        await self.detector.start()
-        self.logger.info("Detector started!")
-        task = asyncio.create_task(self.__run(), name="Main chat task")
-        self.__tasks.append(task)
+        self.__task = asyncio.create_task(self.__run(), name="Main chat task")
+        await asyncio.sleep(0)
 
     async def stop(self):
-        await self.detector.stop()
-        self._send_status("disconnecting")
-        for task in self.__tasks:
-            task.cancel(f"{self.__class__.__name__}.stop() called")
-        await asyncio.gather(*self.__tasks)
-        self.__tasks = []
+        self._send_status("stop")
+        self.__task.cancel(f"{self.__class__.__name__}.stop() called")
+        await self.__task
+        self.__task = None
 
     async def wait_dc_connected(self):
         self.logger.debug("pc connected, awaiting dc...")
@@ -118,10 +115,11 @@ class WebRTCChatter:
         self.logger.debug("dc connected.")
 
     def add_dc(self, dc: RTCDataChannel):
-        self.logger.debug("connecting dc to chatter")
+        if self.__dc is not None:
+            raise ValueError("DataChannel already set")
         self.__dc = dc
-        self.logger.success(f"dc connected: {dc.label}:{dc.id}")
         self.__dc_connected.set()
+        self.logger.success(f"dc connected: {dc.label}:{dc.id}")
 
     @property
     def voice(self) -> object:
@@ -150,27 +148,26 @@ class WebRTCChatter:
     async def __run(self):
         """Run the main program loop."""
         util.splash("moshi")
-        await self.__dc_connected.wait()  # NOTE server handles timeout, TODO should be session controlling timeout
+        await self.__dc_connected.wait()
         self._send_status("hello")
         for i in itertools.count():
             if i == MAX_LOOPS and MAX_LOOPS != 0:
-                self.logger.info(f"Reached MAX_LOOPS={MAX_LOOPS}, i={i}")
-                self._send_status("done max conversation length reached")
-                # TODO update client based on this message
-                #     "Maximum conversation length reached."
-                #     "\n\tThanks for using Moshi!\n\tPlease feel free to start a new conversation."
-                # )
+                msg = f"Reached MAX_LOOPS={MAX_LOOPS}, i={i}"
+                self.logger.info(msg)
+                self._send_status("maxlen", msg)
                 break
             with logger.contextualize(i=i):
                 self.logger.debug("starting loop")
-            self._send_status(f"loopstart {i}")
+                self._send_status("loopstart", str(i))
             try:
                 await self.__main()
             except UserResetError as e:
-                self._send_error(str(e))  # TODO update client with \n\tPlease refresh the page
+                self._send_error(str(e))
+                self._send_status("bye")
                 break
             except MediaStreamError:
-                logger.info("MediaStreamError, interpreting as a hangup, exiting.")
+                logger.info("User hung up (disconnect).")
+                await self.stop()
                 break
         util.splash("bye")
 
@@ -180,16 +177,26 @@ class WebRTCChatter:
             - UserResetError when chatter entered into a state that requires reset by user.
             - MediaStreamError when connection error or user hangup (disconnect).
         """
+        self._send_status("listening")
         try:
-            usr_audio: AudioFrame = await self.__detect_user_utterance()
-        except asyncio.TimeoutError as e:  # TODO should do timeout here?
-            logger.error(f"Timed out getting user utterance: {e}")
-            # TODO move this to client "Sorry, Moshi timed out waiting for your speech.\n\tWe'll try again!"
-            self._send_error("utterance detection timeout")
-            await asyncio.sleep(0.1)
-            return  # skip to next loop
+            # Raises: MediaStreamError, TimeoutError, UtteranceTooLongError
+            usr_audio: AudioFrame = await self.detector.get_utterance()
+        except detector.UtteranceTooLongError as e:
+            self.logger.debug("Utterance too long, prompting user to try again.")
+            await self._send_error("utttoolong")
+            return
+        except asyncio.TimeoutError as e:
+            if self.__utt_start_count == UTT_START_MAX_COUNT:
+                self.logger.debug("User didn't start speaking {self.__utt_start_count} times, raising.")
+                raise UserResetError("user did not start speaking") from e
+            self.logger.debug("Utterance too long, prompting user to try again.")
+            await self._speak_to_user("Are you still there?")
+            self.__utt_start_count += 1
+            return
+
+        self.__utt_start_count = 0
         self._send_status("transcribing")
-        usr_text: str = await self.__transcribe_audio(usr_audio)
+        usr_text: str = await self.__transcribe_audio(usr_audio)  # TODO handle network errors
         usr_msg = self.__add_message(usr_text, Role.USR)
         self._send_transcript(usr_msg)
         await self.__init_character(sample_text=usr_text)
@@ -199,11 +206,11 @@ class WebRTCChatter:
             ast_msg = self.__add_message(ast_text, Role.AST)
             self._send_transcript(ast_msg)
             self._send_status("speaking")
-            ast_audio: AudioFrame = await self.__synth_speech()
+            ast_audio: AudioFrame = await self.__synth_speech()  # TODO handle network errors
             await self.__send_assistant_utterance(ast_audio)
         else:
             self.logger.warning("Got empty assistant response")
-            raise UserResetError("I have nothing to say.")
+            raise UserResetError("empty assistant response")
 
     async def __init_character(self, sample_text: str):
         """Using the sample text, initialize the voice and language used by Chatter."""
@@ -215,24 +222,6 @@ class WebRTCChatter:
         self.logger.debug(f"Selected voice: {voice}")
         self.character = character.Character(voice, language)
         self.logger.info(f"Initialized character: {self.character}")
-
-    async def __detect_user_utterance(self) -> AudioFrame:
-        """
-        Raises:
-            - MediaStreamError
-            - asyncio.TimeoutError
-        """
-        self.logger.debug("Detecting user utterance...")
-        try:
-            usr_audio: AudioFrame = await self.detector.get_utterance()
-        except MediaStreamError:
-            logger.debug("MediaStreamError: user disconnect while detecting utterance.")
-            raise
-        except asyncio.TimeoutError as e:
-            logger.debug(f"Timed out waiting for user utterance: {e}")
-            raise
-        self.logger.info(f"Detected user utterance: {usr_audio}")
-        return usr_audio
 
     async def __send_assistant_utterance(self, ast_audio: AudioFrame):
         self.logger.debug(f"Sending assistant utterance: {ast_audio}...")

@@ -4,10 +4,11 @@ import json
 import os
 import uuid
 
-from aiohttp import web
-from aiohttp_session import get_session
+import firebase_admin
+from fastapi import APIRouter, Depends, HTTPException, Request
 from aiortc import RTCPeerConnection, RTCSessionDescription, RTCDataChannel
 from loguru import logger
+from pydantic import BaseModel, validator
 
 from moshi.chat import WebRTCChatter
 from moshi import util
@@ -16,6 +17,8 @@ pcs = set()
 
 CONNECTION_TIMEOUT = int(os.getenv("MOSHICONNECTIONTIMEOUT", 5))
 logger.info(f"Using (WebRTC session) CONNECTION_TIMEOUT={CONNECTION_TIMEOUT}")
+
+router = APIRouter()
 
 def async_with_pcid(f):
     """Decorator for contextualizing the logger with a PeerConnection uid."""
@@ -37,11 +40,19 @@ async def shutdown():
     pcs.clear()
 
 
-# Create WebRTC handler; offer/ is called by client.js on index.html having created an initial SDP offer;
+class Offer(BaseModel):
+    sdp: str
+    type: str
+
+    @validator("type")
+    def type_must_be_offer(cls, v):
+        if v != "offer":
+            raise ValueError("type must be 'offer'")
+        return v
+
 @async_with_pcid
-# NOTE DEBUG auth disabled for local dev.
-# @util.require_authentication  # TODO use Firebase auth
-async def offer(request):
+@router.post("/call/new")
+async def new_call(offer: Offer, user: dict = Depends(firebase_auth)):
     """In WebRTC, there's an initial offer->answer exchange that negotiates the connection parameters.
     This endpoint accepts an offer request from a client and returns an answer with the SDP (session description protocol).
     Moreover, it sets up the PeerConnection (pc) and the event listeners on the connection.
@@ -50,24 +61,12 @@ async def offer(request):
         - RFC 2327
     """
     logger.info("Got offer")
-    logger.debug(f"request: {request}")
-    try:
-        params = await request.json()
-    except json.decoder.JSONDecodeError as e:
-        logger.error("Invalid JSON: {e}")
-        logger.debug(f"Response text: {response.text}")
-        raise web.HTTPUnprocessableEntity(reason="Invalid JSON")
-    logger.trace(f"Request params: {params}")
-    # session = await get_session(request)
-    if _tp := params.get("type") != "offer":
-        err = f"Invalid offer type, expected 'offer', got: '{_tp}'"
-        logger.error(err)
-        raise web.HTTPBadRequest(reason = err)
-    offer = RTCSessionDescription(sdp=params["sdp"], type=params["type"])
+    logger.debug(f"request: {offer}")
+    offer = RTCSessionDescription(**offer.dict())
     logger.trace(f"offer: {offer}")
     pc = RTCPeerConnection()
     pcs.add(pc)
-    logger.info(f"Created peer connection object for: {request.remote}")
+    logger.info(f"Created peer connection object for: {user['email']}")
 
     # usremail = session["user_email"]  # pass so logging will record user email
     usremail = "NONE - TEST"
@@ -128,9 +127,4 @@ async def offer(request):
 
     # NOTE DEBUG SO WE CAN SEE THE APP RING FOR A MOMENT
     await asyncio.sleep(1.0)
-    return web.Response(
-        content_type="application/json",
-        text=json.dumps(
-            {"sdp": pc.localDescription.sdp, "type": pc.localDescription.type}
-        ),
-    )
+    return {"sdp": pc.localDescription.sdp, "type": pc.localDescription.type}

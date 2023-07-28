@@ -1,3 +1,8 @@
+# This module provides language utilities, including:
+#     - Language detection
+#     - Language translation
+#     - String similarity
+
 import asyncio
 import contextvars
 import textwrap

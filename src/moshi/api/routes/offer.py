@@ -4,14 +4,13 @@ import json
 import os
 import uuid
 
-import firebase_admin
 from fastapi import APIRouter, Depends, HTTPException, Request
 from aiortc import RTCPeerConnection, RTCSessionDescription, RTCDataChannel
 from loguru import logger
 from pydantic import BaseModel, validator
 
+from moshi.api.auth import firebase_auth
 from moshi.chat import WebRTCChatter
-from moshi import util
 
 pcs = set()
 

@@ -16,7 +16,6 @@ from moshi.core.config import GOOGLE_PROJECT
 
 gcreds = contextvars.ContextVar('gcreds')
 
-logger.debug("Initializing Firebase authentication...")
 firebase_app = firebase_admin.initialize_app()
 logger.info(f"Firebase authentication initialized: {firebase_app.project_id}")
 assert GOOGLE_PROJECT == firebase_app.project_id, f"Initialized auth for unexpected project_id: {firebase_app.project_id}"

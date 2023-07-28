@@ -1,4 +1,4 @@
-import json
+from enum import Enum
 from pprint import pformat, pprint
 
 from fastapi import FastAPI, Depends, HTTPException, Request, File, UploadFile
@@ -9,11 +9,28 @@ from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoin
 from starlette.requests import Request
 from starlette.responses import Response
 
-from moshi import activities, util
+from moshi import util
+from moshi import __version__ as moshi_version
 from moshi.core.storage import firestore_client
-from moshi.api.auth import firebase_auth
+from .auth import firebase_auth
+from .routes import offer
 
 app = FastAPI()
+app.include_router(offer.router)
+
+async def on_shutdown():
+    logger.info("Shutting down...")
+    await offer.shutdown()
+
+app.add_event_handler("shutdown", on_shutdown)
+
+@logger.catch
+async def on_startup(app):
+    util._setup_loguru()
+    # asyncio.get_event_loop().set_exception_handler(util.aio_exception_handler)
+    logger.success("Loaded!")
+
+app.add_event_handler("startup", on_startup)
 
 class LogRequestMiddleware(BaseHTTPMiddleware):
     async def dispatch(
@@ -39,47 +56,23 @@ logger.warning("Using permissive CORS for development. In production, only allow
 app.add_middleware(LogRequestMiddleware)
 
 @app.get("/healthz")
-def healthz(request: Request):
-    """Health check endpoint"""
+def healthz(request: Request, user: dict = Depends(firebase_auth)):
     return "OK"
 
-@app.get("/m/new/{kind}")
-async def new_conversation(kind: str, user: dict = Depends(firebase_auth)):
-    """Create a new conversation."""
-    unm = user['name']
-    uid = user['uid']
-    uem = user['email']
-    logger.debug(f"Making new conversation of kind: {kind}")
-    collection_ref = firestore_client.collection("conversations")
-    convo = activities.new(kind=kind, uid=uid)
-    doc_ref = collection_ref.document()
-    cid = doc_ref.id
-    with logger.contextualize(cid=cid):
-        doc_data = convo.asdict()
-        logger.debug(f"Creating conversation...")
-        result = await doc_ref.set(doc_data)
-        logger.info(f"Created new conversation document!")
-    return {
-        "message": "New conversation created",
-        "detail" : {
-            "conversation_id": cid,
-        }
-    }
+class ConversationKind(str, Enum):
+    unstr = "unstructured"
 
 @app.get("/m/new/{kind}")
-async def new_conversation(kind: str, user: dict = Depends(firebase_auth)):
-    """Create a new conversation."""
+async def new_conversation(kind: ConversationKind, user: dict = Depends(firebase_auth)):
     uid = user['uid']
-    logger.debug(f"Making new conversation of kind: {kind}")
     collection_ref = firestore_client.collection("conversations")
     convo = activities.new(kind=kind, uid=uid)
     doc_ref = collection_ref.document()
     cid = doc_ref.id
     with logger.contextualize(cid=cid):
-        doc_data = convo.asdict()
-        logger.debug(f"Creating conversation...")
-        result = await doc_ref.set(doc_data)
-        logger.info(f"Created new conversation document!")
+        logger.trace(f"Creating conversation...")
+        result = await doc_ref.set(convo.asdict())
+        logger.trace(f"Created new conversation document!")
     return {
         "message": "New conversation created",
         "detail" : {

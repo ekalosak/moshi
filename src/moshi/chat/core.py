@@ -190,7 +190,7 @@ class WebRTCChatter:
             - UserResetError when chatter entered into a state that requires reset by user.
             - MediaStreamError when connection error or user hangup (disconnect).
         """
-        self.logger.debug("in main")
+        self.logger.debug("main")
         self._send_status("listening")
         try:
             # Raises: MediaStreamError, TimeoutError, UtteranceTooLongError
@@ -202,7 +202,7 @@ class WebRTCChatter:
         except asyncio.TimeoutError as e:
             if self.__utt_start_count == UTT_START_MAX_COUNT:
                 self.logger.debug("User didn't start speaking {self.__utt_start_count} times, raising.")
-                raise UserResetError("user did not start speaking") from e
+                raise UserResetError("usrNotSpeaking") from e
             self.logger.debug("Utterance too long, prompting user to try again.")
             await self._speak_to_user("Are you still there?")
             self.__utt_start_count += 1

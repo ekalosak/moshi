@@ -6,12 +6,12 @@ import textwrap
 
 import av
 import openai
-from av import AudioFifo, AudioFrame
+from av import AudioFrame
 from google.cloud import texttospeech
 from google.cloud.texttospeech import Voice
 from loguru import logger
 
-from moshi.core import audio, gcloud
+from moshi import audio
 
 GOOGLE_SPEECH_SYNTHESIS_TIMEOUT = int(os.getenv("GOOGLE_SPEECH_SYNTHESIS_TIMEOUT", 5))
 logger.info(f"Using speech synth timeout: {GOOGLE_SPEECH_SYNTHESIS_TIMEOUT}")

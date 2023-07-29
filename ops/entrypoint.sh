@@ -15,12 +15,13 @@ su - eric -c '
     moshi && \
   LOGURU_LEVEL=DEBUG \
   MOSHICONNECTIONTIMEOUT=30 \
+  MOSHILOFILE=0 \
   MOSHILOGSTDOUT=0 \
   MOSHILOGCLOUD=1 \
-  gunicorn main:app_factory \
+  gunicorn main:app \
     --bind :8080 \
     --workers 3 \
     --threads 4 \
     --timeout 20 \
-    --worker-class aiohttp.GunicornWebWorker
+    --worker-class uvicorn.workers.UvicornWorker
 '

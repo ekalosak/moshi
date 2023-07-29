@@ -11,8 +11,7 @@ from google import auth as gauth
 from google.auth.transport.requests import Request
 from loguru import logger
 
-from moshi.core import storage
-from moshi.core.config import GOOGLE_PROJECT
+from moshi.utils import storage, GOOGLE_PROJECT
 
 gcreds = contextvars.ContextVar('gcreds')
 
@@ -37,10 +36,10 @@ async def firebase_auth(credentials: HTTPAuthorizationCredentials = Depends(secu
             token,
         )
     except fauth.InvalidIdTokenError:
-        logger.error("Invalid authentication token")
+        logger.debug("Invalid authentication token")
         raise HTTPException(status_code=401, detail="Invalid authentication token")
     except fauth.ExpiredIdTokenError:
-        logger.error("Expired authentication token")
+        logger.debug("Expired authentication token")
         raise HTTPException(status_code=401, detail="Expired authentication token")
 
     decoded_token['name'] = decoded_token.get('name', 'Unnamed')

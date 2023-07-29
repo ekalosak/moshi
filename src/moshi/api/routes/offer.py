@@ -1,6 +1,5 @@
 import asyncio
 import functools
-import json
 import os
 import uuid
 
@@ -10,7 +9,7 @@ from loguru import logger
 from pydantic import BaseModel, validator
 
 from moshi.api.auth import firebase_auth
-from moshi.chat import WebRTCChatter
+from moshi.call import WebRTCChatter
 
 pcs = set()
 

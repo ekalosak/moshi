@@ -10,7 +10,7 @@ from aiortc.mediastreams import MediaStreamError
 from av import AudioFifo, AudioFrame
 from loguru import logger
 
-from moshi.core import audio
+from moshi import audio
 
 UTT_START_TIMEOUT_SEC = 5.0  # wait for the user to start speaking for this long before giving up. 
 # TODO tune the UTT_END_TIMEOUT_SEC param for typical network conditions.

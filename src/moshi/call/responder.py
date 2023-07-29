@@ -5,12 +5,10 @@ import time
 from typing import Callable
 
 from aiortc import MediaStreamTrack
-from aiortc.mediastreams import MediaStreamError
 from av import AudioFifo, AudioFrame
 from loguru import logger
 
-from moshi import AUDIO_FORMAT, AUDIO_LAYOUT, SAMPLE_RATE
-from moshi.core import audio
+from moshi import AUDIO_FORMAT, AUDIO_LAYOUT, SAMPLE_RATE, audio
 
 FRAME_SEND_TIMEOUT_SEC = 0.5  # how long beyond the length of the response to wait.
 FRAME_SIZE = 960

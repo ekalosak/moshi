@@ -13,12 +13,13 @@ from moshi import (
     Message,
     Role,
     UserResetError,
-    util,
+    utils,
 )
-from moshi.chat import (
+from moshi.core import (
     character,
+)
+from . import (
     detector,
-    lang,
     responder,
     speech,
     think,
@@ -156,7 +157,7 @@ class WebRTCChatter:
     @logger.catch
     async def __run(self):
         """Run the main program loop."""
-        util.splash("moshi")
+        utils.log.splash("moshi")
         await self.__dc_connected.wait()
         self._send_status("hello")
         for i in itertools.count():
@@ -230,7 +231,7 @@ class WebRTCChatter:
         """Using the sample text, initialize the voice and language used by Chatter."""
         if self.character is not None:
             return
-        language = await lang.detect_language(sample_text)
+        language = await utils.lang.detect_language(sample_text)
         self.logger.debug(f"Language detected: {language}")
         voice = await speech.get_voice(language)
         self.logger.debug(f"Selected voice: {voice}")

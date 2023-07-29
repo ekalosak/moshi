@@ -1,3 +1,8 @@
+"""Tests API Firebase auth.
+NOTE: This test requires a running Firebase emulator.
+NOTE: This test requires a test user in the Firebase auth service.
+NOTE: You must set FIREBASE_AUTH_EMULATOR_HOST="127.0.0.1:9099" in your environment.
+"""
 import asyncio
 
 import pytest
@@ -23,7 +28,7 @@ def email():
 
 @pytest.fixture
 def password():
-    return "test"
+    return "testtest"
 
 @pytest.fixture
 def url():
@@ -52,3 +57,11 @@ async def test_api_auth(email, password, url):
         "returnSecureToken": True
     }
     response = requests.post(url, json=data)
+    assert response.status_code == 200, "Add test user to authorized_users collection in Firestore."
+    auth_token = response.json()["idToken"]
+    print()
+    print(auth_token)
+    print()
+    response = client.get("/version", headers={"Authorization": f"Bearer {auth_token}"})
+    print(response.json())
+    assert response.status_code == 200

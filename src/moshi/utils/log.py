@@ -6,11 +6,10 @@ import uuid
 import warnings
 
 from google.cloud import logging
-import loguru
 from loguru import logger
 from loguru._defaults import LOGURU_FORMAT
 
-LOG_LEVEL = os.getenv("MLOGLEVEL", "TRACE")
+LOG_LEVEL = os.getenv("MLOGLEVEL", "DEBUG")
 FILE_LOGS = int(os.getenv("MOSHILOGDISK", 0))
 STDOUT_LOGS = int(os.getenv("MOSHILOGSTDOUT", 1))
 CLOUD_LOGS = int(os.getenv("MOSHILOGCLOUD", 0))

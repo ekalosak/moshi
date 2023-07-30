@@ -13,6 +13,7 @@ from .character import Character
 from moshi.utils.storage import firestore_client
 from moshi.utils import speech, ctx
 
+transcript_col = firestore_client.collection("transcripts")
 @dataclasses.dataclass
 class Transcript:
     activity_type: str
@@ -54,6 +55,9 @@ class BaseActivity(ABC, BaseModel):
     def lang(self):
         return self.__character.language
 
+    @property
+    def cid(self):
+        return self.__cid
 
     async def start(self):
         await self.__init_transcript()
@@ -69,13 +73,7 @@ class BaseActivity(ABC, BaseModel):
             messages=self._init_messages(),
         )
         logger.trace(f"Created conversation: {self.__transcript}")
-        collection_ref = firestore_client.collection("transcripts")
-        doc_ref = collection_ref.document()
-        self.__cid = doc_ref.id
-        with logger.contextualize(cid=self.__cid):
-            logger.trace(f"Creating new conversation document in Firebase...")
-            result = await doc_ref.set(self.__transcript.asdict())
-            logger.trace(f"Created new conversation document!")
+        await self.__save()
 
     async def __init_character(self):
         """Initialize the character for this conversation."""
@@ -84,6 +82,19 @@ class BaseActivity(ABC, BaseModel):
         logger.trace(f"Selected voice: {voice}")
         self.__character = Character(voice)
         logger.trace(f"Character created: {self.__character}")
+
+    async def __save(self):
+        """Save the transcript to Firestore."""
+        if self.__cid:
+            doc_ref = transcript_col.document(self.__cid)
+        else:
+            doc_ref = transcript_col.document()
+            self.__cid = doc_ref.id
+        with logger.contextualize(cid=self.__cid):
+            logger.trace(f"Creating new conversation document in Firebase...")
+            result = await doc_ref.set(self.__transcript.asdict())
+            logger.trace(f"Created new conversation document!")
+
 
 
 class Unstructured(BaseActivity):

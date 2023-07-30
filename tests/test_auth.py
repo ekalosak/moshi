@@ -22,46 +22,17 @@ from moshi.api.core import app
 #     authorized = await auth.is_email_authorized(em)
 #     assert authorized
 
-@pytest.fixture
-def email():
-    return "test@test.test"
-
-@pytest.fixture
-def password():
-    return "testtest"
-
-@pytest.fixture
-def url():
-    """emulator auth service url"""
-    return "http://localhost:9099/identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=dne"
-
 @pytest.mark.asyncio
 @pytest.mark.gcloud
-async def test_api_auth(email, password, url):
+async def test_api_auth(auth_token):
     """Tests Firebase Auth middleware."""
     client = TestClient(app)
-    # unauthenticated request against healthz should be ok
     response = client.get("/healthz")
     assert response.status_code == 200
-    # unauthenticated request against version should fail
     response = client.get("/version")
     assert response.status_code == 403
-    # bad auth token should fail
-    auth_token = "badtoken"
-    response = client.get("/version", headers={"Authorization": f"Bearer {auth_token}"})
+    response = client.get("/version", headers={"Authorization": f"Bearer badtoken"})
     assert response.status_code == 401
-    # get test token
-    data = {
-        "email": email,
-        "password": password,
-        "returnSecureToken": True
-    }
-    response = requests.post(url, json=data)
-    assert response.status_code == 200, "Add test user to authorized_users collection in Firestore."
-    auth_token = response.json()["idToken"]
-    print()
-    print(auth_token)
-    print()
     response = client.get("/version", headers={"Authorization": f"Bearer {auth_token}"})
     print(response.json())
     assert response.status_code == 200

@@ -6,9 +6,11 @@ import uuid
 import warnings
 
 from google.cloud import logging
+import loguru
 from loguru import logger
 from loguru._defaults import LOGURU_FORMAT
 
+LOG_LEVEL = os.getenv("MLOGLEVEL", "TRACE")
 FILE_LOGS = int(os.getenv("MOSHILOGDISK", 0))
 STDOUT_LOGS = int(os.getenv("MOSHILOGSTDOUT", 1))
 CLOUD_LOGS = int(os.getenv("MOSHILOGCLOUD", 0))
@@ -64,14 +66,14 @@ def setup_loguru():
     if STDOUT_LOGS:
         logger.add(
             sink=sys.stderr,
-            level="DEBUG",
+            level=LOG_LEVEL,
             format=log_format,
             colorize=True,
         )
     if FILE_LOGS:
         logger.add(
             "logs/server.log",
-            level="DEBUG",
+            level=LOG_LEVEL,
             format=log_format,
             rotation="10 MB",
         )
@@ -86,7 +88,7 @@ def setup_loguru():
 
         logger.add(
             log_to_gcp,
-            level="DEBUG",
+            level=LOG_LEVEL,
             format="{message}",
         )
 

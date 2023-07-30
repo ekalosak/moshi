@@ -1,6 +1,6 @@
 """Contains Firebase HTTP auth middleware."""
 import asyncio
-import contextvars
+from contextvars import ContextVar
 import os
 
 import firebase_admin
@@ -10,10 +10,13 @@ from firebase_admin import auth as fauth
 from google import auth as gauth
 from google.auth.transport.requests import Request
 from loguru import logger
+from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 
 from moshi.utils import storage, GOOGLE_PROJECT
 
-gcreds = contextvars.ContextVar('gcreds')
+
+vuid = ContextVar('vuid')
+gcreds = ContextVar('gcreds')
 
 firebase_app = firebase_admin.initialize_app()
 logger.info(f"Firebase authentication initialized: {firebase_app.project_id}")
@@ -21,6 +24,35 @@ assert GOOGLE_PROJECT == firebase_app.project_id, f"Initialized auth for unexpec
 
 security = HTTPBearer()
 logger.success("Loaded!")
+
+class AuthMiddleware(BaseHTTPMiddleware):
+    async def dispatch(
+        self, request: Request, call_next: RequestResponseEndpoint
+    ):
+        token = request.headers.get("Authorization", "").split(" ")[-1]
+        try:
+            decoded_token = await asyncio.to_thread(
+                fauth.verify_id_token,
+                token,
+            )
+        except fauth.InvalidIdTokenError:
+            logger.trace("Invalid authentication token")
+            raise HTTPException(status_code=401, detail="Invalid authentication token")
+        except fauth.ExpiredIdTokenError:
+            logger.trace("Expired authentication token")
+            raise HTTPException(status_code=401, detail="Expired authentication token")
+
+        decoded_token['name'] = decoded_token.get('name', 'Unnamed')
+        with logger.contextualize(
+            uid=decoded_token['uid'],
+            email=decoded_token['email'],
+        ):
+            token = vuid.set(decoded_token['uid'])
+            try:
+                logger.trace("User authenticated")
+                yield decoded_token
+            finally:
+                vuid.reset(token)
 
 async def firebase_auth(credentials: HTTPAuthorizationCredentials = Depends(security)) -> dict:
     """Middleware to check Firebase authentication in headers.
@@ -36,20 +68,23 @@ async def firebase_auth(credentials: HTTPAuthorizationCredentials = Depends(secu
             token,
         )
     except fauth.InvalidIdTokenError:
-        logger.debug("Invalid authentication token")
+        logger.trace("Invalid authentication token")
         raise HTTPException(status_code=401, detail="Invalid authentication token")
     except fauth.ExpiredIdTokenError:
-        logger.debug("Expired authentication token")
+        logger.trace("Expired authentication token")
         raise HTTPException(status_code=401, detail="Expired authentication token")
 
     decoded_token['name'] = decoded_token.get('name', 'Unnamed')
     with logger.contextualize(
         uid=decoded_token['uid'],
-        uname=decoded_token['name'],
-        uemail=decoded_token['email'],
+        email=decoded_token['email'],
     ):
-        logger.debug("User authenticated")
-        yield decoded_token
+        token = vuid.set(decoded_token['uid'])
+        try:
+            logger.trace("User authenticated")
+            yield decoded_token
+        finally:
+            vuid.reset(token)
 
 
 async def is_email_authorized(email: str) -> bool:

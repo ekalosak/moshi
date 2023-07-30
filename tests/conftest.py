@@ -5,6 +5,7 @@ import os
 from pathlib import Path
 from typing import Callable
 
+import requests
 import av
 import pytest
 from aiortc import MediaStreamTrack
@@ -146,3 +147,29 @@ def Sink() -> "Sink":
 def status_fn() -> Callable[str, None]:
     fn = lambda x: print(f"Status: {x}")
     return fn
+
+
+"""These fixtures are for testing the auth middleware."""""
+@pytest.fixture
+def email():
+    return "test@test.test"
+
+@pytest.fixture
+def password():
+    return "testtest"
+
+@pytest.fixture
+def url():
+    """emulator auth service url"""
+    return "http://localhost:9099/identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=dne"
+
+@pytest.fixture
+def auth_token(email, password, url):
+    data = {
+        "email": email,
+        "password": password,
+        "returnSecureToken": True
+    }
+    response = requests.post(url, json=data)
+    assert response.status_code == 200, "Add test user to authorized_users collection in Firestore."
+    return response.json()["idToken"]

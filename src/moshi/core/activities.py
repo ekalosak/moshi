@@ -1,18 +1,27 @@
 """Create initial prompt for a an unstructured conversation."""
 from abc import ABC, abstractmethod
 from enum import Enum
+from typing import Annotated, Literal, Union
 
 from moshi.core.base import Conversation, Message, Role
+from pydantic import BaseModel, Field
 
-class Activity(ABC):
+class ActivityType(str, Enum):
+    UNSTRUCTURED = "unstructured"
+
+class BaseActivity(ABC, BaseModel):
+    """An activity is a conversation factory."""
+    activity_type: ActivityType
     @abstractmethod
     def _init_messages(self) -> list[Message]:
         ...
-    def new_conversation(self, uid: str, kind: str) -> Conversation:
+    def new_conversation(self, uid: str) -> Conversation:
+        kind = self.__class__.__name__
         msgs = self._init_messages()
         return Conversation(messages=msgs, uid=uid, kind=kind)
 
-class Unstructured(Activity):
+class Unstructured(BaseActivity):
+    activity_type: Literal[ActivityType.UNSTRUCTURED] = ActivityType.UNSTRUCTURED
     def _init_messages(self) -> list[Message]:
         messages = [
             Message(
@@ -30,20 +39,4 @@ class Unstructured(Activity):
         ]
         return messages
 
-class ConversationKind(str, Enum):
-    UNSTR = "unstructured"
-
-activity_map = {
-    'unstructured': Unstructured,
-}
-
-def new(kind: ConversationKind, uid: str) -> Conversation:
-    """Initialize a conversation.
-    Raises:
-        - ValueError if the <kind> isn't supported.
-    """
-    Act = activity_map.get(kind)
-    if Act is None:
-        raise ValueError(f"Invalid activity kind: {kind}\n\tMust be one of {list(acts.keys())}.")
-    act = Act()
-    return act.new_conversation(uid, kind)
+Activity = Annotated[Union[Unstructured, Unstructured], Field(discriminator="activity_type")]

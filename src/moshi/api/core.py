@@ -1,3 +1,4 @@
+from contextvars import ContextVar
 from enum import Enum
 from pprint import pprint
 
@@ -11,10 +12,10 @@ from starlette.responses import Response
 
 from moshi import __version__ as moshi_version
 from moshi.core import activities
-from moshi.core.activities import ConversationKind
+from moshi.core.activities import ActivityType
 from moshi.utils.storage import firestore_client
 from moshi.utils.log import setup_loguru
-from .auth import firebase_auth
+from .auth import firebase_auth, AuthMiddleware
 from .routes import offer
 
 app = FastAPI()
@@ -41,9 +42,12 @@ class LogRequestMiddleware(BaseHTTPMiddleware):
     ) -> Response:
         user_agent = request.headers.get("User-Agent", "Unknown agent")
         pprint(dict(request))  # TODO security problem to print tokens
-        logger.debug(f"{request.method} from '{user_agent}' to {request.url}")
+        logger.trace(f"{request.method} from '{user_agent}' to {request.url}")
         response = await call_next(request)
         return response
+
+app.add_middleware(LogRequestMiddleware)
+# app.add_middleware(AuthMiddleware)
 
 # Configure CORS
 #   NOTE must be last middleware added.
@@ -56,8 +60,6 @@ app.add_middleware(
 )
 logger.warning("Using permissive CORS for development. In production, only allow requests from known origins.")
 
-app.add_middleware(LogRequestMiddleware)
-
 @app.get("/healthz")
 def healthz():
     return "OK"
@@ -67,15 +69,19 @@ def version(user: dict = Depends(firebase_auth)):
     print(user)
     return moshi_version
 
-@app.get("/m/new/{kind}")
-async def new_conversation(kind: ConversationKind, user: dict = Depends(firebase_auth)):
+@app.post("/m/new/")
+async def new_conversation(activity_type: ActivityType, user: dict = Depends(firebase_auth)):
+    """Create a new conversation in the database."""
     uid = user['uid']
     collection_ref = firestore_client.collection("conversations")
-    convo = activities.new(kind=kind, uid=uid)
+    act = activities.Activity(activity_type=activity_type)
+    logger.trace(f"Created activity: {act}")
+    convo = act.new_conversation()
+    logger.trace(f"Created conversation: {convo}")
     doc_ref = collection_ref.document()
     cid = doc_ref.id
     with logger.contextualize(cid=cid):
-        logger.trace(f"Creating conversation...")
+        logger.trace(f"Creating new conversation document in Firebase...")
         result = await doc_ref.set(convo.asdict())
         logger.trace(f"Created new conversation document!")
     return {

@@ -16,10 +16,10 @@ from moshi import (
     utils,
 )
 from moshi.core import activities
+from moshi.utils import think
 from . import (
     detector,
     responder,
-    think,
 )
 
 MAX_RESPONSE_TOKENS = 64
@@ -153,11 +153,11 @@ class WebRTCAdapter:
                 logger.info("User hung up (disconnect).")
                 break
             except Exception as e:
-                logger.error(e)
+                logger.exception(e)
                 self._send_error("internal")
                 break
         await self.stop()
-        util.splash("bye")
+        utils.log.splash("bye")
 
     async def __main(self):
         """Run one loop of the main program.
@@ -172,7 +172,7 @@ class WebRTCAdapter:
             usr_audio: AudioFrame = await self.detector.get_utterance()
         except detector.UtteranceTooLongError as e:
             logger.debug("Utterance too long, prompting user to try again.")
-            await self._send_error("utttoolong")
+            self._send_error("utttoolong")
             return
         except asyncio.TimeoutError as e:
             if self.__utt_start_count == UTT_START_MAX_COUNT:
@@ -201,13 +201,13 @@ class WebRTCAdapter:
             logger.warning("Got empty assistant response")
             raise UserResetError("empty assistant response")
 
-    async def __add_message(self, content: str, role: Role) -> Message:
+    def __add_message(self, content: str, role: Role) -> Message:
         assert isinstance(content, str)
         if not isinstance(role, Role):
             role = Role(role)
         msg = Message(role=role, content=content)
         logger.debug(f"Adding message: {msg}")
-        await self.act.add_msg(msg)
+        self.act.add_msg(msg)
         return msg
 
     async def __synth_speech(self, text: str = None) -> AudioFrame:

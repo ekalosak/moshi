@@ -3,7 +3,6 @@ tracks.
 """
 import asyncio
 import time
-from typing import Callable
 
 from aiortc import MediaStreamTrack
 from aiortc.mediastreams import MediaStreamError
@@ -56,7 +55,7 @@ class UtteranceDetector:
             self.__track.recv(),
             timeout=UTT_START_TIMEOUT_SEC,
         )
-        logger.debug("Utterance started")
+        logger.debug(f"Utterance started, first frame: {first_frame}")
         self.__fifo.write(first_frame)
         utt_sec = 0.0
         while 1:
@@ -68,6 +67,9 @@ class UtteranceDetector:
             except asyncio.TimeoutError as e:
                 logger.debug("Utterance ended")
                 break
+            except MediaStreamError:
+                logger.error("User hung up")
+                raise
             self.__fifo.write(frame)
             utt_sec += audio.get_frame_seconds(frame)
             if utt_sec > UTT_MAX_LEN_SEC:

@@ -1,5 +1,5 @@
 import asyncio
-import contextvars
+import io
 import os
 import textwrap
 
@@ -61,7 +61,6 @@ async def _synthesize_speech_bytes(text: str, voice: Voice, rate: int = 24000) -
     logger.debug(
         f"Requesting speech synthesis: synthesis_input={synthesis_input}, voice_selector={voice_selector}, audio_config={audio_config}"
     )
-    client = _get_client()
     request = dict(
         input=synthesis_input,
         voice=voice_selector,
@@ -86,10 +85,11 @@ async def synthesize_speech(text: str, voice: Voice, rate: int = 24000) -> Audio
 
 
 async def transcribe(audio_frame: AudioFrame, language: str = None) -> str:
-    buf = audio.af2wavbytes(audio_frame)
+    b = audio.af2wavbytes(audio_frame)
+    buf = io.BytesIO(b)
+    buf.name = "utterance.wav"
     transcript = await asyncio.wait_for(
         openai.Audio.atranscribe(OPENAI_TRANSCRIPTION_MODEL, buf, language=language),
         timeout=5,
     )
-    logger.log("TRANSCRIPT", transcript)
     return transcript["text"]

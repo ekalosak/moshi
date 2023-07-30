@@ -22,11 +22,29 @@ logging.getLogger("asyncio").setLevel(logging.CRITICAL)
 
 util.setup_loguru()
 
+class FileTrack(MediaStreamTrack):
+    """A track that plays a file, then waits for ever on next recv() - rather
+    than hanging up with MediaStreamError."""
+    kind = "audio"
+
+    def __init__(self, file: str):
+        super().__init__()
+        print(file)
+        self.file = file
+        self.framegen = av.open(str(self.file)).decode()
+
+    async def recv(self) -> AudioFrame:
+        try:
+            frame = next(self.framegen)
+        except StopIteration:
+            print("FileTrack: end of file reached, waiting forever...")
+            await asyncio.sleep(1e6)
+        return frame
+
 
 @pytest.fixture(autouse=True)
 def _print_blank_line():
     print()
-
 
 @pytest.fixture
 def utterance_wav_file() -> Path:
@@ -49,13 +67,14 @@ def short_audio_frame(short_wav_file) -> AudioFrame:
     frame = AudioResampler(rate=SAMPLE_RATE).resample(frame)[0]
     return frame
 
-
 @pytest.fixture
 def short_audio_track(short_wav_file) -> MediaStreamTrack:
     """A track that plays a short audio file."""
-    player = media.MediaPlayer(file=str(short_wav_file))
-    yield player.audio
-    player._stop(player.audio)
+    track = FileTrack(short_wav_file)
+    try:
+        yield track
+    finally:
+        track.stop()
 
 
 @pytest.fixture
@@ -63,7 +82,6 @@ def utterance_audio_track(utterance_wav_file) -> MediaStreamTrack:
     """A track that plays an utterance."""
     player = media.MediaPlayer(
         file=str(utterance_wav_file),
-        loop=True,
     )
     yield player.audio
     player._stop(player.audio)
@@ -115,29 +133,21 @@ def Sink() -> "Sink":
             self.__task.cancel(f"{self.__class__.__name__}.stop() called")
             self.__task = None
 
-        @logger.catch
+        # @logger.catch
         async def _mainloop(self):
             self.stream_ended.clear()
-            logger.debug("Starting mainloop")
+            print("Starting mainloop")
             for i in itertools.count():
-                logger.trace(f"starting loop i={i}")
+                print(f"starting loop i={i}")
                 try:
-                    logger.trace("getting frame")
+                    # frame = await asyncio.wait_for(self.__track.recv(), timeout=0.5)
                     frame = await self.__track.recv()
-                    logger.trace(f"got frame: {frame}")
                 except MediaStreamError:
+                    print("MediaStreamError")
                     break
-                try:
-                    logger.trace("writing frame to sink")
-                    self.fifo.write(frame)  # this is the sink
-                    logger.trace("wrote frame to sink")
-                except ValueError as e:
-                    logger.error(e)
-                    logger.debug(frame)
-                    logger.debug(self.fifo)
-                    raise
-                logger.trace(f"finished loop i={i}")
-            logger.debug("Ending mainloop")
+                self.fifo.write(frame)  # this is the sink
+                print(f"finished loop i={i}")
+            print("Ending mainloop")
             self.stream_ended.set()
 
     return Sink

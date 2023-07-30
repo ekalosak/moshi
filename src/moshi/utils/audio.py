@@ -22,7 +22,6 @@ def track_str(track: MediaStreamTrack) -> str:
     return f"{track.readyState}:{track.kind}:{track.id}"
 
 
-@logger.catch
 def make_resampler():
     return AudioResampler(
         format=AUDIO_FORMAT,

@@ -13,17 +13,17 @@ from moshi import (
     Message,
     Model,
     Role,
-    WebRTCChatter,
     audio,
 )
+from moshi.call.webrtc import WebRTCAdapter
 
 DUMMY_AST_TEXT = "ast test"
 DUMMY_USR_TEXT = "usr test"
 
 
-def test_chatter_init():
-    chatter = WebRTCChatter()
-
+@pytest.fixture
+def adapter():
+    return WebRTCAdapter("unstructured")
 
 async def dummy_response(*a, **k):
     return [DUMMY_AST_TEXT]
@@ -52,19 +52,16 @@ async def dummy_transcribe(*a, **k) -> str:
 
 
 @pytest.mark.asyncio
-async def test_chatter_disconnect_bug_15(utterance_audio_track, Sink):
+async def test_adapter_disconnect_bug_15(utterance_audio_track, Sink, adapter):
     """test that, when the user disconnects (i.e. detector gets a MediaStreamError), Moshi fails forward nicely."""
-    chatter = WebRTCChatter()
-    chatter.detector.setTrack(utterance_audio_track)  # 8s speak, 13s tot
-    sink = Sink(chatter.responder.audio)
-    # breakpoint()  # TODO how to interrupt utterance_audio i.e. make it raise MediaStreamError? i.e. hangup?
-    # a=1
-    print("chatter and sink initialized, starting them now...")
-    await asyncio.gather(chatter.start(), sink.start())
-    print("chatter and sink started")
+    adapter.detector.setTrack(utterance_audio_track)  # 8s speak, 13s tot
+    sink = Sink(adapter.responder.audio)
+    print("adapter and sink initialized, starting them now...")
+    await asyncio.gather(adapter.start(), sink.start())
+    print("adapter and sink started")
     await asyncio.sleep(2)
     print("spoofing 'datachannels connected' signal")
-    chatter._WebRTCChatter__all_connected.set()
+    adapter._WebRTCAdapter__all_connected.set()
     await asyncio.sleep(3)
     print("interrupting detector track")
     utterance_audio_track.stop()
@@ -78,46 +75,45 @@ async def test_chatter_disconnect_bug_15(utterance_audio_track, Sink):
 @mock.patch("moshi.core.speech.get_voice", dummy_get_voice)
 @mock.patch("moshi.core.speech.transcribe", dummy_transcribe)
 @mock.patch("moshi.core.think.completion_from_assistant", dummy_response)
-async def test_chatter_aiortc_components(
-    utterance_audio_track, short_audio_frame, Sink
+async def test_adapter_aiortc_components(
+    utterance_audio_track, short_audio_frame, Sink, adapter,
 ):
-    """Test that the chatter detects the utterance and responds.
-    The chatter is initialized here in the order it is in main.py.
+    """Test that the adapter detects the utterance and responds.
+    The adapter is initialized here in the order it is in main.py.
     It uses tracks as source and sink, but no network - this just assumes we can at least get PeerConnections and audio
     tracks set up in the WebRTC framework. This test does _not_ test the transcription, synthesis, or chat
     functionality.
     """
     sleep = 20.0
     print(
-        "initializing chatter and sink (as dummy client); source is utterance_audio_track"
+        "initializing adapter and sink (as dummy client); source is utterance_audio_track"
     )
-    chatter = WebRTCChatter()
-    chatter.detector.setTrack(utterance_audio_track)
-    sink = Sink(chatter.responder.audio)
-    # TODO chatter.responder._ResponsePlayer__throttle_playback = dummy
+    adapter.detector.setTrack(utterance_audio_track)
+    sink = Sink(adapter.responder.audio)
+    # TODO adapter.responder._ResponsePlayer__throttle_playback = dummy
     with mock.patch(
-        "moshi.core.WebRTCChatter._WebRTCChatter__synth_speech",
+        "moshi.core.WebRTCAdapter._WebRTCAdapter__synth_speech",
         dummy_speech(short_audio_frame),
     ):
-        print("chatter and sink initialized, starting them now...")
-        await asyncio.gather(chatter.start(), sink.start())
-        print("chatter and sink started")
+        print("adapter and sink initialized, starting them now...")
+        await asyncio.gather(adapter.start(), sink.start())
+        print("adapter and sink started")
         await asyncio.sleep(2)
         print("spoofing 'datachannels connected' signal")
-        chatter._WebRTCChatter__all_connected.set()
+        adapter._WebRTCAdapter__all_connected.set()
         print(f"sleeping {sleep}")
         await asyncio.sleep(sleep)  # sec
-    chat_task = chatter._WebRTCChatter__task
-    print(f"chatter.__task: {chat_task}")
-    print("stopping chatter and sink")
-    await asyncio.gather(chatter.stop(), sink.stop())
+    chat_task = adapter._WebRTCAdapter__task
+    print(f"adapter.__task: {chat_task}")
+    print("stopping adapter and sink")
+    await asyncio.gather(adapter.stop(), sink.stop())
     print("stopped!")
-    utframe = chatter.detector._UtteranceDetector__utterance
+    utframe = adapter.detector._UtteranceDetector__utterance
     ut_sec = audio.get_frame_seconds(utframe)
     assert 8.2 <= ut_sec <= 9.0, "Utterance detection degraded"  # 8.56 sec nominally
     # Check the messages
-    assert chatter.messages[-2] == Message(Role.USR, DUMMY_USR_TEXT)
-    assert chatter.messages[-1] == Message(Role.AST, DUMMY_AST_TEXT)
+    assert adapter.messages[-2] == Message(Role.USR, DUMMY_USR_TEXT)
+    assert adapter.messages[-1] == Message(Role.AST, DUMMY_AST_TEXT)
     # Check convolution of utterance with the sink
     res = audio.make_resampler()
     _ut = res.resample(utframe)
@@ -153,20 +149,17 @@ async def test_chatter_aiortc_components(
 @pytest.mark.slow
 @pytest.mark.asyncio
 @pytest.mark.openai
-@mock.patch("moshi.think.OPENAI_COMPLETION_MODEL", Model.TEXTADA001)
-async def test_chatter_happy_path(utterance_audio_track, Sink):
+@mock.patch("moshi.utils.think.OPENAI_COMPLETION_MODEL", Model.TEXTADA001)
+async def test_adapter_happy_path(short_audio_track, Sink, adapter):
     """Check the full integration."""
     timeout = 30.0
-    chatter = WebRTCChatter()
-    chatter.detector.setTrack(utterance_audio_track)
-    sink = Sink(chatter.responder.audio)
-    await asyncio.gather(chatter.detector.start(), sink.start())
-    try:
-        done, pending = await asyncio.wait(
-            [chatter._WebRTCChatter__main()], timeout=timeout
-        )
-    finally:
-        await asyncio.gather(chatter.detector.stop(), sink.stop())
+    adapter.detector.setTrack(short_audio_track)
+    sink = Sink(adapter.responder.audio)
+    await sink.start()
+    done, pending = await asyncio.wait(
+        [adapter._WebRTCAdapter__main()], timeout=timeout
+    )
+    await sink.stop()
     if done:
         task = done.pop()
         if task.exception() is not None:
@@ -187,5 +180,5 @@ async def test_chatter_happy_path(utterance_audio_track, Sink):
         raise asyncio.TimeoutError(
             f"The main task={task} timed out after timeout={timeout} seconds"
         )
-    assert chatter.messages[-2].role == Role.USR
-    assert chatter.messages[-1].role == Role.AST
+    assert adapter.messages[-2].role == Role.USR
+    assert adapter.messages[-1].role == Role.AST

@@ -26,8 +26,6 @@ def _gcp_log_severity_map(level: str) -> str:
     match level:
         case "SUCCESS":
             return "INFO"
-        case "INSTRUCTION":
-            return "DEBUG"
         case _:
             return level
 
@@ -62,7 +60,6 @@ def _to_log_dict(rec: dict) -> dict:
 def setup_loguru():
     logger.remove()
     log_format = LOGURU_FORMAT + " | <g><d>{extra}</d></g>"
-    logger.level("TRANSCRIPT", no=15, color="<magenta>", icon="📜")
     if STDOUT_LOGS:
         logger.add(
             sink=sys.stderr,

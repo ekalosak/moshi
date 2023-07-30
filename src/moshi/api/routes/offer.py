@@ -51,7 +51,7 @@ async def new_call(
     pcs.add(pc)
     logger.trace(f"offer: {offer}")
     logger.trace(f"session description: {desc}")
-    logger.trace(f"created peer connection: {pc.id}")
+    logger.trace(f"created peer connection: {pc}")
 
     @pc.on("datachannel")
     def on_datachannel(dc: RTCDataChannel):

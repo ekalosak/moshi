@@ -59,6 +59,7 @@ Homepage = "https://github.com/ekalosak/moshi/tree/main"
 Repository = "https://github.com/ekalosak/moshi.git"
 
 [tool.pytest.ini_options]
+asyncio_mode = "auto"
 markers = [
   "slow: runs more than a second or two to run",
   "openai: access to the _paid_ OpenAI APIs",

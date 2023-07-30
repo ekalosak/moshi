@@ -8,7 +8,7 @@ from typing import Annotated, Literal, Union
 from loguru import logger
 from pydantic import BaseModel, Field
 
-from .base import Message, Role, Profile
+from .base import Message, Role
 from .character import Character
 from moshi.utils.storage import firestore_client
 from moshi.utils import speech, ctx
@@ -17,7 +17,7 @@ from moshi.utils import speech, ctx
 class Transcript:
     activity_type: str
     messages: list[Message]
-    uid: str  # user id from FBA
+    uid: str  # user id from FBA, required to index transcripts in db
     timestamp: datetime.datetime = None
 
     def asdict(self) -> dict:
@@ -33,14 +33,9 @@ class ActivityType(str, Enum):
 class BaseActivity(ABC, BaseModel):
     """An Activity provides a prompt for a conversation and the database wrapper."""
     activity_type: ActivityType
-    __profile: Profile
     __transcript: Transcript = None
     __cid: str = None
     __character: Character = None
-
-    def __init__(self, **data):
-        self.__profile = ctx.profile.get()
-        super().__init__(**data)
 
     @abstractmethod
     def _init_messages(self) -> list[Message]:
@@ -57,7 +52,6 @@ class BaseActivity(ABC, BaseModel):
 
     @property
     def lang(self):
-        assert self.__character.language == self.user.language
         return self.__character.language
 
 
@@ -67,17 +61,17 @@ class BaseActivity(ABC, BaseModel):
 
     async def __init_transcript(self):
         """Create the Firestore artifacts for this conversation."""
-        collection_ref = firestore_client.collection("transcripts")
         act = Activity(activity_type=self.activity_type.value)
         logger.trace(f"Created activity: {act}")
-        doc_ref = collection_ref.document()
-        self.__cid = doc_ref.id
         self.__transcript = Transcript(
             activity_type=self.activity_type,
-            uid=self.uid,
+            uid=ctx.user.get().uid,
             messages=self._init_messages(),
         )
         logger.trace(f"Created conversation: {self.__transcript}")
+        collection_ref = firestore_client.collection("transcripts")
+        doc_ref = collection_ref.document()
+        self.__cid = doc_ref.id
         with logger.contextualize(cid=self.__cid):
             logger.trace(f"Creating new conversation document in Firebase...")
             result = await doc_ref.set(self.__transcript.asdict())
@@ -85,11 +79,11 @@ class BaseActivity(ABC, BaseModel):
 
     async def __init_character(self):
         """Initialize the character for this conversation."""
-        self.logger.trace(f"Creating character...")
-        voice = await speech.get_voice(self.user.lang)
-        self.logger.trace(f"Selected voice: {voice}")
-        self.character = Character(voice)
-        self.logger.trace(f"Character created: {self.character}")
+        logger.trace(f"Creating character...")
+        voice = await speech.get_voice(ctx.profile.get().lang)
+        logger.trace(f"Selected voice: {voice}")
+        self.__character = Character(voice)
+        logger.trace(f"Character created: {self.__character}")
 
 
 class Unstructured(BaseActivity):

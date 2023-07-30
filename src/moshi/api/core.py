@@ -10,7 +10,7 @@ from starlette.responses import Response
 
 from moshi import __version__ as moshi_version
 from moshi.utils.log import setup_loguru
-from .auth import firebase_auth, AuthMiddleware
+from .auth import firebase_auth
 from .routes import offer
 
 app = FastAPI()

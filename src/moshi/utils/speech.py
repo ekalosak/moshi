@@ -80,15 +80,16 @@ async def _synthesize_speech_bytes(text: str, voice: Voice, rate: int = 24000) -
 async def synthesize_speech(text: str, voice: Voice, rate: int = 24000) -> AudioFrame:
     audio_bytes = await _synthesize_speech_bytes(text, voice, rate)
     assert isinstance(audio_bytes, bytes)
-    audio_frame = audio.wav_bytes_to_audio_frame(audio_bytes)
+    audio_frame = audio.wavbytes2af(audio_bytes)
     assert isinstance(audio_frame, AudioFrame)
     return audio_frame
 
 
 async def transcribe(audio_frame: AudioFrame, language: str = None) -> str:
-    # audio.write_audio_frame_to_wav(audio_frame, fp)
-    buf = audio.audio_frame_to_wav_bytes(audio_frame)  # TODO implement without write to tmp
-    # TODO timeout
-    transcript = await openai.Audio.atranscribe(OPENAI_TRANSCRIPTION_MODEL, buf, language=language)
+    buf = audio.af2wavbytes(audio_frame)
+    transcript = await asyncio.wait_for(
+        openai.Audio.atranscribe(OPENAI_TRANSCRIPTION_MODEL, buf, language=language),
+        timeout=5,
+    )
     logger.log("TRANSCRIPT", transcript)
     return transcript["text"]

@@ -2,7 +2,6 @@
 import os
 import tempfile
 
-import av
 import numpy as np
 from aiortc.mediastreams import MediaStreamTrack
 from av import AudioFifo, AudioFormat, AudioFrame, AudioLayout, AudioResampler
@@ -70,7 +69,7 @@ def empty_frame(
     frame.pts = pts
     return frame
 
-def af2bytes(af: AudioFrame) -> bytes:
+def af2wavbytes(af: AudioFrame) -> bytes:
     """Convert an AudioFrame to a bytestring in WAV format."""
     if af.format.name != AUDIO_FORMAT:
         logger.warning(f"AudioFrame format {af.format.name} != {AUDIO_FORMAT}")
@@ -80,39 +79,12 @@ def af2bytes(af: AudioFrame) -> bytes:
         logger.warning(f"AudioFrame rate {af.rate} != {SAMPLE_RATE}")
     return af.to_ndarray().tobytes()
 
-def write_audio_frame_to_wav(frame: AudioFrame, output_file):
-    # Source: https://stackoverflow.com/a/56307655/5298555
-    with av.open(output_file, "w") as container:
-        stream = container.add_stream("pcm_s16le")
-        for packet in stream.encode(frame):
-            container.mux(packet)
-        for packet in stream.encode(None):
-            container.mux(packet)
-    logger.debug(f"Wrote audio in WAV (pcm_s16le) format to {output_file}")
-
-
-def write_bytes_to_wav_file(filename: str, bytestring: bytes):
-    with open(filename, "wb") as f:
-        f.write(bytestring)
-
-
-def load_wav_to_buffer(fp: str) -> AudioFifo:
-    if not isinstance(fp, str):
-        raise TypeError(f"fp must be str, not {type(fp)}, due to av.open()")
-    with av.open(fp, "r") as container:
-        fifo = AudioFifo()
-        for frame in container.decode(audio=0):
-            fifo.write(frame)
-    return fifo
-
-
-def load_wav_to_audio_frame(fp: str) -> AudioFrame:
-    frame = load_wav_to_buffer(fp).read()
-    res = make_resampler()
-    return res.resample(frame)[0]
-
-
-def wav_bytes_to_audio_frame(wav: bytes) -> AudioFrame:
-    _, fp = tempfile.mkstemp()
-    write_bytes_to_wav_file(fp, wav)
-    return load_wav_to_audio_frame(fp)
+def wavbytes2af(b: bytes) -> AudioFrame:
+    """Convert a bytestring in WAV format to an AudioFrame."""
+    af = AudioFrame.from_ndarray(
+        np.atleast_2d(np.frombuffer(b, dtype=np.int16)),
+        format=AUDIO_FORMAT,
+        layout=AUDIO_LAYOUT,
+    )
+    af.rate = SAMPLE_RATE
+    return af

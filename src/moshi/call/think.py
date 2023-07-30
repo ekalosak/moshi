@@ -1,7 +1,6 @@
 """ This module abstracts specific chatbot implementations for use in the ChitChat app. """
 import os
 import re
-import textwrap
 from dataclasses import asdict
 from enum import Enum
 from pprint import pformat
@@ -11,7 +10,7 @@ import openai
 from loguru import logger
 
 from moshi import Message, Model, ModelType, Role
-from moshi.core import secrets
+from moshi.utils import secrets
 
 OPENAI_COMPLETION_MODEL = Model(
     os.getenv("OPENAI_COMPLETION_MODEL", "text-davinci-002")

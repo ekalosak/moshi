@@ -1,3 +1,4 @@
+# Filter users by the table authorized_users in Firestore.
 import contextvars
 
 from google.cloud import firestore

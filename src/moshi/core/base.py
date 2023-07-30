@@ -4,15 +4,16 @@ from dataclasses import dataclass
 from enum import Enum
 
 @dataclass
+class User:
+    uid: str
+    email: str
+
+@dataclass
 class Profile:
     uid: str
     lang: str
     name: str
-
-@dataclass
-class User:
-    uid: str
-    email: str
+    primary_lang: str
 
 class Role(str, Enum):
     SYS = "sys"

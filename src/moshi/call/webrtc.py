@@ -16,8 +16,6 @@ from moshi import (
     utils,
 )
 from moshi.core import activities
-from moshi.core.base import Profile
-from moshi.utils import ctx
 from . import (
     detector,
     responder,
@@ -34,8 +32,6 @@ logger.success("Loaded!")
 
 class WebRTCAdapter:
     """This adapter connects WebRTC audio and signalling to the activity.
-    Raises:
-        - LookupError when no profile is found for the user.
     """
 
     def __init__(self, activity_type: activities.ActivityType):
@@ -43,9 +39,7 @@ class WebRTCAdapter:
         self.__dc_connected = asyncio.Event()
         self.__task = None
         self.__utt_start_count = 0
-        self.__user = ctx.user.get()
-        self.__profile = ctx.profile.get()
-        self.act = activities.Activity(activity_type)
+        self.act = activities.Activity(activity_type=activity_type)
         self.detector = detector.UtteranceDetector()  # get_utterance: track -> AudioFrame
         self.responder = responder.ResponsePlayer()  # play_response: AudioFrame -> track
 

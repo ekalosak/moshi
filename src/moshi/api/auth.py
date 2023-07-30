@@ -69,7 +69,7 @@ async def user_profile(user: User = Depends(firebase_auth)) -> Profile:
         raise HTTPException(status_code=400, detail="User has no profile")
     with logger.contextualize(
         name = profile.name,
-        lang = profile.language,
+        lang = profile.lang,
     ):
         token = ctx.profile.set(profile)
         try:

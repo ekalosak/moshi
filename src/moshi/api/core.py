@@ -35,7 +35,7 @@ class LogRequestMiddleware(BaseHTTPMiddleware):
         self, request: Request, call_next: RequestResponseEndpoint
     ) -> Response:
         user_agent = request.headers.get("User-Agent", "Unknown agent")
-        pprint(dict(request))  # TODO security problem to print tokens
+        # pprint(dict(request))  # TODO security problem to print tokens
         logger.trace(f"{request.method} from '{user_agent}' to {request.url}")
         response = await call_next(request)
         return response
@@ -62,7 +62,17 @@ def healthz():
 
 @app.get("/version")
 def version(user: dict = Depends(firebase_auth)):
-    print(user)
     return moshi_version
+
+# from pydantic import BaseModel
+# class Msg(BaseModel):
+#     msg: str
+
+# @app.post("/ping")
+# def ping(msg: Msg, user: dict = Depends(firebase_auth)):
+#     if msg.msg == "ping":
+#         return "pong"
+#     else:
+#         return "ping"
 
 app.include_router(offer.router)

@@ -1,7 +1,6 @@
 import asyncio
-import functools
 import os
-import uuid
+from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from aiortc import RTCPeerConnection, RTCSessionDescription, RTCDataChannel
@@ -10,7 +9,7 @@ from pydantic import BaseModel, validator
 
 from moshi.core.activities import ActivityType
 from moshi.core.base import User
-from moshi.api.auth import firebase_auth, user_profile
+from moshi.api.auth import user_profile
 from moshi.call import WebRTCAdapter
 
 pcs = set()
@@ -30,13 +29,8 @@ async def shutdown():
 
 class Offer(BaseModel):
     sdp: str
+    # type: Literal["offer"]
     type: str
-
-    @validator("type")
-    def type_must_be_offer(cls, v):
-        if v != "offer":
-            raise ValueError("type must be 'offer'")
-        return v
 
 @router.post("/call/{activity_type}")
 async def new_call(

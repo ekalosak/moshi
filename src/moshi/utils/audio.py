@@ -1,5 +1,4 @@
 """ This module provide audio processing utilities. """
-import io
 import os
 import tempfile
 
@@ -71,6 +70,15 @@ def empty_frame(
     frame.pts = pts
     return frame
 
+def af2bytes(af: AudioFrame) -> bytes:
+    """Convert an AudioFrame to a bytestring in WAV format."""
+    if af.format.name != AUDIO_FORMAT:
+        logger.warning(f"AudioFrame format {af.format.name} != {AUDIO_FORMAT}")
+    if af.layout.name != AUDIO_LAYOUT:
+        logger.warning(f"AudioFrame layout {af.layout.name} != {AUDIO_LAYOUT}")
+    if af.rate != SAMPLE_RATE:
+        logger.warning(f"AudioFrame rate {af.rate} != {SAMPLE_RATE}")
+    return af.to_ndarray().tobytes()
 
 def write_audio_frame_to_wav(frame: AudioFrame, output_file):
     # Source: https://stackoverflow.com/a/56307655/5298555
@@ -89,6 +97,8 @@ def write_bytes_to_wav_file(filename: str, bytestring: bytes):
 
 
 def load_wav_to_buffer(fp: str) -> AudioFifo:
+    if not isinstance(fp, str):
+        raise TypeError(f"fp must be str, not {type(fp)}, due to av.open()")
     with av.open(fp, "r") as container:
         fifo = AudioFifo()
         for frame in container.decode(audio=0):

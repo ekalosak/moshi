@@ -3,8 +3,8 @@ import pytest
 
 from google.cloud import texttospeech
 
-from moshi.core.base import User, Profile, Message
-from moshi.utils import ctx, storage
+from moshi.core.base import Message, Profile, User
+from moshi.utils import ctx
 from moshi.core import activities
 
 @pytest.fixture
@@ -12,6 +12,7 @@ def event_loop():
     loop = asyncio.get_event_loop()
     yield loop
     loop.close()
+
 
 @pytest.fixture(autouse=True)
 def user():
@@ -24,7 +25,7 @@ def user():
 
 @pytest.fixture(autouse=True)
 def profile():
-    profile = Profile(name="testname", lang="en", uid="testuid")
+    profile = Profile(name="testname", lang="en", uid="testuid", primary_lang="en")
     tok = ctx.profile.set(profile)
     try:
         yield

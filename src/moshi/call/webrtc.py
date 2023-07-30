@@ -76,8 +76,9 @@ class WebRTCAdapter:
 
     async def start(self):
         if self.__task:
-            logger.debug("Already started, no-op.")
+            logger.warning("Already started, no-op.")
             return
+        await self.act.start()
         self.__task = asyncio.create_task(self.__run(), name="Main chat task")
         await self.wait_dc_connected()
         self._send_status("start")
@@ -182,18 +183,17 @@ class WebRTCAdapter:
             await self._speak_to_user("Are you still there?")
             self.__utt_start_count += 1
             return
+        if not isinstance(usr_audio, AudioFrame):
+            raise TypeError(f"Expected AudioFrame, got {type(usr_audio)}")
 
         self.__utt_start_count = 0
         self._send_status("transcribing")
         usr_text: str = await self.__transcribe_audio(usr_audio)  # TODO handle network errors
-        usr_msg = self.__add_message(usr_text, Role.USR)
-        self._send_transcript(usr_msg)
-        await self.__init_character(sample_text=usr_text)
+        self.__add_message(usr_text, Role.USR)
         self._send_status("thinking")
         ast_text: str = await self.__get_response()
         if ast_text:
-            ast_msg = self.__add_message(ast_text, Role.AST)
-            self._send_transcript(ast_msg)
+            self.__add_message(ast_text, Role.AST)
             self._send_status("speaking")
             ast_audio: AudioFrame = await self.__synth_speech()  # TODO handle network errors
             await self.responder.send_utterance(ast_audio)  # TODO handle: Raises: MediaStreamError, TimeoutError
@@ -206,9 +206,9 @@ class WebRTCAdapter:
         if not isinstance(role, Role):
             role = Role(role)
         msg = Message(role=role, content=content)
-        logger.debug(f"Adding message: {msg}")
+        logger.trace(f"Adding message: {msg}")
+        self._send_transcript(msg)
         self.act.add_msg(msg)
-        return msg
 
     async def __synth_speech(self, text: str = None) -> AudioFrame:
         msg = self.messages[-1]

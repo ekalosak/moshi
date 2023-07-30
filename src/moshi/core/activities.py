@@ -1,5 +1,6 @@
 """Create initial prompt for a an unstructured conversation."""
 from abc import ABC, abstractmethod
+import asyncio
 import dataclasses
 import datetime
 from enum import Enum
@@ -37,6 +38,7 @@ class BaseActivity(ABC, BaseModel):
     __transcript: Transcript = None
     __cid: str = None
     __character: Character = None
+    __save_task: asyncio.Task = None
 
     @abstractmethod
     def _init_messages(self) -> list[Message]:
@@ -60,8 +62,23 @@ class BaseActivity(ABC, BaseModel):
         return self.__cid
 
     async def start(self):
+        if self.__character:
+            logger.warning("Conversation already started.")
+            return
         await self.__init_transcript()
         await self.__init_character()        
+
+    def add_msg(self, msg: Message):
+        try:
+            self.__transcript.messages.append(msg)
+        except AttributeError:
+            raise RuntimeError("Conversation not initialized yet.")
+        else:
+            if self.__save_task:
+                if not self.__save_task.done():
+                    logger.warning(f"Cancelling save task: {self.__save_task}")
+                self.__save_task.cancel()
+            self.__save_task = asyncio.create_task(self.__save())
 
     async def __init_transcript(self):
         """Create the Firestore artifacts for this conversation."""

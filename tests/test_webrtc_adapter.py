@@ -16,6 +16,8 @@ from moshi import (
     audio,
 )
 from moshi.call.webrtc import WebRTCAdapter
+from moshi.core.base import Profile, User
+from moshi.utils import ctx
 
 DUMMY_AST_TEXT = "ast test"
 DUMMY_USR_TEXT = "usr test"
@@ -147,19 +149,25 @@ async def test_adapter_aiortc_components(
 
 
 @pytest.mark.slow
-@pytest.mark.asyncio
 @pytest.mark.openai
+@pytest.mark.asyncio
+@mock.patch("moshi.call.webrtc.MAX_LOOPS", 1)
 @mock.patch("moshi.utils.think.OPENAI_COMPLETION_MODEL", Model.TEXTADA001)
 async def test_adapter_happy_path(short_audio_track, Sink, adapter):
     """Check the full integration."""
-    timeout = 30.0
+    timeout = 10.
     adapter.detector.setTrack(short_audio_track)
     sink = Sink(adapter.responder.audio)
+    utok = ctx.user.set(User(uid="test", email="test@test.test"))
+    ptok = ctx.profile.set(Profile(uid="test", name="test", primary_lang="en", lang="ja"))
     await sink.start()
+    print("sink started")
+    adapter._WebRTCAdapter__dc_connected.set()
+    await adapter.start()
+    print("adapter started")
     done, pending = await asyncio.wait(
-        [adapter._WebRTCAdapter__main()], timeout=timeout
+        [adapter._WebRTCAdapter__task], timeout=timeout,
     )
-    await sink.stop()
     if done:
         task = done.pop()
         if task.exception() is not None:
@@ -182,3 +190,7 @@ async def test_adapter_happy_path(short_audio_track, Sink, adapter):
         )
     assert adapter.messages[-2].role == Role.USR
     assert adapter.messages[-1].role == Role.AST
+    await adapter.stop()
+    await sink.stop()
+    ctx.profile.reset(ptok)
+    ctx.user.reset(utok)

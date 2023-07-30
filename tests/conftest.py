@@ -21,7 +21,6 @@ RESOURCEDIR = Path(__file__).parent / "resources"
 logging.getLogger("asyncio").setLevel(logging.CRITICAL)
 
 util.setup_loguru()
-
 class FileTrack(MediaStreamTrack):
     """A track that plays a file, then waits for ever on next recv() - rather
     than hanging up with MediaStreamError."""
@@ -40,7 +39,6 @@ class FileTrack(MediaStreamTrack):
             print("FileTrack: end of file reached, waiting forever...")
             await asyncio.sleep(1e6)
         return frame
-
 
 @pytest.fixture(autouse=True)
 def _print_blank_line():
@@ -133,20 +131,17 @@ def Sink() -> "Sink":
             self.__task.cancel(f"{self.__class__.__name__}.stop() called")
             self.__task = None
 
-        # @logger.catch
+        @logger.catch
         async def _mainloop(self):
             self.stream_ended.clear()
             print("Starting mainloop")
-            for i in itertools.count():
-                print(f"starting loop i={i}")
+            while 1:
                 try:
-                    # frame = await asyncio.wait_for(self.__track.recv(), timeout=0.5)
-                    frame = await self.__track.recv()
+                    frame = await asyncio.wait_for(self.__track.recv(), timeout=5)
                 except MediaStreamError:
                     print("MediaStreamError")
                     break
                 self.fifo.write(frame)  # this is the sink
-                print(f"finished loop i={i}")
             print("Ending mainloop")
             self.stream_ended.set()
 

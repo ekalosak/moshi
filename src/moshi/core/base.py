@@ -1,9 +1,18 @@
 """ Base types. """
 import dataclasses
 from dataclasses import dataclass
-from datetime import datetime
 from enum import Enum
 
+@dataclass
+class Profile:
+    uid: str
+    lang: str
+    name: str
+
+@dataclass
+class User:
+    uid: str
+    email: str
 
 class Role(str, Enum):
     SYS = "sys"

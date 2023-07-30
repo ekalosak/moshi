@@ -8,8 +8,10 @@ from aiortc import RTCPeerConnection, RTCSessionDescription, RTCDataChannel
 from loguru import logger
 from pydantic import BaseModel, validator
 
-from moshi.api.auth import firebase_auth
-from moshi.call import WebRTCChatter
+from moshi.core.activities import ActivityType
+from moshi.core.base import User
+from moshi.api.auth import firebase_auth, user_profile
+from moshi.call import WebRTCAdapter
 
 pcs = set()
 
@@ -17,18 +19,6 @@ CONNECTION_TIMEOUT = int(os.getenv("MOSHICONNECTIONTIMEOUT", 5))
 logger.info(f"Using (WebRTC session) CONNECTION_TIMEOUT={CONNECTION_TIMEOUT}")
 
 router = APIRouter()
-
-def async_with_pcid(f):
-    """Decorator for contextualizing the logger with a PeerConnection uid."""
-
-    @functools.wraps(f)
-    async def wrapped(*a, **k):
-        pcid = uuid.uuid4()
-        with logger.contextualize(PeerConnection=str(pcid)):
-            return await f(*a, **k)
-
-    return wrapped
-
 
 async def shutdown():
     """Close peer connections."""
@@ -48,9 +38,12 @@ class Offer(BaseModel):
             raise ValueError("type must be 'offer'")
         return v
 
-@async_with_pcid
-@router.post("/call/new")
-async def new_call(offer: Offer, user: dict = Depends(firebase_auth)):
+@router.post("/call/{activity_type}")
+async def new_call(
+    offer: Offer,
+    activity_type: ActivityType,
+    profile: User = Depends(user_profile),
+):
     """In WebRTC, there's an initial offer->answer exchange that negotiates the connection parameters.
     This endpoint accepts an offer request from a client and returns an answer with the SDP (session description protocol).
     Moreover, it sets up the PeerConnection (pc) and the event listeners on the connection.
@@ -58,70 +51,66 @@ async def new_call(offer: Offer, user: dict = Depends(firebase_auth)):
         - RFC 3264
         - RFC 2327
     """
-    logger.info("Got offer")
-    logger.debug(f"request: {offer}")
-    offer = RTCSessionDescription(**offer.dict())
-    logger.trace(f"offer: {offer}")
+    adapter = WebRTCAdapter(activity_type=activity_type)
+    desc = RTCSessionDescription(**offer.dict())
     pc = RTCPeerConnection()
     pcs.add(pc)
-    logger.info(f"Created peer connection object for: {user['email']}")
+    logger.trace(f"offer: {offer}")
+    logger.trace(f"session description: {desc}")
+    logger.trace(f"created peer connection: {pc.id}")
 
-    # usremail = session["user_email"]  # pass so logging will record user email
-    usremail = "NONE - TEST"
-    chatter = WebRTCChatter(usremail)
+    @pc.on("datachannel")
+    def on_datachannel(dc: RTCDataChannel):
+        logger.trace(f"dc: new: {dc.label}:{dc.id}")
+        adapter.add_dc(dc)
 
-    with logger.contextualize(email=usremail):
+        @dc.on("message")
+        def on_message(msg):
+            logger.trace(f'dc: msg: {msg}')
+            if isinstance(msg, str) and msg.startswith("ping "):
+                # NOTE io under the hood done with fire-and-forget ensure_future, UDP
+                dc.send("pong " + msg[4:])
+            elif isinstance(msg, str):
+                logger.warning(f"dc: msg: unexpected message: {msg}")
+            else:
+                logger.warning(f"dc: msg: unexpected message type: {type(msg)}")
 
-        @pc.on("datachannel")
-        def on_datachannel(dc: RTCDataChannel):
-            logger.debug(f"dc: {dc}")
-            logger.info(f"dc received: {dc.label}:{dc.id}")
-            chatter.add_dc(dc)
+    @pc.on("connectionstatechange")
+    async def on_connectionstatechange():
+        logger.trace(f"Connection state changed to: {pc.connectionState}")
+        if pc.connectionState == "failed":
+            await pc.close()
+            pcs.discard(pc)
+        elif pc.connectionState == "connecting":
+            # on_track should have been called by this point, so start should be ok
+            await adapter.start()
+        elif pc.connectionState == "connected":
+            try:
+                await asyncio.wait_for(adapter.wait_dc_connected(), timeout=CONNECTION_TIMEOUT)
+            except asyncio.TimeoutError as e:
+                with logger.contextualize(timeout_sec=CONNECTION_TIMEOUT):
+                    logger.error("Timeout waiting for dc connected")
 
-            @dc.on("message")
-            def on_message(msg):
-                logger.debug(f'dc: msg: {msg}')
-                if isinstance(msg, str) and msg.startswith("ping "):
-                    # NOTE io under the hood done with fire-and-forget ensure_future, UDP
-                    dc.send("pong " + msg[4:])
+    @pc.on("track")
+    def on_track(track):
+        logger.info(f"Track {track.kind} received")
+        if track.kind != "audio":
+            raise TypeError(
+                f"Track kind not supported, expected 'audio', got: '{track.kind}'"
+            )
+        adapter.detector.setTrack(track)  # must be called before start()
+        pc.addTrack(adapter.responder.audio)
+        logger.success(f"Added audio track: {track.kind}:{track.id}")
 
-        @pc.on("connectionstatechange")
-        async def on_connectionstatechange():
-            logger.info(f"Connection state changed to: {pc.connectionState}")
-            if pc.connectionState == "failed":
-                await pc.close()
-                pcs.discard(pc)
-            elif pc.connectionState == "connecting":
-                # on_track should have been called by this point, so start should be ok
-                await chatter.start()
-            elif pc.connectionState == "connected":
-                try:
-                    await asyncio.wait_for(chatter.wait_dc_connected(), timeout=CONNECTION_TIMEOUT)
-                except asyncio.TimeoutError as e:
-                    with logger.contextualize(timeout_sec=CONNECTION_TIMEOUT):
-                        logger.error("Timeout waiting for dc connected")
+        @track.on("ended")
+        async def on_ended():  # e.g. user disconnects audio
+            await adapter.stop()
+            logger.info(f"Track {track.kind} ended")
 
-        @pc.on("track")
-        def on_track(track):
-            logger.info(f"Track {track.kind} received")
-            if track.kind != "audio":
-                raise TypeError(
-                    f"Track kind not supported, expected 'audio', got: '{track.kind}'"
-                )
-            chatter.detector.setTrack(track)  # must be called before start()
-            pc.addTrack(chatter.responder.audio)
-            logger.success(f"Added audio track: {track.kind}:{track.id}")
-
-            @track.on("ended")
-            async def on_ended():  # e.g. user disconnects audio
-                await chatter.stop()
-                logger.info(f"Track {track.kind} ended")
-
-    await pc.setRemoteDescription(offer)
-
+    await pc.setRemoteDescription(desc)
     answer = await pc.createAnswer()
-    logger.trace(f"answer: {answer}")
     await pc.setLocalDescription(answer)
+    logger.trace(f"answer: {answer}")
 
     # NOTE DEBUG SO WE CAN SEE THE APP RING FOR A MOMENT
     await asyncio.sleep(1.0)

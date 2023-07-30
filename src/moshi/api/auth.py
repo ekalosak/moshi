@@ -10,12 +10,11 @@ from firebase_admin import auth as fauth
 from google import auth as gauth
 from google.auth.transport.requests import Request
 from loguru import logger
-from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 
-from moshi.utils import storage, GOOGLE_PROJECT
+from moshi.core.base import User, Profile
+from moshi.utils import ctx, storage, GOOGLE_PROJECT
 
 
-vuid = ContextVar('vuid')
 gcreds = ContextVar('gcreds')
 
 firebase_app = firebase_admin.initialize_app()
@@ -25,41 +24,12 @@ assert GOOGLE_PROJECT == firebase_app.project_id, f"Initialized auth for unexpec
 security = HTTPBearer()
 logger.success("Loaded!")
 
-class AuthMiddleware(BaseHTTPMiddleware):
-    async def dispatch(
-        self, request: Request, call_next: RequestResponseEndpoint
-    ):
-        token = request.headers.get("Authorization", "").split(" ")[-1]
-        try:
-            decoded_token = await asyncio.to_thread(
-                fauth.verify_id_token,
-                token,
-            )
-        except fauth.InvalidIdTokenError:
-            logger.trace("Invalid authentication token")
-            raise HTTPException(status_code=401, detail="Invalid authentication token")
-        except fauth.ExpiredIdTokenError:
-            logger.trace("Expired authentication token")
-            raise HTTPException(status_code=401, detail="Expired authentication token")
-
-        decoded_token['name'] = decoded_token.get('name', 'Unnamed')
-        with logger.contextualize(
-            uid=decoded_token['uid'],
-            email=decoded_token['email'],
-        ):
-            token = vuid.set(decoded_token['uid'])
-            try:
-                logger.trace("User authenticated")
-                yield decoded_token
-            finally:
-                vuid.reset(token)
-
-async def firebase_auth(credentials: HTTPAuthorizationCredentials = Depends(security)) -> dict:
+async def firebase_auth(credentials: HTTPAuthorizationCredentials = Depends(security)) -> User:
     """Middleware to check Firebase authentication in headers.
     Raises:
         - HTTPException 401
     Returns:
-        - decoded_token: data from auth service corresponding to credentials.
+        - User: data from Firebase Auth corresponding to user.
     """
     token = credentials.credentials
     try:
@@ -73,18 +43,40 @@ async def firebase_auth(credentials: HTTPAuthorizationCredentials = Depends(secu
     except fauth.ExpiredIdTokenError:
         logger.trace("Expired authentication token")
         raise HTTPException(status_code=401, detail="Expired authentication token")
-
-    decoded_token['name'] = decoded_token.get('name', 'Unnamed')
+    user = User(uid=decoded_token['uid'], email=decoded_token['email'])
     with logger.contextualize(
         uid=decoded_token['uid'],
         email=decoded_token['email'],
     ):
-        token = vuid.set(decoded_token['uid'])
+        token = ctx.user.set(user)
         try:
             logger.trace("User authenticated")
-            yield decoded_token
+            yield user
         finally:
-            vuid.reset(token)
+            ctx.user.reset(token)
+
+async def user_profile(user: User = Depends(firebase_auth)) -> Profile:
+    """Middleware to check that user has profile in database.
+    Raises:
+        - HTTPException 400
+    Returns:
+        - Profile: data from Firestore corresponding to user's profile.
+    """
+    try:
+        profile = await storage.get_profile(user.uid)
+    except KeyError:
+        logger.trace("User has no profile")
+        raise HTTPException(status_code=400, detail="User has no profile")
+    with logger.contextualize(
+        name = profile.name,
+        lang = profile.language,
+    ):
+        token = ctx.profile.set(profile)
+        try:
+            logger.trace("User has profile")
+            yield profile
+        finally:
+            ctx.profile.reset(token)
 
 
 async def is_email_authorized(email: str) -> bool:

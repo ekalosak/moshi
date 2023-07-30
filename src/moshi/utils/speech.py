@@ -1,17 +1,15 @@
 import asyncio
 import contextvars
 import os
-import tempfile
 import textwrap
 
-import av
 import openai
 from av import AudioFrame
 from google.cloud import texttospeech
 from google.cloud.texttospeech import Voice
 from loguru import logger
 
-from moshi import audio
+from . import audio
 
 GOOGLE_SPEECH_SYNTHESIS_TIMEOUT = int(os.getenv("GOOGLE_SPEECH_SYNTHESIS_TIMEOUT", 5))
 logger.info(f"Using speech synth timeout: {GOOGLE_SPEECH_SYNTHESIS_TIMEOUT}")
@@ -20,38 +18,22 @@ logger.info(f"Using language detection timeout: {GOOGLE_VOICE_SELECTION_TIMEOUT}
 OPENAI_TRANSCRIPTION_MODEL = os.getenv("OPENAI_TRANSCRIPTION_MODEL", "whisper-1")
 logger.info(f"Using transcription model: {OPENAI_TRANSCRIPTION_MODEL}")
 
-gttsclient = contextvars.ContextVar("gttsclient")
+client = texttospeech.TextToSpeechAsyncClient()
 
 logger.success("Loaded!")
 
-
-def _setup_client() -> None:
-    try:
-        gttsclient.get()
-        logger.debug("Text to speech client already exists.")
-    except LookupError as e:
-        logger.debug("Creating text to speech client...")
-        client = texttospeech.TextToSpeechAsyncClient()
-        gttsclient.set(client)
-        logger.info("Text to speech client initialized.")
-
-
-def _get_client() -> "Client":
-    """Get the texttospeech client."""
-    _setup_client()
-    return gttsclient.get()
-
-
 async def get_voice(langcode: str, gender="FEMALE", model="Standard") -> str:
     """Get a valid voice for the language. Just picks the first match.
+    Raises:
+        - ValueError if no voice found.
+        - asyncio.TimeoutError if timeout exceeded.
     Source:
         - https://cloud.google.com/text-to-speech/pricing for list of valid voice model classes
     """
-    client = _get_client()
     awaitable = client.list_voices(language_code=langcode)
     response = await asyncio.wait_for(awaitable, timeout=GOOGLE_VOICE_SELECTION_TIMEOUT)
     voices = response.voices
-    logger.debug(f"Language {langcode} has {len(voices)} supported voices.")
+    logger.trace(f"Language {langcode} has {len(voices)} supported voices.")
     for voice in voices:
         if model in voice.name and gender in str(voice.ssml_gender):
             return voice
@@ -103,16 +85,10 @@ async def synthesize_speech(text: str, voice: Voice, rate: int = 24000) -> Audio
     return audio_frame
 
 
-async def transcribe(audio_frame: AudioFrame) -> str:
-    _, fp = tempfile.mkstemp(suffix=".wav")
-    # TODO use a BytesIO rather than literally writing a file
-    audio.write_audio_frame_to_wav(audio_frame, fp)
-    logger.debug(f"Transcribing audio from {fp}")
-    with open(fp, "rb") as f:
-        # TODO timeout I suppose, also async openai
-        transcript = await openai.Audio.atranscribe(
-            OPENAI_TRANSCRIPTION_MODEL,
-            f,
-        )
-    logger.debug(f"transcript={transcript}")
+async def transcribe(audio_frame: AudioFrame, language: str = None) -> str:
+    # audio.write_audio_frame_to_wav(audio_frame, fp)
+    buf = audio.audio_frame_to_wav_bytes(audio_frame)  # TODO implement without write to tmp
+    # TODO timeout
+    transcript = await openai.Audio.atranscribe(OPENAI_TRANSCRIPTION_MODEL, buf, language=language)
+    logger.log("TRANSCRIPT", transcript)
     return transcript["text"]

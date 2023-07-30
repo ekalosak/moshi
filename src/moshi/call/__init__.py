@@ -1,1 +1,1 @@
-from .core import WebRTCChatter
+from .webrtc import WebRTCAdapter

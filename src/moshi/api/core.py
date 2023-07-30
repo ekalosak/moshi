@@ -2,24 +2,19 @@ from contextvars import ContextVar
 from enum import Enum
 from pprint import pprint
 
-from fastapi import FastAPI, Depends, HTTPException, Request, File, UploadFile
+from fastapi import FastAPI, Depends, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse, FileResponse
 from loguru import logger
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.requests import Request
 from starlette.responses import Response
 
 from moshi import __version__ as moshi_version
-from moshi.core import activities
-from moshi.core.activities import ActivityType
-from moshi.utils.storage import firestore_client
 from moshi.utils.log import setup_loguru
 from .auth import firebase_auth, AuthMiddleware
 from .routes import offer
 
 app = FastAPI()
-app.include_router(offer.router)
 
 async def on_shutdown():
     logger.debug("Shutting down...")
@@ -48,6 +43,8 @@ class LogRequestMiddleware(BaseHTTPMiddleware):
 
 app.add_middleware(LogRequestMiddleware)
 # app.add_middleware(AuthMiddleware)
+# NOTE need healthz to not be authenticated so that the health check can be performed by the load balancer.
+# NOTE in future, the authentication will be handled by the service mesh.
 
 # Configure CORS
 #   NOTE must be last middleware added.
@@ -69,24 +66,4 @@ def version(user: dict = Depends(firebase_auth)):
     print(user)
     return moshi_version
 
-@app.post("/m/new/")
-async def new_conversation(activity_type: ActivityType, user: dict = Depends(firebase_auth)):
-    """Create a new conversation in the database."""
-    uid = user['uid']
-    collection_ref = firestore_client.collection("conversations")
-    act = activities.Activity(activity_type=activity_type)
-    logger.trace(f"Created activity: {act}")
-    convo = act.new_conversation()
-    logger.trace(f"Created conversation: {convo}")
-    doc_ref = collection_ref.document()
-    cid = doc_ref.id
-    with logger.contextualize(cid=cid):
-        logger.trace(f"Creating new conversation document in Firebase...")
-        result = await doc_ref.set(convo.asdict())
-        logger.trace(f"Created new conversation document!")
-    return {
-        "message": "New conversation created",
-        "detail" : {
-            "conversation_id": cid,
-        }
-    }
+app.include_router(offer.router)

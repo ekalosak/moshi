@@ -4,10 +4,6 @@ from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
 
-from loguru import logger
-
-logger.success("Loaded!")
-
 
 class Role(str, Enum):
     SYS = "sys"
@@ -20,21 +16,6 @@ class Message:
     # NOTE .asdict()
     role: Role
     content: str
-
-
-@dataclass
-class Conversation:
-    kind: str
-    messages: list[Message]
-    uid: str  # user id from FB
-    timestamp: datetime = None
-
-    def asdict(self) -> dict:
-        return dataclasses.asdict(self)
-
-    def __post_init__(self):
-        self.timestamp = self.timestamp or datetime.now()
-
 
 # TODO Model(ABC, str, Enum), ChatModel(Model), CompletionModel(Model)
 class ModelType(str, Enum):

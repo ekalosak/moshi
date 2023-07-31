@@ -94,10 +94,7 @@ class WebRTCAdapter:
             logger.warning("Already stopped, no-op.")
         # TODO handle cancellation error in __run
         self.__task.cancel(f"{self.__class__.__name__}.stop() called")
-        await asyncio.gather(
-            self.act.stop(),
-            self.__task
-        )
+        await asyncio.gather(self.__task, self.act.stop())
         self.__task = None
         self._send_status("stop")
         logger.info("Stopped")
@@ -146,7 +143,6 @@ class WebRTCAdapter:
     async def __run(self):
         """Run the main program loop."""
         utils.log.splash("moshi")
-        await self.__dc_connected.wait()
         self._send_status("hello")
         for i in itertools.count():
             if i == MAX_LOOPS and MAX_LOOPS != 0:
@@ -166,11 +162,14 @@ class WebRTCAdapter:
             except MediaStreamError:
                 logger.info("User hung up (disconnect).")
                 break
+            except asyncio.CancelledError as e:
+                logger.info("Cancelled.")
+                break
             except Exception as e:
-                logger.error(e, exc_info=True)
+                logger.error(e)
                 self._send_error("internal")
                 break
-        await self.stop()
+        self._send_status("bye")
         utils.log.splash("bye")
 
     async def __main(self):

@@ -93,17 +93,19 @@ class BaseActivity(ABC, BaseModel):
     async def __save(self):
         """Save the transcript to Firestore."""
         if self.__cid:
+            logger.info("Updating existing doc...")
             doc_ref = transcript_col.document(self.__cid)
         else:
+            logger.info("Creating new conversation document...")
             doc_ref = transcript_col.document()
             self.__cid = doc_ref.id
         with logger.contextualize(cid=self.__cid):
-            logger.trace(f"Creating new conversation document in Firebase...")
+            logger.debug(f"Saving conversation document...")
             try:
                 await doc_ref.set(self.__transcript.asdict())
-                logger.trace(f"Created new conversation document!")
+                logger.success(f"Updated conversation document!")
             except asyncio.CancelledError:
-                logger.trace(f"Cancelled saving conversation document.")
+                logger.debug(f"Cancelled saving conversation document.")
 
 
 

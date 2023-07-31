@@ -92,8 +92,8 @@ class WebRTCAdapter:
         if self.__task == None:
             logger.warning("Already stopped, no-op.")
         self.__task.cancel(f"{self.__class__.__name__}.stop() called")
-        await self.act.stop()
-        await self.__task
+        # await self.act.stop()
+        # await self.__task
         results = await asyncio.gather(self.act.stop(), self.__task, return_exceptions=True)
         self.__task = None
         try:
@@ -151,6 +151,7 @@ class WebRTCAdapter:
         utils.log.splash("moshi")
         await self.__dc_connected.wait()
         self._send_status("hello")
+        e = None
         for i in itertools.count():
             if i == MAX_LOOPS and MAX_LOOPS != 0:
                 msg = f"Reached MAX_LOOPS={MAX_LOOPS}, i={i}"

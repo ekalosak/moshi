@@ -23,6 +23,9 @@ Fourth, it creates a doc in the moshinews collection:
 - `body`: `...`
 """
 
+import os
+from sys import exit
+
 import firebase_admin
 import google.cloud.firestore as firestore
 from firebase_admin import auth
@@ -36,6 +39,13 @@ DEFAULT_USER_PASSWORD = "testtest"
 DEFAULT_USER_NAME = "Timmy Test"
 DEFAULT_USER_LANG = "en-US"
 DEFAULT_USER_PRIMARY_LANG = "en-US"
+
+if not os.getenv("FIRESTORE_EMULATOR_HOST"):
+    print("FIRESTORE_EMULATOR_HOST not set, exiting.")
+    exit(1)
+if not os.getenv("FIREBASE_AUTH_EMULATOR_HOST"):
+    print("FIREBASE_AUTH_EMULATOR_HOST not set, exiting.")
+    exit(1)
 
 SUPPORTED_LANGS = [
     "en-US",
@@ -70,7 +80,7 @@ def _init_auth():
 def _init_config(db):
     """Initialize the config collection."""
     doc_ref = db.collection("config").document("supported_langs")
-    doc_ref.set({"lang": SUPPORTED_LANGS})
+    doc_ref.set({"langs": SUPPORTED_LANGS})
     print("Successfully initialized the config collection.")
 
 def _init_moshinews(db):

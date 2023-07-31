@@ -58,6 +58,7 @@ async def _synthesize_speech_bytes(text: str, voice: Voice, rate: int = 24000) -
     """Synthesize speech to a bytestring in WAV (PCM_16) format.
     Implemented with texttospeech.googleapis.com;
     """
+    SILENCE_SAMPLES = 8
     synthesis_input = texttospeech.SynthesisInput(text=text)
     audio_config = texttospeech.AudioConfig(
         audio_encoding=texttospeech.AudioEncoding.LINEAR16,  # NOTE fixed s16 format
@@ -88,7 +89,10 @@ async def _synthesize_speech_bytes(text: str, voice: Voice, rate: int = 24000) -
     logger.debug(
         f"Got response from texttospeech.synthesize_speech: {textwrap.shorten(str(response.audio_content), 32)}"
     )
-    return response.audio_content
+    byt = response.audio_content
+    assert isinstance(byt, bytes)
+    byt += b"\x00\x00\x00\x00\x00\x00\x00\x00" * SILENCE_SAMPLES
+    return byt
 
 
 async def synthesize(text: str, voice: Voice, rate: int = 24000) -> AudioFrame:

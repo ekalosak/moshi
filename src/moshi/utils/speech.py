@@ -1,7 +1,7 @@
 import asyncio
-import contextvars
 import os
 import textwrap
+import tempfile
 
 import openai
 from av import AudioFrame
@@ -61,7 +61,6 @@ async def _synthesize_speech_bytes(text: str, voice: Voice, rate: int = 24000) -
     logger.debug(
         f"Requesting speech synthesis: synthesis_input={synthesis_input}, voice_selector={voice_selector}, audio_config={audio_config}"
     )
-    client = _get_client()
     request = dict(
         input=synthesis_input,
         voice=voice_selector,
@@ -86,9 +85,11 @@ async def synthesize_speech(text: str, voice: Voice, rate: int = 24000) -> Audio
 
 
 async def transcribe(audio_frame: AudioFrame, language: str = None) -> str:
-    # audio.write_audio_frame_to_wav(audio_frame, fp)
-    buf = audio.audio_frame_to_wav_bytes(audio_frame)  # TODO implement without write to tmp
-    # TODO timeout
-    transcript = await openai.Audio.atranscribe(OPENAI_TRANSCRIPTION_MODEL, buf, language=language)
-    logger.log("TRANSCRIPT", transcript)
+    _, fp = tempfile.mkstemp(suffix=".wav")
+    try:
+        audio.write_audio_frame_to_wav(audio_frame, fp)
+        with open(fp, "rb") as f:
+            transcript = await openai.Audio.atranscribe(OPENAI_TRANSCRIPTION_MODEL, f, language=language)
+    finally:
+        os.remove(fp)
     return transcript["text"]

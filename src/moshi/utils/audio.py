@@ -104,5 +104,9 @@ def load_wav_to_audio_frame(fp: str) -> AudioFrame:
 
 def wav_bytes_to_audio_frame(wav: bytes) -> AudioFrame:
     _, fp = tempfile.mkstemp()
-    write_bytes_to_wav_file(fp, wav)
-    return load_wav_to_audio_frame(fp)
+    try:
+        write_bytes_to_wav_file(fp, wav)
+        af = load_wav_to_audio_frame(fp)
+    finally:
+        os.remove(fp)
+    return af

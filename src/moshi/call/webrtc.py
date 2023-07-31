@@ -91,10 +91,9 @@ class WebRTCAdapter:
     async def stop(self):
         if self.__task == None:
             logger.warning("Already stopped, no-op.")
-        # TODO handle cancellation error in __run
         self.__task.cancel(f"{self.__class__.__name__}.stop() called")
-        # await self.act.stop()
-        # await self.__task
+        await self.act.stop()
+        await self.__task
         results = await asyncio.gather(self.act.stop(), self.__task, return_exceptions=True)
         self.__task = None
         try:

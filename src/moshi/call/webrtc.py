@@ -79,17 +79,25 @@ class WebRTCAdapter:
             logger.debug("Already started, no-op.")
             return
         self.__task = asyncio.create_task(self.__run(), name="Main chat task")
-        await self.wait_dc_connected()
+        logger.debug("Awaiting component startup...")
+        results = await asyncio.gather(self.act.start(), self.wait_dc_connected(), return_exceptions=True)
+        for i, result in enumerate(results):
+            if isinstance(result, Exception):
+                logger.error(f"Task {i} raised exception: {result}")
+                raise result
+
+        logger.success("WebRTC Adapter started")
         self._send_status("start")
-        logger.info("Started")
 
     async def stop(self):
         if self.__task == None:
             logger.warning("Already stopped, no-op.")
         self._send_status("stop")
+        # TODO handle cancellation error in __run
         self.__task.cancel(f"{self.__class__.__name__}.stop() called")
         await self.__task
         self.__task = None
+        await self.act.stop()  # NOTE saves transcript
         logger.info("Stopped")
 
     async def wait_dc_connected(self):
@@ -110,7 +118,7 @@ class WebRTCAdapter:
 
     @property
     def language(self) -> str:
-        return self.act.language
+        return self.act.lang
 
     @property
     def user_utterance(self) -> str:
@@ -122,8 +130,12 @@ class WebRTCAdapter:
         """The latest assistant utterance."""
         return self.__latest_msg(Role.AST).content
 
+    @property
+    def messages(self) -> list[Message]:
+        return self.act.messages
+
     def __latest_msg(self, role: Role) -> Message:
-        for msg in self.act.messages[::-1]:
+        for msg in self.messages[::-1]:
             if msg.role == role:
                 return msg
         raise ValueError(f"No {role.value} utterances in messages")
@@ -153,11 +165,11 @@ class WebRTCAdapter:
                 logger.info("User hung up (disconnect).")
                 break
             except Exception as e:
-                logger.error(e)
+                logger.error(e, exc_info=True)
                 self._send_error("internal")
                 break
         await self.stop()
-        util.splash("bye")
+        utils.log.splash("bye")
 
     async def __main(self):
         """Run one loop of the main program.
@@ -188,7 +200,6 @@ class WebRTCAdapter:
         usr_text: str = await self.__transcribe_audio(usr_audio)  # TODO handle network errors
         usr_msg = self.__add_message(usr_text, Role.USR)
         self._send_transcript(usr_msg)
-        await self.__init_character(sample_text=usr_text)
         self._send_status("thinking")
         ast_text: str = await self.__get_response()
         if ast_text:
@@ -201,13 +212,13 @@ class WebRTCAdapter:
             logger.warning("Got empty assistant response")
             raise UserResetError("empty assistant response")
 
-    async def __add_message(self, content: str, role: Role) -> Message:
+    def __add_message(self, content: str, role: Role) -> Message:
         assert isinstance(content, str)
         if not isinstance(role, Role):
             role = Role(role)
         msg = Message(role=role, content=content)
         logger.debug(f"Adding message: {msg}")
-        await self.act.add_msg(msg)
+        self.act.add_msg(msg)
         return msg
 
     async def __synth_speech(self, text: str = None) -> AudioFrame:
@@ -215,15 +226,13 @@ class WebRTCAdapter:
         logger.debug(f"Synthesizing to speech: {msg}")
         assert msg.role == Role.AST
         frame = await utils.speech.synthesize(msg.content, self.voice)
-        logger.info(f"Speech synthesized: {frame}")
+        logger.debug(f"Speech synthesized: {frame}")
         assert isinstance(frame, AudioFrame)
         return frame
 
     async def __get_response(self):
         """Retrieve the chatbot's response to the user utterance."""
-        usr_msg = self.messages[-1]
-        assert usr_msg.content is self.user_utterance, "State is out of whack"
-        logger.debug(f"Responding to user message: {usr_msg}")
+        logger.debug(f"Getting assistant response...")
         ast_txts: str = await think.completion_from_assistant(
             self.messages,
             n=1,
@@ -232,13 +241,13 @@ class WebRTCAdapter:
         )  # TODO add user=session["user id"] to help moderation
         assert len(ast_txts) == 1
         ast_txt = ast_txts[0]
-        logger.info(f"Got assistant response: {textwrap.shorten(ast_txt, 64)}")
+        logger.debug(f"Got assistant response: {textwrap.shorten(ast_txt, 64)}")
         return ast_txt
 
     async def __transcribe_audio(self, audio, role=Role.USR):
         logger.debug(f"Transcribing {role.value} audio: {audio}")
-        transcript: str = await utils.speech.transcribe(audio)
-        logger.info(
+        transcript: str = await utils.speech.transcribe(audio, language=self.language)
+        logger.debug(
             f"Transcribed {role.value} utterance: {textwrap.shorten(transcript, 64)}"
         )
         return transcript

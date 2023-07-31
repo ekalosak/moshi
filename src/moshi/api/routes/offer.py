@@ -71,7 +71,7 @@ async def new_call(
 
     @pc.on("connectionstatechange")
     async def on_connectionstatechange():
-        logger.trace(f"Connection state changed to: {pc.connectionState}")
+        logger.debug(f"Connection state changed to: {pc.connectionState}")
         if pc.connectionState == "failed":
             await pc.close()
             pcs.discard(pc)
@@ -106,6 +106,4 @@ async def new_call(
     await pc.setLocalDescription(answer)
     logger.trace(f"answer: {answer}")
 
-    # NOTE DEBUG SO WE CAN SEE THE APP RING FOR A MOMENT
-    await asyncio.sleep(1.0)
     return {"sdp": pc.localDescription.sdp, "type": pc.localDescription.type}

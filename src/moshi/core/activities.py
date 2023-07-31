@@ -1,5 +1,6 @@
 """Create initial prompt for a an unstructured conversation."""
 from abc import ABC, abstractmethod
+import asyncio
 import dataclasses
 import datetime
 from enum import Enum
@@ -59,29 +60,35 @@ class BaseActivity(ABC, BaseModel):
     def cid(self):
         return self.__cid
 
+    def add_msg(self, msg: Message):
+        self.__transcript.messages.append(msg)
+
     async def start(self):
-        await self.__init_transcript()
-        await self.__init_character()        
+        await asyncio.gather(self.__init_transcript(), self.__init_character())
+        logger.success("Activity started!")
+
+    async def stop(self):
+        """Save the transcript to Firestore."""
+        await self.__save()
 
     async def __init_transcript(self):
         """Create the Firestore artifacts for this conversation."""
-        act = Activity(activity_type=self.activity_type.value)
-        logger.trace(f"Created activity: {act}")
         self.__transcript = Transcript(
             activity_type=self.activity_type,
             uid=ctx.user.get().uid,
             messages=self._init_messages(),
         )
-        logger.trace(f"Created conversation: {self.__transcript}")
         await self.__save()
+        logger.debug(f"Transcript initialized.")
 
     async def __init_character(self):
         """Initialize the character for this conversation."""
-        logger.trace(f"Creating character...")
-        voice = await speech.get_voice(ctx.profile.get().lang)
-        logger.trace(f"Selected voice: {voice}")
+        logger.debug(f"Creating character...")
+        lang = ctx.profile.get().lang
+        voice = await speech.get_voice(lang)
+        logger.debug(f"Selected voice: {voice}")
         self.__character = Character(voice)
-        logger.trace(f"Character created: {self.__character}")
+        logger.debug(f"Character initialized: {self.__character}")
 
     async def __save(self):
         """Save the transcript to Firestore."""
@@ -92,8 +99,11 @@ class BaseActivity(ABC, BaseModel):
             self.__cid = doc_ref.id
         with logger.contextualize(cid=self.__cid):
             logger.trace(f"Creating new conversation document in Firebase...")
-            result = await doc_ref.set(self.__transcript.asdict())
-            logger.trace(f"Created new conversation document!")
+            try:
+                await doc_ref.set(self.__transcript.asdict())
+                logger.trace(f"Created new conversation document!")
+            except asyncio.CancelledError:
+                logger.trace(f"Cancelled saving conversation document.")
 
 
 

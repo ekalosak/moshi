@@ -18,20 +18,32 @@ logger.info(f"Using language detection timeout: {GOOGLE_VOICE_SELECTION_TIMEOUT}
 OPENAI_TRANSCRIPTION_MODEL = os.getenv("OPENAI_TRANSCRIPTION_MODEL", "whisper-1")
 logger.info(f"Using transcription model: {OPENAI_TRANSCRIPTION_MODEL}")
 
-client = texttospeech.TextToSpeechAsyncClient()
+client = texttospeech.TextToSpeechClient()
 
 logger.success("Loaded!")
 
 async def get_voice(langcode: str, gender="FEMALE", model="Standard") -> str:
     """Get a valid voice for the language. Just picks the first match.
+    Args:
+        - langcode: e.g. "en-US"
     Raises:
         - ValueError if no voice found.
         - asyncio.TimeoutError if timeout exceeded.
     Source:
         - https://cloud.google.com/text-to-speech/pricing for list of valid voice model classes
     """
-    awaitable = client.list_voices(language_code=langcode)
-    response = await asyncio.wait_for(awaitable, timeout=GOOGLE_VOICE_SELECTION_TIMEOUT)
+    logger.debug(f"Getting voice for lang code: {langcode}")
+    try:
+        response = await asyncio.wait_for(
+            asyncio.to_thread(
+                client.list_voices,
+                language_code=langcode
+            ),
+            timeout=GOOGLE_VOICE_SELECTION_TIMEOUT,
+        )
+    except Exception as e:
+        logger.error(e)
+        raise
     voices = response.voices
     logger.trace(f"Language {langcode} has {len(voices)} supported voices.")
     for voice in voices:
@@ -66,9 +78,12 @@ async def _synthesize_speech_bytes(text: str, voice: Voice, rate: int = 24000) -
         voice=voice_selector,
         audio_config=audio_config,
     )
-    awaitable = client.synthesize_speech(request=request)
     response = await asyncio.wait_for(
-        awaitable, timeout=GOOGLE_SPEECH_SYNTHESIS_TIMEOUT
+        asyncio.to_thread(
+            client.synthesize_speech,
+            request=request,
+        ),
+        timeout=GOOGLE_SPEECH_SYNTHESIS_TIMEOUT
     )
     logger.debug(
         f"Got response from texttospeech.synthesize_speech: {textwrap.shorten(str(response.audio_content), 32)}"
@@ -76,7 +91,7 @@ async def _synthesize_speech_bytes(text: str, voice: Voice, rate: int = 24000) -
     return response.audio_content
 
 
-async def synthesize_speech(text: str, voice: Voice, rate: int = 24000) -> AudioFrame:
+async def synthesize(text: str, voice: Voice, rate: int = 24000) -> AudioFrame:
     audio_bytes = await _synthesize_speech_bytes(text, voice, rate)
     assert isinstance(audio_bytes, bytes)
     audio_frame = audio.wav_bytes_to_audio_frame(audio_bytes)

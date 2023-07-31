@@ -65,11 +65,13 @@ def setup_loguru():
     logger.level("TRANSCRIPT", no=15, color="<magenta>", icon="📜")
     if STDOUT_LOGS:
         logger.add(
+            diagnose=True,
             sink=sys.stderr,
             level=LOG_LEVEL,
             format=log_format,
             colorize=True,
         )
+        logger.warning("Logging to stdout, including diagnostics.")
     if FILE_LOGS:
         logger.add(
             "logs/server.log",

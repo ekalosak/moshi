@@ -1,9 +1,9 @@
 """This module implements the core WebRTCChatter class for use in the WebRTC server."""
 import asyncio
 import itertools
-import os
 import textwrap
 
+import aiortc
 from aiortc import RTCDataChannel
 from aiortc.mediastreams import MediaStreamError
 from av import AudioFrame
@@ -84,7 +84,6 @@ class WebRTCAdapter:
         for i, result in enumerate(results):
             if isinstance(result, Exception):
                 logger.error(f"Task {i} raised exception: {result}")
-                raise result
 
         logger.success("WebRTC Adapter started")
         self._send_status("start")
@@ -94,9 +93,17 @@ class WebRTCAdapter:
             logger.warning("Already stopped, no-op.")
         # TODO handle cancellation error in __run
         self.__task.cancel(f"{self.__class__.__name__}.stop() called")
-        await asyncio.gather(self.__task, self.act.stop())
+        # await self.act.stop()
+        # await self.__task
+        results = await asyncio.gather(self.act.stop(), self.__task, return_exceptions=True)
         self.__task = None
-        self._send_status("stop")
+        try:
+            self._send_status("stop")
+        except aiortc.exceptions.InvalidStateError as e:
+            logger.debug("dc already closed, no-op.")
+        for i, result in enumerate(results):
+            if isinstance(result, Exception):
+                logger.error(f"Task {i} raised exception: {result}")
         logger.info("Stopped")
 
     async def wait_dc_connected(self):
@@ -143,6 +150,7 @@ class WebRTCAdapter:
     async def __run(self):
         """Run the main program loop."""
         utils.log.splash("moshi")
+        await self.__dc_connected.wait()
         self._send_status("hello")
         for i in itertools.count():
             if i == MAX_LOOPS and MAX_LOOPS != 0:

@@ -47,7 +47,7 @@ class WebRTCAdapter:
         """Send msg over dc with best effort."""
         # NOTE RTCDataChannel.send() does aio via ensure_future.
         # source: https://github.com/aiortc/aiortc/blob/main/src/aiortc/rtcsctptransport.py#L1796
-        logger.debug('sending: ' + msg)
+        logger.trace('sending: ' + msg)
         if not self.__dc:
             logger.warning(f"tried to send before dc connected, discarding message: {msg}")
             return
@@ -91,25 +91,22 @@ class WebRTCAdapter:
     async def stop(self):
         if self.__task == None:
             logger.warning("Already stopped, no-op.")
-        # TODO handle cancellation error in __run
-        self.__task.cancel(f"{self.__class__.__name__}.stop() called")
-        # await self.act.stop()
-        # await self.__task
-        results = await asyncio.gather(self.act.stop(), self.__task, return_exceptions=True)
-        self.__task = None
         try:
             self._send_status("stop")
         except aiortc.exceptions.InvalidStateError as e:
             logger.debug("dc already closed, no-op.")
+        self.__task.cancel(f"{self.__class__.__name__}.stop() called")
+        results = await asyncio.gather(self.act.stop(), self.__task, return_exceptions=True)
+        self.__task = None
         for i, result in enumerate(results):
             if isinstance(result, Exception):
                 logger.error(f"Task {i} raised exception: {result}")
         logger.info("Stopped")
 
     async def wait_dc_connected(self):
-        logger.debug("pc connected, awaiting dc...")
+        logger.trace("pc connected, awaiting dc...")
         await self.__dc_connected.wait()
-        logger.debug("dc connected.")
+        logger.trace("dc connected.")
 
     def add_dc(self, dc: RTCDataChannel):
         if self.__dc is not None:
@@ -146,7 +143,6 @@ class WebRTCAdapter:
                 return msg
         raise ValueError(f"No {role.value} utterances in messages")
 
-    @logger.catch
     async def __run(self):
         """Run the main program loop."""
         utils.log.splash("moshi")
@@ -174,7 +170,9 @@ class WebRTCAdapter:
                 logger.info("Cancelled.")
                 break
             except Exception as e:
-                logger.error(e)
+                import traceback
+                logger.error(f"Caught unexpected exception: {type(e)} {e}")
+                logger.error(traceback.format_exc())
                 self._send_error("internal")
                 break
         self._send_status("bye")
@@ -186,20 +184,20 @@ class WebRTCAdapter:
             - UserResetError when chatter entered into a state that requires reset by user.
             - MediaStreamError when connection error or user hangup (disconnect).
         """
-        logger.debug("main")
         self._send_status("listening")
         try:
-            # Raises: MediaStreamError, TimeoutError, UtteranceTooLongError
+            # Raises: MediaStreamError, TimeoutError, UtteranceTooLongError, UtteranceNotStartedError
             usr_audio: AudioFrame = await self.detector.get_utterance()
         except detector.UtteranceTooLongError as e:
-            logger.debug("Utterance too long, prompting user to try again.")
+            logger.debug("User utterance too long, prompting user to try again.")
             await self._send_error("utttoolong")
             return
-        except asyncio.TimeoutError as e:
+        except detector.UtteranceNotStartedError as e:
+            logger.trace(f"User didn't start speaking {self.__utt_start_count} times.")
             if self.__utt_start_count == UTT_START_MAX_COUNT:
-                logger.debug("User didn't start speaking {self.__utt_start_count} times, raising.")
+                logger.trace("User considered inavtive, raising UserResetError.")
                 raise UserResetError("usrNotSpeaking") from e
-            logger.debug("Utterance too long, prompting user to try again.")
+            logger.trace("Prompting user to try again.")
             await self._speak_to_user("Are you still there?")
             self.__utt_start_count += 1
             return
@@ -216,6 +214,7 @@ class WebRTCAdapter:
             self._send_transcript(ast_msg)
             self._send_status("speaking")
             ast_audio: AudioFrame = await self.__synth_speech()  # TODO handle network errors
+            logger.debug(f"Got assistant response audio: {ast_audio}, sending...")
             await self.responder.send_utterance(ast_audio)  # TODO handle: Raises: MediaStreamError, TimeoutError
         else:
             logger.warning("Got empty assistant response")
@@ -226,7 +225,7 @@ class WebRTCAdapter:
         if not isinstance(role, Role):
             role = Role(role)
         msg = Message(role=role, content=content)
-        logger.debug(f"Adding message: {msg}")
+        logger.trace(f"Adding message: {msg}")
         self.act.add_msg(msg)
         return msg
 
@@ -247,7 +246,8 @@ class WebRTCAdapter:
             n=1,
             max_tokens=MAX_RESPONSE_TOKENS,
             stop=STOP_TOKENS,
-        )  # TODO add user=session["user id"] to help moderation
+            # user=ctx.user.get().uid,  # TODO for moderation
+        )
         assert len(ast_txts) == 1
         ast_txt = ast_txts[0]
         logger.debug(f"Got assistant response: {textwrap.shorten(ast_txt, 64)}")

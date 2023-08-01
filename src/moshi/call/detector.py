@@ -22,6 +22,10 @@ logger.success("Loaded!")
 class UtteranceTooLongError(Exception):
     ...
 
+class UtteranceNotStartedError(Exception):
+    ...
+
+
 class UtteranceDetector:
     """An audio media sink that detects utterances."""
 
@@ -48,15 +52,20 @@ class UtteranceDetector:
     async def get_utterance(self) -> AudioFrame:
         """ Raises:
             - aiortc.MediaStreamError if user hangs up.
-            - asyncio.TimeoutError if the user doesn't start speaking within: UTT_START_TIMEOUT_SEC.
+            - UtteranceNotStartedError if the user doesn't start speaking within: UTT_START_TIMEOUT_SEC.
             - UtteranceTooLongError if the utterance is longer than the maximum allowed length: UTT_MAX_LEN_SEC.
         """
-        logger.debug("Waiting for utterance...")
-        first_frame = await asyncio.wait_for(
-            self.__track.recv(),
-            timeout=UTT_START_TIMEOUT_SEC,
-        )
-        logger.debug("Utterance started")
+        logger.trace("Waiting for utterance to start...")
+        try:
+            first_frame = await asyncio.wait_for(
+                self.__track.recv(),
+                timeout=UTT_START_TIMEOUT_SEC,
+            )
+        except asyncio.TimeoutError as e:
+            raise UtteranceNotStartedError(
+                f"Utterance not started within {UTT_START_TIMEOUT_SEC} sec"
+            ) from e
+        logger.trace("Utterance started")
         self.__fifo.write(first_frame)
         utt_sec = 0.0
         while 1:
@@ -66,7 +75,7 @@ class UtteranceDetector:
                     timeout=UTT_END_TIMEOUT_SEC,
                 )
             except asyncio.TimeoutError as e:
-                logger.debug("Utterance ended")
+                logger.trace("Utterance ended")
                 break
             self.__fifo.write(frame)
             utt_sec += audio.get_frame_seconds(frame)

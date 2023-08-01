@@ -9,9 +9,9 @@ from aiortc.mediastreams import MediaStreamTrack
 from av import AudioFifo, AudioFormat, AudioFrame, AudioLayout, AudioResampler
 from loguru import logger
 
-SAMPLE_RATE = int(os.getenv("MOSHISAMPLERATE", 48000))
-AUDIO_FORMAT = os.getenv("MOSHIAUDIOFORMAT", "s16")
-AUDIO_LAYOUT = os.getenv("MOSHIAUDIOLAYOUT", "stereo")
+SAMPLE_RATE = 48000
+AUDIO_FORMAT = "s16"
+AUDIO_LAYOUT = "stereo"
 logger.info(f"Using sample rate: {SAMPLE_RATE}")
 logger.info(f"Using audio format: {AUDIO_FORMAT}")
 logger.info(f"Using audio layout: {AUDIO_LAYOUT}")
@@ -35,9 +35,7 @@ def make_resampler():
 
 def get_frame_energy(af: AudioFrame) -> float:
     """Calculate the RMS energy of an audio frame."""
-    # TODO dynamic energy detection (i.e. later frames matter more than earlier frames)
     arr = af.to_ndarray()  # produces array with dtype of int16
-    # logger.trace(f"arr.shape: {arr.shape}")
     # NOTE int16 is too small for squares of typical signal stregth so int32 is used
     energy = np.sqrt(np.mean(np.square(arr, dtype=np.int32)))
     logger.trace(f"frame energy: {energy:.3f}")
@@ -48,7 +46,6 @@ def get_frame_energy(af: AudioFrame) -> float:
 def get_frame_seconds(af: AudioFrame) -> float:
     """Calculate the length in seconds of an audio frame."""
     seconds = af.samples / af.rate
-    # logger.trace(f"frame seconds: {seconds}")
     return seconds
 
 

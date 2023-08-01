@@ -98,8 +98,9 @@ async def new_call(
 
         @track.on("ended")
         async def on_ended():  # e.g. user disconnects audio
+            logger.debug(f"Track {track.kind} ended, stopping adapter...")
             await adapter.stop()
-            logger.info(f"Track {track.kind} ended")
+            logger.debug(f"Adapter stopped.")
 
     await pc.setRemoteDescription(desc)
     answer = await pc.createAnswer()

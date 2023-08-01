@@ -90,7 +90,6 @@ async def _synthesize_speech_bytes(text: str, voice: Voice, rate: int = 24000) -
     )
     return response.audio_content
 
-
 async def synthesize(text: str, voice: Voice, rate: int = 24000) -> AudioFrame:
     audio_bytes = await _synthesize_speech_bytes(text, voice, rate)
     assert isinstance(audio_bytes, bytes)

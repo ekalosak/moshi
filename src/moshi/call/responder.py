@@ -16,7 +16,7 @@ FRAME_SIZE = 960
 assert FRAME_SIZE >= 128 and FRAME_SIZE <= 4096
 logger.info(f"Using transport frame size: {FRAME_SIZE}")
 
-logger.success("Loaded!")
+logger.debug("Loaded responder module.")
 
 
 class ResponsePlayerStream(MediaStreamTrack):
@@ -29,25 +29,27 @@ class ResponsePlayerStream(MediaStreamTrack):
         self.__send_start_time = None
         self.__sent_buffer_time = None
 
-    @logger.catch
     async def recv(self) -> AudioFrame:
         """Return audio from the fifo whenever it exists, otherwise send silence.
         """
         frame = None
         while frame == None:
-            frame = self.__fifo.read(FRAME_SIZE, partial=True)
+            frame = self.__fifo.read(FRAME_SIZE)
             if not frame:
+                # NOTE must flush partial frames;
+                #   these will otherwise cause big noise spikes at end of utterance.
+                self.__fifo.read()
                 self.__sent.set()
-                await asyncio.sleep(0.01)
-            else:
-                print("got frame")
+                await asyncio.sleep(0.05)
+            else:  # NOTE must buffer or there will be SILENT buffer overflow on the client.
                 frame_sec = audio.get_frame_seconds(frame)
                 wall_elapsed_time = time.monotonic() - self.__send_start_time
                 if self.__sent_buffer_time - wall_elapsed_time > BUFFER_AHEAD_SEC:
                     throttle_sec = BUFFER_AHEAD_SEC / 3.
                     await asyncio.sleep(throttle_sec)
-                    logger.trace(f"playback throttled {throttle_sec} sec")
+                    # logger.trace(f"playback throttled {throttle_sec} sec")
                 self.__sent_buffer_time += frame_sec
+                # logger.trace(f"frame.pts: {frame.pts}")
         return frame
 
     async def send_audio(self, frame: AudioFrame):
@@ -56,9 +58,7 @@ class ResponsePlayerStream(MediaStreamTrack):
         frame.pts = self.__fifo.samples_written
         self.__fifo.write(frame)
         self.__sent.clear()
-        logger.trace("Wrote frame to fifo, awaiting __sent.wait() event...")
         await self.__sent.wait()
-        logger.trace("__sent.set()")
 
 
 class ResponsePlayer:
@@ -71,7 +71,6 @@ class ResponsePlayer:
     def audio(self):
         return self.__track
 
-    @logger.catch  # TODO REMOVE catch
     async def send_utterance(self, frame: AudioFrame):
         """Write the frame to the audio track, thereby sending it to the remote client.
         Raises:

@@ -35,9 +35,7 @@ def make_resampler():
 
 def get_frame_energy(af: AudioFrame) -> float:
     """Calculate the RMS energy of an audio frame."""
-    # TODO dynamic energy detection (i.e. later frames matter more than earlier frames)
     arr = af.to_ndarray()  # produces array with dtype of int16
-    # logger.trace(f"arr.shape: {arr.shape}")
     # NOTE int16 is too small for squares of typical signal stregth so int32 is used
     energy = np.sqrt(np.mean(np.square(arr, dtype=np.int32)))
     logger.trace(f"frame energy: {energy:.3f}")
@@ -48,7 +46,6 @@ def get_frame_energy(af: AudioFrame) -> float:
 def get_frame_seconds(af: AudioFrame) -> float:
     """Calculate the length in seconds of an audio frame."""
     seconds = af.samples / af.rate
-    # logger.trace(f"frame seconds: {seconds}")
     return seconds
 
 
@@ -98,7 +95,6 @@ def load_wav_to_buffer(fp: str) -> AudioFifo:
 
 def load_wav_to_audio_frame(fp: str) -> AudioFrame:
     frame = load_wav_to_buffer(fp).read()
-    # return frame
     res = make_resampler()
     return res.resample(frame)[0]
 

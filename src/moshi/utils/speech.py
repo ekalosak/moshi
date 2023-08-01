@@ -8,7 +8,6 @@ from av import AudioFrame
 from google.cloud import texttospeech
 from google.cloud.texttospeech import Voice
 from loguru import logger
-import numpy as np
 
 from . import audio
 
@@ -90,19 +89,10 @@ async def _synthesize_speech_bytes(text: str, voice: Voice, rate: int = 24000) -
         f"Got response from texttospeech.synthesize_speech: {textwrap.shorten(str(response.audio_content), 32)}"
     )
     return response.audio_content
-    # byt = response.audio_content
-    # SILENCE_SECONDS = 0.1
-    # silence_samples = int(SILENCE_SECONDS * rate)
-    # silence_byts = b'\x00' * silence_samples
-    # return byt + silence_byts
-
 
 async def synthesize(text: str, voice: Voice, rate: int = 24000) -> AudioFrame:
     audio_bytes = await _synthesize_speech_bytes(text, voice, rate)
     assert isinstance(audio_bytes, bytes)
-    # print(bytes[0:128])
-    # arr = np.frombuffer(audio_bytes, dtype=np.int16)
-    # audio_frame = av.
     audio_frame = audio.wav_bytes_to_audio_frame(audio_bytes)
     assert isinstance(audio_frame, AudioFrame)
     return audio_frame

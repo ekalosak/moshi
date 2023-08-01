@@ -9,9 +9,9 @@ from aiortc.mediastreams import MediaStreamTrack
 from av import AudioFifo, AudioFormat, AudioFrame, AudioLayout, AudioResampler
 from loguru import logger
 
-SAMPLE_RATE = int(os.getenv("MOSHISAMPLERATE", 48000))
-AUDIO_FORMAT = os.getenv("MOSHIAUDIOFORMAT", "s16")
-AUDIO_LAYOUT = os.getenv("MOSHIAUDIOLAYOUT", "stereo")
+SAMPLE_RATE = 48000
+AUDIO_FORMAT = "s16"
+AUDIO_LAYOUT = "stereo"
 logger.info(f"Using sample rate: {SAMPLE_RATE}")
 logger.info(f"Using audio format: {AUDIO_FORMAT}")
 logger.info(f"Using audio layout: {AUDIO_LAYOUT}")
@@ -98,6 +98,7 @@ def load_wav_to_buffer(fp: str) -> AudioFifo:
 
 def load_wav_to_audio_frame(fp: str) -> AudioFrame:
     frame = load_wav_to_buffer(fp).read()
+    # return frame
     res = make_resampler()
     return res.resample(frame)[0]
 

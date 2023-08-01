@@ -8,6 +8,7 @@ from av import AudioFrame
 from google.cloud import texttospeech
 from google.cloud.texttospeech import Voice
 from loguru import logger
+import numpy as np
 
 from . import audio
 
@@ -58,7 +59,6 @@ async def _synthesize_speech_bytes(text: str, voice: Voice, rate: int = 24000) -
     """Synthesize speech to a bytestring in WAV (PCM_16) format.
     Implemented with texttospeech.googleapis.com;
     """
-    SILENCE_SAMPLES = 8
     synthesis_input = texttospeech.SynthesisInput(text=text)
     audio_config = texttospeech.AudioConfig(
         audio_encoding=texttospeech.AudioEncoding.LINEAR16,  # NOTE fixed s16 format
@@ -89,15 +89,20 @@ async def _synthesize_speech_bytes(text: str, voice: Voice, rate: int = 24000) -
     logger.debug(
         f"Got response from texttospeech.synthesize_speech: {textwrap.shorten(str(response.audio_content), 32)}"
     )
-    byt = response.audio_content
-    assert isinstance(byt, bytes)
-    byt += b"\x00\x00\x00\x00\x00\x00\x00\x00" * SILENCE_SAMPLES
-    return byt
+    return response.audio_content
+    # byt = response.audio_content
+    # SILENCE_SECONDS = 0.1
+    # silence_samples = int(SILENCE_SECONDS * rate)
+    # silence_byts = b'\x00' * silence_samples
+    # return byt + silence_byts
 
 
 async def synthesize(text: str, voice: Voice, rate: int = 24000) -> AudioFrame:
     audio_bytes = await _synthesize_speech_bytes(text, voice, rate)
     assert isinstance(audio_bytes, bytes)
+    # print(bytes[0:128])
+    # arr = np.frombuffer(audio_bytes, dtype=np.int16)
+    # audio_frame = av.
     audio_frame = audio.wav_bytes_to_audio_frame(audio_bytes)
     assert isinstance(audio_frame, AudioFrame)
     return audio_frame

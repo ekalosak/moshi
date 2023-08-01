@@ -91,24 +91,22 @@ class WebRTCAdapter:
     async def stop(self):
         if self.__task == None:
             logger.warning("Already stopped, no-op.")
-        self.__task.cancel(f"{self.__class__.__name__}.stop() called")
-        # await self.act.stop()
-        # await self.__task
-        results = await asyncio.gather(self.act.stop(), self.__task, return_exceptions=True)
-        self.__task = None
         try:
             self._send_status("stop")
         except aiortc.exceptions.InvalidStateError as e:
             logger.debug("dc already closed, no-op.")
+        self.__task.cancel(f"{self.__class__.__name__}.stop() called")
+        results = await asyncio.gather(self.act.stop(), self.__task, return_exceptions=True)
+        self.__task = None
         for i, result in enumerate(results):
             if isinstance(result, Exception):
                 logger.error(f"Task {i} raised exception: {result}")
         logger.info("Stopped")
 
     async def wait_dc_connected(self):
-        logger.debug("pc connected, awaiting dc...")
+        logger.trace("pc connected, awaiting dc...")
         await self.__dc_connected.wait()
-        logger.debug("dc connected.")
+        logger.trace("dc connected.")
 
     def add_dc(self, dc: RTCDataChannel):
         if self.__dc is not None:
@@ -145,13 +143,11 @@ class WebRTCAdapter:
                 return msg
         raise ValueError(f"No {role.value} utterances in messages")
 
-    @logger.catch
     async def __run(self):
         """Run the main program loop."""
         utils.log.splash("moshi")
         await self.__dc_connected.wait()
         self._send_status("hello")
-        e = None
         for i in itertools.count():
             if i == MAX_LOOPS and MAX_LOOPS != 0:
                 msg = f"Reached MAX_LOOPS={MAX_LOOPS}, i={i}"
@@ -174,10 +170,9 @@ class WebRTCAdapter:
                 logger.info("Cancelled.")
                 break
             except Exception as e:
-                logger.error(f"Caught unexpected exception: {type(e)} {e}")
-                # log the traceback
                 import traceback
-                print(traceback.format_exc())
+                logger.error(f"Caught unexpected exception: {type(e)} {e}")
+                logger.error(traceback.format_exc())
                 self._send_error("internal")
                 break
         self._send_status("bye")
@@ -234,7 +229,6 @@ class WebRTCAdapter:
         self.act.add_msg(msg)
         return msg
 
-    @logger.catch
     async def __synth_speech(self, text: str = None) -> AudioFrame:
         msg = self.messages[-1]
         logger.debug(f"Synthesizing to speech: {msg}")

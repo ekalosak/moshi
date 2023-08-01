@@ -30,7 +30,8 @@ class ResponsePlayerStream(MediaStreamTrack):
         self.__sent_buffer_time = None
 
     async def recv(self) -> AudioFrame:
-        """Return audio from the fifo whenever it exists, otherwise send silence.
+        """Return audio from the fifo whenever it exists.
+        Otherwise, wait for audio to be written to the fifo.
         """
         frame = None
         while frame == None:

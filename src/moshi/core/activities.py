@@ -20,6 +20,7 @@ class Transcript:
     activity_type: str
     messages: list[Message]
     uid: str  # user id from FBA, required to index transcripts in db
+    language: str
     timestamp: datetime.datetime = None
 
     def asdict(self) -> dict:
@@ -76,6 +77,7 @@ class BaseActivity(ABC, BaseModel):
         self.__transcript = Transcript(
             activity_type=self.activity_type,
             uid=ctx.user.get().uid,
+            language=ctx.profile.get().lang,
             messages=self._init_messages(),
         )
         await self.__save()

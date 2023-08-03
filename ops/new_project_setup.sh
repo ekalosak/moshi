@@ -70,28 +70,4 @@ for api in $required_apis; do
             { echo "🚫 $api enabling failed, please try again." ; exit 1; } }
 done
 
-# Create a service account for Terraform:
-# 1. Check if the service account already exists.
-# 2. If not, create it.
-# 3. If yes, check if it has the right permissions.
-# 4. If not, add the right permissions: project editor.
-# 5. Check if the service account key already exists on the local machine.
-# 6. If not, download it.
-gcloud iam service-accounts list --project $project_name | grep -q "terraform" && \
-    echo "✅ Service account terraform already exists." || \
-    { echo "🔧 Creating service account terraform..." && \
-        gcloud iam service-accounts create terraform --display-name "Terraform service account" --project $project_name && \
-        echo "✅ Service account terraform created!" || \
-        { echo "🚫 Service account creation failed, please try again." ; exit 1; } }
-gcloud projects get-iam-policy $project_name --format json | jq -r '.bindings[] | select(.role == "roles/editor") | .members[]' | grep -q "terraform" && \
-    echo "✅ Service account terraform already has the right permissions." || \
-    { echo "🔧 Adding project editor permissions to service account terraform..." && \
-        gcloud projects add-iam-policy-binding $project_name --member serviceAccount:terraform@$project_name.iam.gserviceaccount.com --role roles/editor && \
-        echo "✅ Service account terraform has the right permissions!" || \
-        { echo "🚫 Service account permissions adding failed, please try again." ; exit 1; } }
-[ -f "terraform-key.json" ] && \
-    echo "✅ Service account key already exists on the local machine." || \
-    { echo "🔧 Downloading service account key..." && \
-        gcloud iam service-accounts keys create terraform-key.json --iam-account terraform@$project_name.iam.gserviceaccount.com && \
-        echo "✅ Service account key downloaded!" || \
-        { echo "🚫 Service account key downloading failed, please try again." ; exit 1; } }
+echo "✅ All required APIs are enabled!"

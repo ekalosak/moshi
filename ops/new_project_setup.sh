@@ -37,7 +37,6 @@ if [ "$project_already_exists" = false ]; then
         { echo "🚫 Project creation failed, please try again." ; exit 1; }
 fi
 
-# Check if billing is enabled for the project
 enable_billing() {
     # If there's more than one billing account, barf
     echo "🔧 Checking if there's only one billing account..."
@@ -53,29 +52,31 @@ enable_billing() {
         { echo "🚫 Billing enabling failed, please try again." ; exit 1; }
 
 }
+# Check if billing is enabled for the project, if not enable it
 gcloud beta billing projects describe $project_name | grep -q "billingEnabled: true" && \
     echo "✅ Billing is already enabled for project $project_name." || \
     enable_billing
 
-# TODO enable APIs using Terraform
-# # Enable APIs: compute engine, IAM
-# required_apis="compute.googleapis.com iam.googleapis.com"
-# echo "🔧 Checking if required APIs are enabled..."
-# for api in $required_apis; do
-#     echo "    🔧 Checking if $api is enabled..."
-#     gcloud services list --project $project_name | grep -q $api && \
-#         echo "    ✅ $api already enabled." || \
-#         { echo "    🔧 Enabling $api..." && \
-#             gcloud services enable $api --project $project_name && \
-#             echo "    ✅ $api enabled!" || \
-#             { echo "🚫 $api enabling failed, please try again." ; exit 1; } }
-# done
-
-# echo "✅ All required APIs are enabled!"
-
+# Set the gcloud project to the new one.
 gcloud config set project $project_name && \
     echo "✅ Project set to $project_name." || \
     { echo "🚫 Project setting failed, please try again." ; exit 1; }
+
+
+# Enable the base set of APIs
+# NOTE further API enablement is done in the Terraform code.
+required_apis="compute.googleapis.com iam.googleapis.com"
+echo "🔧 Checking if required APIs are enabled..."
+for api in $required_apis; do
+    echo "    🔧 Checking if $api is enabled..."
+    gcloud services list --project $project_name | grep -q $api && \
+        echo "    ✅ $api already enabled." || \
+        { echo "    🔧 Enabling $api..." && \
+            gcloud services enable $api --project $project_name && \
+            echo "    ✅ $api enabled!" || \
+            { echo "🚫 $api enabling failed, please try again." ; exit 1; } }
+done
+echo "✅ All required APIs are enabled!"
 
 # Create a service account for Terraform
 gcloud iam service-accounts list --project $project_name | grep -q "terraform" && \

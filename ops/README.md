@@ -1,6 +1,3 @@
-# Metadata
-- Current base image: `debian11-python310-1691105852`
-
 # Architecture
 Packer bakes the VM images.
 Terraform spins up the infra.
@@ -11,8 +8,10 @@ Python artifacts are stored on GCP Artifact Repository.
 # Runbook
 
 ## First time on a brand new GCP project
-1. Run `./scripts/new_project_setup.sh`
-2. Run `./scripts/create_python_repo.sh`
+1. Run `./scripts/new_project_setup.sh` to setup billing and enable base set of GCP APIs.
+2. Run `./scripts/create_python_repo.sh` to create the GCP-hosted PyPi.
+3. Run `packer build -var="project_id=MY_PROJECT" debian11-python3.pkr.hcl` to build the Python3 base VM.
+4. Run `make publish` from the project root to build and publish moshi-srv.
 
 # Packer
 Packer creates VM images. Basically Docker for VMs across cloud providers.

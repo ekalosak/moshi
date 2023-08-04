@@ -14,7 +14,7 @@ variable "project_id" {
 
 variable "ssh_username" {
   type        = string
-  default     = "devops"
+  default     = "packer"
   description = "The username for SSH access to the image."
 }
 

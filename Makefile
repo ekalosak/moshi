@@ -1,8 +1,8 @@
 .PHONY: auth build dev publish precheck
 # Source: https://web.mit.edu/gnu/doc/html/make_6.html
 
-GOOGLE_CLOUD_PROJECT = moshi-002
-GOOGLE_CLOUD_PYPI_URL = https://us-east1-python.pkg.dev/moshi-002/moshi-002-repo/
+GOOGLE_CLOUD_PROJECT = moshi-3
+GOOGLE_CLOUD_PYPI_URL = https://us-central1-python.pkg.dev/moshi-3/moshi/
 
 auth:
 	gcloud auth login
@@ -16,7 +16,7 @@ build:
 
 build-install:
 	pip install --upgrade pip && \
-    pip install build
+    pip install build twine
 
 bump:
 	./scripts/bump_version.sh
@@ -33,7 +33,9 @@ dev:
 
 publish: bump publish-nobump
 
-publish-nobump: build
+publish-nobump: build publish-nobump-nobuild
+
+publish-nobump-nobuild:
 	python3 -m twine upload \
 		 --repository-url $(GOOGLE_CLOUD_PYPI_URL) \
 		 "dist/*" \

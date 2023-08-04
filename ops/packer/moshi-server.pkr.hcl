@@ -33,13 +33,13 @@ locals {
 }
 
 source "googlecompute" "moshi" {
-  project_id      = var.project_id
+  project_id   = var.project_id
   zone         = var.zone
   machine_type = var.machine_type
-  ssh_username        = var.ssh_username
-  source_image = "projects/${var.project_id}/global/images/${var.base_image}"
-  disk_size = 10
-  image_name         = "moshi-srv-{{timestamp}}"
+  ssh_username = var.ssh_username
+  source_image = "${var.base_image}"
+  disk_size    = 10
+  image_name   = "moshi-srv-{{timestamp}}"
 }
 
 build {
@@ -48,6 +48,6 @@ build {
   ]
 
   provisioner "shell" {
-    script = "scripts/install_python3.sh"
+    script = "scripts/install_moshi.sh"
   }
 }

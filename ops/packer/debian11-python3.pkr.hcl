@@ -9,12 +9,13 @@ packer {
 
 variable "project_id" {
   type        = string
+  default     = "moshi-3"
   description = "The ID of your Google Cloud Platform project."
 }
 
 variable "ssh_username" {
   type        = string
-  default     = "packer"
+  default     = "devops"
   description = "The username for SSH access to the image."
 }
 

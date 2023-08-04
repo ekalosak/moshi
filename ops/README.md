@@ -5,13 +5,16 @@ They are run on Google Cloud Build.
 Builds are triggered by merges to main in GitHub.
 Python artifacts are stored on GCP Artifact Repository.
 
+The only IaC that's not in this `ops/` directory are the GitHub Actions in `./github/workflows` and the `Makefile`.
+
 # Runbook
 
 ## First time on a brand new GCP project
 1. Run `./scripts/new_project_setup.sh` to setup billing and enable base set of GCP APIs.
 2. Run `./scripts/create_python_repo.sh` to create the GCP-hosted PyPi.
-3. Run `packer build -var="project_id=MY_PROJECT" debian11-python3.pkr.hcl` to build the Python3 base VM.
-4. Run `make publish` from the project root to build and publish moshi-srv.
+3. Modify and run `packer build debian11-python3.pkr.hcl` to build the Python3 base VM.
+
+## CD
 
 # Packer
 Packer creates VM images. Basically Docker for VMs across cloud providers.
@@ -32,16 +35,12 @@ packer fmt .
 
 ### Base image
 ```sh
-packer validate \
-    -var="project_id=moshi-3" \
-    debian11-python3.pkr.hcl
+packer validate debian11-python3.pkr.hcl
 ```
 
 ## Build
 
 ### Base image
 ```sh
-packer build \
-    -var="project_id=moshi-3" \
-    debian11-python3.pkr.hcl
+packer build debian11-python3.pkr.hcl
 ```

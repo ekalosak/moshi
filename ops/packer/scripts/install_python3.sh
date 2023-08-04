@@ -13,9 +13,11 @@ sudo apt-get -y update && \
   eval "$(pyenv init -)" && \
   pyenv update && \
   pyenv install $PYTHON_VERSION && \
-  pyenv global $PYTHON_VERSION && \
+  pyenv virtualenv $PYTHON_VERSION moshi && \
   pyenv rehash && \
+  pyenv activate moshi && \
   pip install --upgrade pip && \
+  pyenv deactivate && \
   sudo apt-get remove -y git build-essential \
     zlib1g-dev libncurses5-dev libgdbm-dev libnss3-dev libssl-dev libreadline-dev libffi-dev libsqlite3-dev libbz2-dev liblzma-dev && \
   sudo apt-get autoremove -y && \

@@ -1,53 +1,18 @@
-variable "project_id" {
-  type        = string
-  default     = "moshi-3"
-  description = "The ID of your Google Cloud Platform project."
-}
-
-variable "base_image" {
-  type        = string
-  default     = "debian11-python310-1691178818"
-  description = "The name of the base image to use for the instance."
-}
-
-variable "ssh_username" {
-  type        = string
-  default     = "packer"
-  description = "The username for SSH access to the image."
-}
-
-variable "zone" {
-  type        = string
-  default     = "us-central1-c"
-  description = "The zone to build the image in, where the image will live."
-}
-
-variable "machine_type" {
-  type        = string
-  default     = "e2-micro"
-  description = "The machine type to use for building the instance."
-}
-
-variable "service_account" {
-  type        = string
-  default     = "artifact-reader"
-  description = "The name of the GCP Service Account to use for building the image."
-}
-
 locals {
-  image_family = "moshi-srv"
+  ssh_username = "packer"
 }
 
 source "googlecompute" "moshi" {
-  project_id            = var.project_id
-  zone                  = var.zone
-  machine_type          = var.machine_type
-  ssh_username          = var.ssh_username
-  source_image          = "${var.base_image}"
+  project_id            = "moshi-3"
+  zone                  = "us-central1-c"
+  machine_type          = "e2-micro"
+  ssh_username          = "${local.ssh_username}"
+  source_image          = "debian11-python310-1691178818"
   disk_size             = 10
   image_name            = "moshi-srv-{{timestamp}}"
-  image_family          = local.image_family
+  image_family          = "moshi-srv"
   service_account_email = "artifact-reader@moshi-3.iam.gserviceaccount.com"
+  scopes                = ["https://www.googleapis.com/auth/cloud-platform"]
 }
 
 build {
@@ -55,7 +20,7 @@ build {
 
   provisioner "file" {
     source      = "scripts/install_moshi.sh"
-    destination = "/home/${var.ssh_username}/install_moshi.sh"
+    destination = "/home/${local.ssh_username}/install_moshi.sh"
   }
 
   provisioner "shell" {

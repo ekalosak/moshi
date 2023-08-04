@@ -32,7 +32,7 @@ keyring --list-backends && \
 # echo "✅ Pip configured!" && \
 echo "🔧 Installing moshi..." && \
 # yes | pip install --index-url https://us-central1-python.pkg.dev/moshi-3/moshi/simple/ -v moshi && \
-pip install --extra-index-url https://us-central1-python.pkg.dev/moshi-3/moshi/simple moshi && \
+pip install --extra-index-url https://us-central1-python.pkg.dev/moshi-3/pypi/simple moshi && \
 pyenv deactivate && \
 echo "from moshi.api.core import app" > main.py && \
 echo "✅ Moshi installed!"

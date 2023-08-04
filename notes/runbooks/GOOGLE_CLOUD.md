@@ -59,7 +59,7 @@ pip install build && \
     c. verify: `keyring --list-backends`
     d. prep the settings:
     ```fish
-    set -x GOOGLE_CLOUD_LOCATION us-east1
+    set -x GOOGLE_CLOUD_LOCATION us-central1
     gcloud artifacts print-settings python --project=$GOOGLE_CLOUD_PROJECT \
         --repository=$GOOGLE_CLOUD_PYPI_NAME \
         --location=$GOOGLE_CLOUD_LOCATION
@@ -70,9 +70,9 @@ pip install build && \
     h. `pip install keyrings.google-artifactregistry-auth` and hit enter
 7. Upload the package:
 ```fish
-set -x GOOGLE_CLOUD_PROJECT moshi-002
-set -x GOOGLE_CLOUD_PYPI_NAME moshi-002-repo
-set -x GOOGLE_CLOUD_PYPI_URL https://us-east1-python.pkg.dev/$GOOGLE_CLOUD_PROJECT/$GOOGLE_CLOUD_PYPI_NAME/
+set -x GOOGLE_CLOUD_PROJECT moshi-3
+set -x GOOGLE_CLOUD_PYPI_NAME moshi
+set -x GOOGLE_CLOUD_PYPI_URL https://us-central1-python.pkg.dev/$GOOGLE_CLOUD_PROJECT/$GOOGLE_CLOUD_PYPI_NAME/
 python3 -m twine upload \
     --repository-url $GOOGLE_CLOUD_PYPI_URL \
     "dist/*"

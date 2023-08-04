@@ -43,13 +43,18 @@ source "googlecompute" "debian11python3" {
   source_image_family = "debian-11"
   disk_size           = 10
   image_name          = "debian11-python310-{{timestamp}}"
-  image_family       = local.image_family
+  image_family        = local.image_family
 }
 
 build {
   sources = [
     "source.googlecompute.debian11python3"
   ]
+
+  provisioner "file" {
+    source      = "scripts/install_pyenv.sh"
+    destination = "/home/${var.ssh_username}/install_pyenv.sh"
+  }
 
   provisioner "shell" {
     script = "scripts/install_python3.sh"

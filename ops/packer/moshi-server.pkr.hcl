@@ -6,7 +6,7 @@ variable "project_id" {
 
 variable "base_image" {
   type        = string
-  default     = "debian11-python310-1691165718"
+  default     = "debian11-python310-1691174177"
   description = "The name of the base image to use for the instance."
 }
 
@@ -64,7 +64,19 @@ build {
     destination = "/home/${var.ssh_username}/pip.conf"
   }
 
+  provisioner "file" {
+    source      = "scripts/install_moshi.sh"
+    destination = "/home/${var.ssh_username}/install_moshi.sh"
+  }
+
+  provisioner "file" {
+    source      = "scripts/install_moshi_as_moshi.sh"
+    destination = "/home/${var.ssh_username}/install_moshi_as_moshi.sh"
+  }
+
   provisioner "shell" {
-    script = "scripts/install_moshi.sh"
+    inline = [
+      "sudo -u moshi ./install_moshi.sh"
+    ]
   }
 }

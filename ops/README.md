@@ -20,6 +20,9 @@ Most of the IaC has hardcoded parameters so the values are tracked by version co
 7. Run `./scripts/get_gcp_pypi_config.sh` to get the PyPi configuration artifacts.
 7. Run `packer build moshi-server.pkr.hcl` to build the image. You will get a 401 if you don't put in the Service Account from `terraform apply packer`.
 
+### Manual steps
+1. After running the `terraform apply` for GitHub components, retrieve the PROVIDER_NAME and SA_EMAIL; add these as secrets for the GH repo. [GCP OICD docs](https://github.com/terraform-google-modules/terraform-google-github-actions-runners/tree/master/modules/gh-oidc)
+
 ## CD
 
 

@@ -27,9 +27,25 @@ module "gh_oidc" {
   pool_id     = "oidc-pool"
   provider_id = "oidc-gh-provider"
   sa_mapping = {
-    (google_service_account.sa.id) = {
+    (var.service_account) = {
       sa_name   = google_service_account.sa.name
       attribute = "attribute.repository/user/repo"
     }
   }
+}
+
+
+output "pool_name" {
+  description = "Pool name"
+  value       = module.gh_oidc.pool_name
+}
+
+output "provider_name" {
+  description = "Provider name"
+  value       = module.gh_oidc.provider_name
+}
+
+output "sa_email" {
+  description = "Service account email"
+  value       = google_service_account.sa.email
 }

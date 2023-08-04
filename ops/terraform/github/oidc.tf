@@ -13,6 +13,7 @@ variable "service_account" {
 resource "google_service_account" "sa" {
   project    = var.project_id
   account_id = var.service_account
+  display_name = "Service Account for OIDC auth from GitHub Actions"
 }
 
 resource "google_project_iam_member" "project" {

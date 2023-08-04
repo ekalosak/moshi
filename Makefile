@@ -1,8 +1,8 @@
-.PHONY: auth build dev publish publish-nobump precheck
+.PHONY: auth build dev publish publish-nobump publish-nobump-nobuild precheck
 # Source: https://web.mit.edu/gnu/doc/html/make_6.html
 
 GOOGLE_CLOUD_PROJECT = moshi-3
-GOOGLE_CLOUD_PYPI_URL = https://us-central1-python.pkg.dev/moshi-3/moshi/
+GOOGLE_CLOUD_PYPI_URL = https://us-central1-python.pkg.dev/moshi-3/pypi/
 
 auth:
 	gcloud auth login

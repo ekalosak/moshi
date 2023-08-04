@@ -47,22 +47,11 @@ source "googlecompute" "moshi" {
   disk_size             = 10
   image_name            = "moshi-srv-{{timestamp}}"
   image_family          = local.image_family
-  service_account_email = "${var.service_account}@${var.project_id}.iam.gserviceaccount.com"
+  service_account_email = "artifact-reader@moshi-3.iam.gserviceaccount.com"
 }
 
 build {
   sources = ["source.googlecompute.moshi"]
-
-  provisioner "file" {
-    source      = "artifacts/pypirc"
-    destination = "/home/${var.ssh_username}/.pypirc"
-  }
-
-
-  provisioner "file" {
-    source      = "artifacts/pip.conf"
-    destination = "/home/${var.ssh_username}/pip.conf"
-  }
 
   provisioner "file" {
     source      = "scripts/install_moshi.sh"
@@ -71,8 +60,6 @@ build {
 
   provisioner "shell" {
     inline = [
-      "sudo mv .pypirc /home/moshi/",
-      "sudo mv pip.conf /home/moshi/",
       "sudo -u moshi ./install_moshi.sh"
     ]
   }

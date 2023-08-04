@@ -12,7 +12,7 @@ variable "base_image" {
 
 variable "ssh_username" {
   type        = string
-  default     = "devops"
+  default     = "packer"
   description = "The username for SSH access to the image."
 }
 
@@ -28,24 +28,40 @@ variable "machine_type" {
   description = "The machine type to use for building the instance."
 }
 
+variable "service_account" {
+  type        = string
+  default     = "artifact-reader"
+  description = "The name of the GCP Service Account to use for building the image."
+}
+
 locals {
   image_family = "moshi-srv"
 }
 
 source "googlecompute" "moshi" {
-  project_id   = var.project_id
-  zone         = var.zone
-  machine_type = var.machine_type
-  ssh_username = var.ssh_username
-  source_image = "${var.base_image}"
-  disk_size    = 10
-  image_name   = "moshi-srv-{{timestamp}}"
+  project_id            = var.project_id
+  zone                  = var.zone
+  machine_type          = var.machine_type
+  ssh_username          = var.ssh_username
+  source_image          = "${var.base_image}"
+  disk_size             = 10
+  image_name            = "moshi-srv-{{timestamp}}"
+  service_account_email = "${var.service_account}@${var.project_id}.iam.gserviceaccount.com"
 }
 
 build {
-  sources = [
-    "source.googlecompute.moshi"
-  ]
+  sources = ["source.googlecompute.moshi"]
+
+  provisioner "file" {
+    source      = "artifacts/pypirc"
+    destination = "/home/${var.ssh_username}/.pypirc"
+  }
+
+
+  provisioner "file" {
+    source      = "artifacts/pip.conf"
+    destination = "/home/${var.ssh_username}/pip.conf"
+  }
 
   provisioner "shell" {
     script = "scripts/install_moshi.sh"

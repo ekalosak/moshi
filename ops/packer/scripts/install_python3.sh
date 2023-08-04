@@ -20,4 +20,7 @@ sudo apt-get -y update && \
   sudo apt-get autoremove -y && \
   sudo apt-get clean -y && \
   sudo rm -rf /var/lib/apt/lists/* && \
+  sudo adduser --disabled-password --gecos "" moshi && \
+  mv ~/.pyenv /home/moshi/ && \
+  chown -R moshi:moshi /home/moshi/.pyenv && \
   echo "✅ Python3 installed!"

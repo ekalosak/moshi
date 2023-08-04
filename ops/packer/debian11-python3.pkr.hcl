@@ -40,6 +40,8 @@ source "googlecompute" "debian11python3" {
   machine_type        = var.machine_type
   ssh_username        = var.ssh_username
   source_image_family = "debian-11"
+  disk_size           = 10
+  image_name          = "debian11-python310-{{timestamp}}"
 }
 
 build {

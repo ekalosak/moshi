@@ -1,4 +1,4 @@
-.PHONY: auth build dev publish precheck
+.PHONY: auth build dev publish publish-nobump precheck
 # Source: https://web.mit.edu/gnu/doc/html/make_6.html
 
 GOOGLE_CLOUD_PROJECT = moshi-3

@@ -27,7 +27,7 @@ variable "zone" {
 
 variable "machine_type" {
   type        = string
-  default     = "e2-micro"
+  default     = "e2-medium"
   description = "The machine type to create the image with."
 }
 
@@ -43,6 +43,7 @@ source "googlecompute" "debian11python3" {
   source_image_family = "debian-11"
   disk_size           = 10
   image_name          = "debian11-python310-{{timestamp}}"
+  image_family       = local.image_family
 }
 
 build {

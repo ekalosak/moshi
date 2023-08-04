@@ -6,7 +6,7 @@ variable "project_id" {
 
 variable "base_image" {
   type        = string
-  default     = "debian11-python310-1691112698"
+  default     = "debian11-python310-1691165718"
   description = "The name of the base image to use for the instance."
 }
 
@@ -46,6 +46,7 @@ source "googlecompute" "moshi" {
   source_image          = "${var.base_image}"
   disk_size             = 10
   image_name            = "moshi-srv-{{timestamp}}"
+  image_family          = local.image_family
   service_account_email = "${var.service_account}@${var.project_id}.iam.gserviceaccount.com"
 }
 

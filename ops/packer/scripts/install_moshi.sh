@@ -1,5 +1,5 @@
 #!/bin/bash
-su - moshi && \
+su - moshi &&
   echo "👋 Installing Moshi..." && \
   export PYENV_ROOT="$HOME/.pyenv" && \
   export PATH="$PYENV_ROOT/bin:$PATH" && \

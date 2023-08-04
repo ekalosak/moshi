@@ -1,7 +1,8 @@
 #!/bin/bash
 # For setting up VMs (Deterministic Instance Template)
 PYTHON_VERSION=3.10
-sudo apt-get -y update && \
+sudo adduser --system --home /home/moshi --shell /bin/bash moshi && \
+  sudo apt-get -y update && \
   sudo apt-get -y install git build-essential \
     zlib1g-dev libncurses5-dev libgdbm-dev libnss3-dev libssl-dev libreadline-dev libffi-dev libsqlite3-dev libbz2-dev liblzma-dev && \
   curl https://pyenv.run | bash && \
@@ -20,7 +21,6 @@ sudo apt-get -y update && \
   sudo apt-get autoremove -y && \
   sudo apt-get clean -y && \
   sudo rm -rf /var/lib/apt/lists/* && \
-  sudo adduser --disabled-password --gecos "" moshi && \
-  mv ~/.pyenv /home/moshi/ && \
-  chown -R moshi:moshi /home/moshi/.pyenv && \
+  sudo mv ~/.pyenv /home/moshi/ && \
+  sudo chown -R moshi /home/moshi/.pyenv && \
   echo "✅ Python3 installed!"

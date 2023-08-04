@@ -15,6 +15,6 @@ resource "google_service_account" "artifact_writer" {
 
 resource "google_project_iam_member" "artifact_writer" {
   project = "moshi-3"
-    role = "roles/artifactregistry.writer"
+  role    = "roles/artifactregistry.writer"
   member  = "serviceAccount:${google_service_account.artifact_writer.email}"
 }

@@ -16,6 +16,7 @@ The only IaC that's not in this `ops/` directory are the GitHub Actions in `./gi
 
 ## CD
 
+
 # Packer
 Packer creates VM images. Basically Docker for VMs across cloud providers.
 

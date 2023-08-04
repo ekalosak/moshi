@@ -6,7 +6,7 @@ variable "project_id" {
 
 variable "base_image" {
   type        = string
-  default     = "debian11-python310-1691105852"
+  default     = "debian11-python310-1691112698"
   description = "The name of the base image to use for the instance."
 }
 

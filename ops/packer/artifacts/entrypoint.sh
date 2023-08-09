@@ -6,6 +6,7 @@ su - moshi && \
   echo "👉 PYTHON3: $(command -v python3)" && \
   echo "👉 GUNICORN: $(command -v gunicorn)" && \
   echo "🔧 Running Moshi..." && \
+  GOOGLE_PROJECT_ID=moshi-3 \
   LOGURU_LEVEL=DEBUG \
   MOSHICONNECTIONTIMEOUT=30 \
   MOSHILOFILE=0 \

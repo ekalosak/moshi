@@ -29,6 +29,7 @@ echo "👉 Keyrings:" && \
 keyring --list-backends && \
 echo "🔧 Installing moshi..." && \
 pip install --extra-index-url https://us-central1-python.pkg.dev/moshi-3/pypi/simple moshi[server] && \
-pyenv deactivate && \
 echo "from moshi.api.core import app" > main.py && \
-echo "✅ Moshi installed!"
+echo "✅ Moshi installed!" && \
+echo "👉 Moshi version: $(python3 -c 'import moshi; print(moshi.__version__)')" && \
+pyenv deactivate

@@ -9,7 +9,9 @@ from loguru import logger
 GOOGLE_PROJECT = os.getenv("GOOGLE_PROJECT_ID")
 logger.info(f"Using Google Cloud project: {GOOGLE_PROJECT}")
 if not GOOGLE_PROJECT:
-    raise ValueError("GOOGLE_PROJECT_ID is not set! This is a required environment variable.")
+    raise ValueError(
+        "GOOGLE_PROJECT_ID is not set! This is a required environment variable."
+    )
 
 gcreds = contextvars.ContextVar("gcreds")
 

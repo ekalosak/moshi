@@ -3,10 +3,12 @@ import dataclasses
 from dataclasses import dataclass
 from enum import Enum
 
+
 @dataclass
 class User:
     uid: str
     email: str
+
 
 @dataclass
 class Profile:
@@ -14,6 +16,7 @@ class Profile:
     lang: str
     name: str
     primary_lang: str
+
 
 class Role(str, Enum):
     SYS = "sys"
@@ -26,6 +29,7 @@ class Message:
     # NOTE .asdict()
     role: Role
     content: str
+
 
 # TODO Model(ABC, str, Enum), ChatModel(Model), CompletionModel(Model)
 class ModelType(str, Enum):

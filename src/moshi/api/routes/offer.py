@@ -19,6 +19,7 @@ logger.info(f"Using (WebRTC session) CONNECTION_TIMEOUT={CONNECTION_TIMEOUT}")
 
 router = APIRouter()
 
+
 async def shutdown():
     """Close peer connections."""
     logger.debug(f"Closing {len(pcs)} PeerConnections...")
@@ -31,6 +32,7 @@ class Offer(BaseModel):
     sdp: str
     # type: Literal["offer"]
     type: str
+
 
 @router.post("/call/{activity_type}")
 async def new_call(
@@ -60,7 +62,7 @@ async def new_call(
 
         @dc.on("message")
         def on_message(msg):
-            logger.trace(f'dc: msg: {msg}')
+            logger.trace(f"dc: msg: {msg}")
             if isinstance(msg, str) and msg.startswith("ping "):
                 # NOTE io under the hood done with fire-and-forget ensure_future, UDP
                 dc.send("pong " + msg[4:])
@@ -80,7 +82,9 @@ async def new_call(
             await adapter.start()
         elif pc.connectionState == "connected":
             try:
-                await asyncio.wait_for(adapter.wait_dc_connected(), timeout=CONNECTION_TIMEOUT)
+                await asyncio.wait_for(
+                    adapter.wait_dc_connected(), timeout=CONNECTION_TIMEOUT
+                )
             except asyncio.TimeoutError as e:
                 with logger.contextualize(timeout_sec=CONNECTION_TIMEOUT):
                     logger.error("Timeout waiting for dc connected")

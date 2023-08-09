@@ -2,6 +2,7 @@ import dataclasses
 
 from google.cloud import texttospeech
 
+
 def _name_from_language(language: str) -> str:
     match language:
         case "en":
@@ -35,6 +36,6 @@ class Character:
 
     def asdict(self) -> dict:
         return dataclasses.asdict(self)
-    
+
     def __post_init__(self):
         self.name = self.name or _name_from_language(self.language)

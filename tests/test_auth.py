@@ -11,6 +11,7 @@ from fastapi import HTTPException
 from fastapi.testclient import TestClient
 
 from moshi.api import auth
+
 # from moshi import auth
 from moshi.api.core import app
 
@@ -21,6 +22,7 @@ from moshi.api.core import app
 #     em = "test@test.test"
 #     authorized = await auth.is_email_authorized(em)
 #     assert authorized
+
 
 @pytest.mark.asyncio
 @pytest.mark.gcloud

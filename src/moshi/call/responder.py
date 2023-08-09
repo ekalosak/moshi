@@ -10,7 +10,9 @@ from loguru import logger
 
 from moshi import AUDIO_FORMAT, AUDIO_LAYOUT, SAMPLE_RATE, audio
 
-BUFFER_AHEAD_SEC = 0.5  # how far ahead of the current time to allow buffer audio frames on the client.
+BUFFER_AHEAD_SEC = (
+    0.5  # how far ahead of the current time to allow buffer audio frames on the client.
+)
 FRAME_SEND_TIMEOUT_SEC = 0.5  # how long beyond the length of the response to wait for the audio fifo to flush to the track.
 FRAME_SIZE = 960
 assert FRAME_SIZE >= 128 and FRAME_SIZE <= 4096
@@ -46,7 +48,7 @@ class ResponsePlayerStream(MediaStreamTrack):
                 frame_sec = audio.get_frame_seconds(frame)
                 wall_elapsed_time = time.monotonic() - self.__send_start_time
                 if self.__sent_buffer_time - wall_elapsed_time > BUFFER_AHEAD_SEC:
-                    throttle_sec = BUFFER_AHEAD_SEC / 3.
+                    throttle_sec = BUFFER_AHEAD_SEC / 3.0
                     await asyncio.sleep(throttle_sec)
                     # logger.trace(f"playback throttled {throttle_sec} sec")
                 self.__sent_buffer_time += frame_sec
@@ -55,7 +57,7 @@ class ResponsePlayerStream(MediaStreamTrack):
 
     async def send_audio(self, frame: AudioFrame):
         self.__send_start_time = time.monotonic()
-        self.__sent_buffer_time = 0.
+        self.__sent_buffer_time = 0.0
         frame.pts = self.__fifo.samples_written
         self.__fifo.write(frame)
         self.__sent.clear()
@@ -78,7 +80,9 @@ class ResponsePlayer:
             - aiortc.MediaStreamError if the remote client hangs up.
             - asyncio.TimeoutError if the audio track is busy for longer than: FRAME_SEND_TIMEOUT_SEC.
         """
-        logger.trace(f"Sending utterance of length: {audio.get_frame_seconds(frame):.3f} sec")
+        logger.trace(
+            f"Sending utterance of length: {audio.get_frame_seconds(frame):.3f} sec"
+        )
         assert frame.rate == SAMPLE_RATE
         timeout = audio.get_frame_seconds(frame) + FRAME_SEND_TIMEOUT_SEC
         await asyncio.wait_for(

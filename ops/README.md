@@ -64,10 +64,3 @@ packer validate debian11-python3.pkr.hcl
 ```sh
 packer build debian11-python3.pkr.hcl
 ```
-
-# Tips
-
-## Roll the latest VM Image to a Managed Instance Group
-```
-gcloud compute instance-groups managed rolling-action replace moshi-srv-igm --zone us-central1-c
-```

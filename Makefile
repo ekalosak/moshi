@@ -68,3 +68,10 @@ test:
 
 test-cov:
 	coverage report --format=total
+
+healthcheck:
+	gcloud compute backend-services get-health moshi-srv-bs \
+  --global \
+  --project $GOOGLE_CLOUD_PROJECT \
+  --format json \
+  --log-http

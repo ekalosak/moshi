@@ -7,16 +7,12 @@ GOOGLE_CLOUD_PYPI_URL = https://us-central1-python.pkg.dev/moshi-3/pypi/
 auth:
 	gcloud auth login
 
-auth-install: auth
+auth-install:
 	pip install twine keyring keyrings.google-artifactregistry-auth
 
 build:
 	rm -rf dist 2>/dev/null
 	python -m build
-
-build-install:
-	pip install --upgrade pip && \
-    pip install -e .[build]
 
 bump:
 	./scripts/bump_version.sh

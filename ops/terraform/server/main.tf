@@ -9,7 +9,7 @@ provider "google-beta" {
 }
 
 resource "google_service_account" "default" {
-  provider = google-beta
+  provider     = google-beta
   account_id   = "moshi-srv-sa"
   display_name = "Service Account for the Moshi media server's managed instance group."
 }
@@ -22,7 +22,7 @@ resource "google_project_iam_member" "default" {
 
 resource "google_compute_instance_template" "default" {
   // https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_instance_template
-  provider = google-beta
+  provider    = google-beta
   name        = "moshi-srv-template"
   description = "This template is used to create Moshi media server instances."
 
@@ -36,7 +36,7 @@ resource "google_compute_instance_template" "default" {
   machine_type         = "e2-micro"
   can_ip_forward       = false
 
-  metadata_startup_script = "/home/moshi/entrypoint.sh"
+  metadata_startup_script = "sudo -u moshi /home/moshi/entrypoint.sh"
 
   scheduling {
     automatic_restart   = true
@@ -61,7 +61,7 @@ resource "google_compute_instance_template" "default" {
 }
 
 resource "google_compute_health_check" "autohealing" {
-  provider = google-beta
+  provider            = google-beta
   name                = "autohealing-health-check"
   check_interval_sec  = 5
   timeout_sec         = 5
@@ -77,7 +77,7 @@ resource "google_compute_health_check" "autohealing" {
 resource "google_compute_instance_group_manager" "default" {
   // https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_instance_group_manager
   // https://cloud.google.com/compute/docs/instance-groups
-  provider = google-beta
+  provider    = google-beta
   name        = "moshi-srv-igm"
   description = "This instance group is used to create Moshi media server instances."
 
@@ -100,10 +100,47 @@ resource "google_compute_instance_group_manager" "default" {
   }
 }
 
-## load balancer ALB
+resource "google_compute_security_policy" "default" {
+  # https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_security_policy
+  provider    = google-beta
+  name        = "moshi-srv-sp"
+  description = "This security policy is used to protect the Moshi media server load balancer."
+  rule {
+    action   = "allow"
+    priority = "2147483647"
+    match {
+      versioned_expr = "SRC_IPS_V1"
+      config {
+        src_ip_ranges = ["*"]
+      }
+    }
+    description = "default rule"
+  }
+  rule {
+    action   = "rate_based_ban"
+    priority = "1000"
+    match {
+      versioned_expr = "SRC_IPS_V1"
+      config {
+        src_ip_ranges = ["*"]
+      }
+    }
+    description = "rate limit"
+    rate_limit_options {
+      conform_action = "allow"
+      exceed_action = "deny(429)"
+      rate_limit_threshold {
+        count = 60
+        interval_sec = 60
+      }
+      ban_duration_sec = 60
+    }
+  }
+}
+
 resource "google_compute_backend_service" "default" {
   # https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_backend_service
-  provider = google-beta
+  provider    = google-beta
   name        = "moshi-srv-bs"
   description = "This backend service is used to route traffic to Moshi media server instances."
 
@@ -111,16 +148,21 @@ resource "google_compute_backend_service" "default" {
   port_name   = "http"
   timeout_sec = 30
 
+  load_balancing_scheme = "EXTERNAL"
+  security_policy = google_compute_security_policy.default.id
+
   backend {
     group = google_compute_instance_group_manager.default.instance_group
   }
 
   health_checks = [google_compute_health_check.autohealing.id]
+
+
 }
 
 resource "google_compute_url_map" "default" {
   # https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_url_map
-  provider = google-beta
+  provider    = google-beta
   name        = "moshi-srv-um"
   description = "This URL map is used to route traffic to Moshi media server instances."
 
@@ -137,6 +179,33 @@ resource "google_compute_global_address" "default" {
   purpose      = "GLOBAL"
   address_type = "EXTERNAL"
 }
+
+
+# make an application load balancer with an HTTPS frontend 
+# it must use the SSL cert created in ops/terraform/sslcert/main.tf
+# it must use the URL map created in this file i.e. all traffic is routed to the backend service
+resource "google_compute_global_forwarding_rule" "default" {
+  # https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_global_forwarding_rule
+  provider              = google-beta
+  name                  = "moshi-srv-lb"
+  description           = "This load balancer is used to route traffic to Moshi media server instances."
+  target = google_compute_target_https_proxy.default.self_link
+  ip_address = google_compute_global_address.default.address
+  load_balancing_scheme = "EXTERNAL"
+  port_range = "443-443"
+
+}
+
+resource "google_compute_target_https_proxy" "default" {
+  # https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_target_https_proxy
+  provider    = google-beta
+  name        = "moshi-srv-thp"
+  description = "This target HTTP proxy is used to route traffic to Moshi media server instances."
+
+  url_map = google_compute_url_map.default.self_link
+  ssl_certificates = ["projects/moshi-3/global/sslCertificates/moshi-srv-ssl"]
+}
+
 
 output "moshi-srv-external-ip" {
   value = google_compute_global_address.default.address

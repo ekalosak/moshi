@@ -15,8 +15,9 @@ jobs:
           cache: 'pip'
       - name: Setup build environment
         run: mkdir build
+        run: mkdir build
       - name: Install build dependencies
-        run: pip install .[build]
+        run: make build-install
       - name: Build Python package
         run: make build
       - id: 'auth'

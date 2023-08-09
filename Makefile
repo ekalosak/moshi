@@ -1,4 +1,4 @@
-.PHONY: auth build dev publish publish-nobump publish-nobump-nobuild precheck
+.PHONY: auth build cycle dev publish publish-nobump publish-nobump-nobuild precheck
 # Source: https://web.mit.edu/gnu/doc/html/make_6.html
 
 GOOGLE_CLOUD_PROJECT = moshi-3
@@ -8,7 +8,12 @@ auth:
 	gcloud auth login
 
 auth-install:
-	pip install twine keyring keyrings.google-artifactregistry-auth
+	PIP_NO_INPUT=1 pip install twine keyring keyrings.google-artifactregistry-auth
+
+bake:
+	@echo "🍳 Baking..."
+	(cd ops/packer && packer build moshi-server.pkr.hcl)
+	@echo "🍳 Baked."
 
 build:
 	rm -rf dist 2>/dev/null
@@ -19,6 +24,14 @@ bump:
 
 confirm:
 	@echo -n "Are you sure? [y/N] " && read ans && [ $${ans:-N} = y ]
+
+# https://cloud.google.com/sdk/gcloud/reference/compute/instance-groups/managed/rolling-action/replace
+# Make the instance group use the latest version of the moshi-srv image by replacing all instances in the group.
+cycle:
+	gcloud compute instance-groups managed \
+		rolling-action replace \
+		moshi-srv-igm \
+		--zone us-central1-c
 
 dev-install: auth-install build-install
 	mkdir build 2>/dev/null || echo "build/ exists" && \

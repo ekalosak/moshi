@@ -12,7 +12,7 @@ auth-install:
 
 build:
 	rm -rf dist 2>/dev/null
-	python -m build
+	PIP_NO_INPUT=1 python -m build
 
 bump:
 	./scripts/bump_version.sh

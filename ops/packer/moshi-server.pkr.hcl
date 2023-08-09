@@ -23,6 +23,11 @@ build {
     destination = "/home/${local.ssh_username}/install_moshi.sh"
   }
 
+  provisioner "file" {
+    source      = "artifacts/entrypoint.sh"
+    destination = "/tmp/entrypoint.sh"
+  }
+
   provisioner "shell" {
     inline = [
       "sudo -u moshi ./install_moshi.sh"

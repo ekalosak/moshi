@@ -1,6 +1,7 @@
 #!/bin/bash
 PYTHON_VERSION=3.10
 cd /home/moshi
+cp /tmp/entrypoint.sh .
 echo "👋 Installing Moshi..."
 echo "👉 whoami: $(whoami)"
 echo "👉 pwd: $(pwd)"

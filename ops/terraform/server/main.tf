@@ -7,8 +7,9 @@
 provider "google-beta" {
   project = "moshi-3"
 }
-  
+
 resource "google_service_account" "default" {
+  provider = google-beta
   account_id   = "moshi-srv-sa"
   display_name = "Service Account for the Moshi media server's managed instance group."
 }
@@ -21,6 +22,7 @@ resource "google_project_iam_member" "default" {
 
 resource "google_compute_instance_template" "default" {
   // https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_instance_template
+  provider = google-beta
   name        = "moshi-srv-template"
   description = "This template is used to create Moshi media server instances."
 
@@ -34,10 +36,7 @@ resource "google_compute_instance_template" "default" {
   machine_type         = "e2-micro"
   can_ip_forward       = false
 
-  // add startup script to instance
-  metadata = {
-    startup-script-url = "gs://${google_storage_bucket.moshi-srv.name}/entrypoint.sh"
-  }
+  metadata_startup_script = "/home/moshi/entrypoint.sh"
 
   scheduling {
     automatic_restart   = true
@@ -45,9 +44,9 @@ resource "google_compute_instance_template" "default" {
   }
 
   disk {
-    source_image      = "moshi-3/moshi-srv"
-    auto_delete       = true
-    boot              = true
+    source_image = "moshi-3/moshi-srv"
+    auto_delete  = true
+    boot         = true
   }
 
   network_interface {
@@ -62,6 +61,7 @@ resource "google_compute_instance_template" "default" {
 }
 
 resource "google_compute_health_check" "autohealing" {
+  provider = google-beta
   name                = "autohealing-health-check"
   check_interval_sec  = 5
   timeout_sec         = 5
@@ -77,13 +77,14 @@ resource "google_compute_health_check" "autohealing" {
 resource "google_compute_instance_group_manager" "default" {
   // https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_instance_group_manager
   // https://cloud.google.com/compute/docs/instance-groups
+  provider = google-beta
   name        = "moshi-srv-igm"
   description = "This instance group is used to create Moshi media server instances."
 
   base_instance_name = "moshi-srv"
   zone               = "us-central1-c"
   version {
-    instance_template  = google_compute_instance_template.default.self_link
+    instance_template = google_compute_instance_template.default.self_link
   }
 
   target_size = 1
@@ -102,11 +103,12 @@ resource "google_compute_instance_group_manager" "default" {
 ## load balancer ALB
 resource "google_compute_backend_service" "default" {
   # https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_backend_service
+  provider = google-beta
   name        = "moshi-srv-bs"
   description = "This backend service is used to route traffic to Moshi media server instances."
 
-  protocol = "HTTP"
-  port_name = "http"
+  protocol    = "HTTP"
+  port_name   = "http"
   timeout_sec = 30
 
   backend {
@@ -118,6 +120,7 @@ resource "google_compute_backend_service" "default" {
 
 resource "google_compute_url_map" "default" {
   # https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_url_map
+  provider = google-beta
   name        = "moshi-srv-um"
   description = "This URL map is used to route traffic to Moshi media server instances."
 
@@ -126,28 +129,15 @@ resource "google_compute_url_map" "default" {
 
 resource "google_compute_global_address" "default" {
   # https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_global_address
-  project     = "moshi-3"
+  provider = google-beta
+  # project     = "moshi-3"
   name        = "moshi-srv-ip"
   description = "This IP address is used by the Moshi media server load balancer."
 
-  purpose = "GLOBAL"
+  purpose      = "GLOBAL"
   address_type = "EXTERNAL"
 }
 
-resource "google_storage_bucket" "moshi-srv" {
-  provider = google-beta
-
-  # NOTE: name is globally unique and lowercase so I do the following to generate a random string:
-  #     `uuidgen | cut -f 1 -d '-'| tr '[:upper:]' '[:lower:]'`
-  name          = "moshi-5aee1af5"
-  location      = "us-central1"
-  storage_class = "STANDARD"
-#   force_destroy = true  # if true, non-empty buckets can be destroyed
-}
-
-output "moshi-srv-bucket-name" {
-  value = google_storage_bucket.moshi-srv.name
-}
 output "moshi-srv-external-ip" {
   value = google_compute_global_address.default.address
 }

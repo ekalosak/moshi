@@ -1,6 +1,0 @@
-[distutils]
-index-servers =
-    moshi
-
-[moshi]
-repository: https://us-central1-python.pkg.dev/moshi-3/moshi/

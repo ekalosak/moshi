@@ -15,6 +15,10 @@ bake:
 	(cd ops/packer && packer build moshi-server.pkr.hcl)
 	@echo "🍳 Baked."
 
+build-install:
+	PIP_NO_INPUT=1 pip install --upgrade pip
+	PIP_NO_INPUT=1 pip install build twine
+
 build:
 	rm -rf dist 2>/dev/null
 	PIP_NO_INPUT=1 python -m build

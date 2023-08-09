@@ -52,10 +52,6 @@ tests = [
   'scipy',
   'selenium',
 ]
-build = [
-  'twine',
-  'build',
-]
 dev = [
   'black',
   'flake8',

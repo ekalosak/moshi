@@ -16,7 +16,7 @@ jobs:
       - name: Setup build environment
         run: mkdir build
       - name: Install build dependencies
-        run: make build-install
+        run: pip install .[build]
       - name: Build Python package
         run: make build
       - id: 'auth'

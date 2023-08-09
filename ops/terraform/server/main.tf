@@ -34,6 +34,11 @@ resource "google_compute_instance_template" "default" {
   machine_type         = "e2-micro"
   can_ip_forward       = false
 
+  // add startup script to instance
+  metadata = {
+    startup-script-url = "gs://${google_storage_bucket.moshi-srv.name}/entrypoint.sh"
+  }
+
   scheduling {
     automatic_restart   = true
     on_host_maintenance = "MIGRATE"
@@ -129,6 +134,20 @@ resource "google_compute_global_address" "default" {
   address_type = "EXTERNAL"
 }
 
+resource "google_storage_bucket" "moshi-srv" {
+  provider = google-beta
+
+  # NOTE: name is globally unique and lowercase so I do the following to generate a random string:
+  #     `uuidgen | cut -f 1 -d '-'| tr '[:upper:]' '[:lower:]'`
+  name          = "moshi-5aee1af5"
+  location      = "us-central1"
+  storage_class = "STANDARD"
+#   force_destroy = true  # if true, non-empty buckets can be destroyed
+}
+
+output "moshi-srv-bucket-name" {
+  value = google_storage_bucket.moshi-srv.name
+}
 output "moshi-srv-external-ip" {
   value = google_compute_global_address.default.address
 }

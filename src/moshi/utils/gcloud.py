@@ -6,8 +6,10 @@ from google.auth import default
 from google.auth.transport.requests import Request
 from loguru import logger
 
-GOOGLE_PROJECT = os.getenv("GOOGLE_PROJECT_ID", "moshi-002")
+GOOGLE_PROJECT = os.getenv("GOOGLE_PROJECT_ID")
 logger.info(f"Using Google Cloud project: {GOOGLE_PROJECT}")
+if not GOOGLE_PROJECT:
+    raise ValueError("GOOGLE_PROJECT_ID is not set! This is a required environment variable.")
 
 gcreds = contextvars.ContextVar("gcreds")
 

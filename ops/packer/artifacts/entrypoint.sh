@@ -6,9 +6,9 @@ echo "👋 I am: $(whoami)" && \
 echo "👉 PATH: $PATH" && \
 eval "$(pyenv init -)" && \
 echo "👉 PYENV: $(command -v pyenv)" && \
-echo "🔧 Activating Python virtual environment..." && \
-pyenv activate moshi && \
-echo "✅ Python virtual environment activated!" && \
+# echo "🔧 Activating Python virtual environment..." && \
+# pyenv activate moshi && \
+# echo "✅ Python virtual environment activated!" && \
 echo "👉 PYTHON3: $(command -v python3)" && \
 echo "👉 GUNICORN: $(command -v gunicorn)" && \
 echo "🔧 Running Moshi..." && \

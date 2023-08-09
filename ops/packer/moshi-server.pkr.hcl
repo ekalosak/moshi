@@ -28,9 +28,14 @@ build {
     destination = "/tmp/entrypoint.sh"
   }
 
+  provisioner "file" {
+    source      = "artifacts/entrypoint_as_moshi.sh"
+    destination = "/tmp/entrypoint_as_moshi.sh"
+  }
+
   provisioner "shell" {
     inline = [
-      "sudo chown moshi /tmp/entrypoint.sh",
+      "sudo chown moshi /tmp/entrypoint.sh /tmp/entrypoint_as_moshi.sh",
       "sudo -u moshi ./install_moshi.sh"
     ]
   }

@@ -2,6 +2,7 @@
 PYTHON_VERSION=3.10
 cd /home/moshi
 mv /tmp/entrypoint.sh /home/moshi/entrypoint.sh
+mv /tmp/entrypoint_as_moshi.sh /home/moshi/entrypoint_as_moshi.sh
 echo "👋 Installing Moshi..."
 echo "👉 whoami: $(whoami)"
 echo "👉 pwd: $(pwd)"

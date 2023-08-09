@@ -1,6 +1,5 @@
 #!/bin/bash
 echo "🏁 STARTING ENTRYPOINT.SH 🏁"
-# sudo -u moshi bash -c ' \
 export PYENV_ROOT="$HOME/.pyenv" && \
 export PATH="$PYENV_ROOT/bin:$PATH" && \
 echo "👋 I am: $(whoami)" && \
@@ -25,4 +24,3 @@ gunicorn main:app \
   --threads 4 \
   --timeout 20 \
   --worker-class uvicorn.workers.UvicornWorker
-# '

@@ -36,7 +36,7 @@ resource "google_compute_instance_template" "default" {
   machine_type         = "e2-micro"
   can_ip_forward       = false
 
-  metadata_startup_script = "sudo -u moshi /home/moshi/entrypoint.sh"
+  metadata_startup_script = "/home/moshi/entrypoint_as_moshi.sh"
 
   scheduling {
     automatic_restart   = true

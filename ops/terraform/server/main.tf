@@ -10,7 +10,7 @@ provider "google-beta" {
   
 resource "google_service_account" "default" {
   account_id   = "moshi-srv-sa"
-  display_name = "Service Account for the Moshi media server."
+  display_name = "Service Account for the Moshi media server's managed instance group."
 }
 
 resource "google_project_iam_member" "default" {
@@ -102,10 +102,10 @@ resource "google_compute_backend_service" "default" {
 
   protocol = "HTTP"
   port_name = "http"
-  timeout_sec = 10
+  timeout_sec = 30
 
   backend {
-    group = google_compute_instance_group_manager.default.self_link
+    group = google_compute_instance_group_manager.default.instance_group
   }
 
   health_checks = [google_compute_health_check.autohealing.id]
@@ -117,4 +117,18 @@ resource "google_compute_url_map" "default" {
   description = "This URL map is used to route traffic to Moshi media server instances."
 
   default_service = google_compute_backend_service.default.self_link
+}
+
+resource "google_compute_global_address" "default" {
+  # https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_global_address
+  project     = "moshi-3"
+  name        = "moshi-srv-ip"
+  description = "This IP address is used by the Moshi media server load balancer."
+
+  purpose = "GLOBAL"
+  address_type = "EXTERNAL"
+}
+
+output "moshi-srv-external-ip" {
+  value = google_compute_global_address.default.address
 }

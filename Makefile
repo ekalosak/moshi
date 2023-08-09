@@ -16,7 +16,7 @@ build:
 
 build-install:
 	pip install --upgrade pip && \
-    pip install build twine
+    pip install -e .[build]
 
 bump:
 	./scripts/bump_version.sh
@@ -36,6 +36,7 @@ publish: bump publish-nobump
 publish-nobump: build publish-nobump-nobuild
 
 publish-nobump-nobuild:
+	@echo "📦 Publishing to $(GOOGLE_CLOUD_PYPI_URL) ..."
 	python3 -m twine upload \
 		 --repository-url $(GOOGLE_CLOUD_PYPI_URL) \
 		 "dist/*" \

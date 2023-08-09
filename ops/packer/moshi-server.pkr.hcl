@@ -30,6 +30,7 @@ build {
 
   provisioner "shell" {
     inline = [
+      "sudo chown moshi /tmp/entrypoint.sh",
       "sudo -u moshi ./install_moshi.sh"
     ]
   }

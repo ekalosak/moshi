@@ -1,4 +1,4 @@
-__version__ = "23.7.3"
+__version__ = "23.7.5"
 
 from .core import base
 from .core.base import Message, Model, ModelType, Role

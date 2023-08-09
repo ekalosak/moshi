@@ -1,5 +1,8 @@
 # This TF creates the GCP Cloud Storage bucket that will be used to store the Moshi media server's data.
 # Primarily, at the moment, this is the Moshi media server's entrypoint.sh script.
+provider "google-beta" {
+  project = "moshi-3"
+}
 
 resource "google_storage_bucket" "moshi-srv" {
   provider = google-beta

@@ -20,6 +20,7 @@ Most of the IaC has hardcoded parameters so the values are tracked by version co
 1. Run `packer build moshi-server.pkr.hcl` to build the image. You will get a 401 if you don't put in the Service Account from `terraform apply pypi`.
 
 ### Manual steps
+1. After running the `terraform apply` for the `storage/` components, run `gcloud storage cp artifacts/entrypoint.sh gs://moshi-<STORAGE_NAME>/entrypoint.sh` using the output from that tf apply command.
 1. After running the `terraform apply` for GitHub components, retrieve the PROVIDER_NAME and SA_EMAIL; add these as secrets for the GH repo. [GCP OICD docs](https://github.com/terraform-google-modules/terraform-google-github-actions-runners/tree/master/modules/gh-oidc)
 
 ## CD

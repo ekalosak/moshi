@@ -26,13 +26,8 @@ yes | pip install \
 echo "✅ Keyring installed!" && \
 echo "👉 Keyrings:" && \
 keyring --list-backends && \
-# echo "🔧 Configuring pip..." && \
-# mkdir -p ~/.config/pip && \
-# mv ~/pip.conf ~/.config/pip/pip.conf && \
-# echo "✅ Pip configured!" && \
 echo "🔧 Installing moshi..." && \
-# yes | pip install --index-url https://us-central1-python.pkg.dev/moshi-3/moshi/simple/ -v moshi && \
-pip install --extra-index-url https://us-central1-python.pkg.dev/moshi-3/pypi/simple moshi && \
+pip install --extra-index-url https://us-central1-python.pkg.dev/moshi-3/pypi/simple moshi[server] && \
 pyenv deactivate && \
 echo "from moshi.api.core import app" > main.py && \
 echo "✅ Moshi installed!"

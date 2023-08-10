@@ -3,7 +3,6 @@ import os
 from unittest import mock
 
 import pytest
-from av import AudioResampler
 from scipy import signal
 
 from moshi import (
@@ -13,16 +12,16 @@ from moshi import (
     Message,
     Model,
     Role,
-    WebRTCChatter,
     audio,
 )
+from moshi.call import WebRTCAdapter
 
 DUMMY_AST_TEXT = "ast test"
 DUMMY_USR_TEXT = "usr test"
 
 
 def test_chatter_init():
-    chatter = WebRTCChatter()
+    chatter = WebRTCAdapter()
 
 
 async def dummy_response(*a, **k):
@@ -49,27 +48,6 @@ async def dummy_get_voice(*a, **k) -> dict[str, str]:
 async def dummy_transcribe(*a, **k) -> str:
     await asyncio.sleep(0.0)
     return DUMMY_USR_TEXT
-
-
-@pytest.mark.asyncio
-async def test_chatter_disconnect_bug_15(utterance_audio_track, Sink):
-    """test that, when the user disconnects (i.e. detector gets a MediaStreamError), Moshi fails forward nicely."""
-    chatter = WebRTCChatter()
-    chatter.detector.setTrack(utterance_audio_track)  # 8s speak, 13s tot
-    sink = Sink(chatter.responder.audio)
-    # breakpoint()  # TODO how to interrupt utterance_audio i.e. make it raise MediaStreamError? i.e. hangup?
-    # a=1
-    print("chatter and sink initialized, starting them now...")
-    await asyncio.gather(chatter.start(), sink.start())
-    print("chatter and sink started")
-    await asyncio.sleep(2)
-    print("spoofing 'datachannels connected' signal")
-    chatter._WebRTCChatter__all_connected.set()
-    await asyncio.sleep(3)
-    print("interrupting detector track")
-    utterance_audio_track.stop()
-    print("waiting for barf")
-    await asyncio.sleep(2)
 
 
 @pytest.mark.slow

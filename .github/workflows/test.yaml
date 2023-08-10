@@ -1,6 +1,8 @@
 name: Test
 run-name: ${{ github.actor }} is testing code
 on: [pull_request]
+env:
+  GOOGLE_PROJECT_ID: moshi-3
 jobs:
   Tests:
     runs-on: ubuntu-latest

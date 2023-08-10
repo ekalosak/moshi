@@ -60,7 +60,6 @@ logger.warning(
     "Using permissive CORS for development. In production, only allow requests from known origins."
 )
 
-
 # NOTE healthz must not require auth so health checks can be performed
 @app.get("/healthz")
 def healthz():
@@ -71,5 +70,9 @@ def healthz():
 def version(user: dict = Depends(firebase_auth)):
     return moshi_version
 
+
+@app.get("/")
+def index():
+    return "Under construction..."
 
 app.include_router(offer.router)

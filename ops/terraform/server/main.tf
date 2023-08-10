@@ -180,37 +180,55 @@ resource "google_compute_backend_service" "default" {
 
 resource "google_compute_url_map" "default" {
   # https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_url_map
-  provider    = google-beta
+  # provider    = google-beta
+  project     = "moshi-3"
   name        = "moshi-srv-um"
-  description = "This URL map is used to route traffic to Moshi media server instances."
+  description = "This URL map is used to route call traffic to Moshi media server instances."
 
-  default_service = google_compute_backend_service.default.self_link
+  # default_service = google_compute_backend_service.default.self_link
+  default_url_redirect {
+    https_redirect = true
+    host_redirect  = "dev.chatmoshi.com"
+    path_redirect  = "/"
+    strip_query    = true
+  }
+
+  host_rule {
+    hosts        = ["dev.chatmoshi.com"]
+    path_matcher = "all"
+  }
+  path_matcher {
+    name = "all"
+    default_url_redirect {
+      https_redirect = true
+      host_redirect  = "dev.chatmoshi.com"
+      path_redirect  = "/"
+      strip_query    = true
+    }
+    path_rule {
+      paths   = ["/call/*"]
+      service = google_compute_backend_service.default.self_link
+    }
+    path_rule {
+      paths   = ["/"]
+      service = google_compute_backend_service.default.self_link
+    }
+  }
 }
 
-resource "google_compute_global_address" "default" {
-  # https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_global_address
-  provider = google-beta
-  # project     = "moshi-3"
-  name        = "moshi-srv-ip"
-  description = "This IP address is used by the Moshi media server load balancer."
 
-  purpose      = "GLOBAL"
-  address_type = "EXTERNAL"
-}
-
-
-# make an application load balancer with an HTTPS frontend 
-# it must use the SSL cert created in ops/terraform/sslcert/main.tf
-# it must use the URL map created in this file i.e. all traffic is routed to the backend service
 resource "google_compute_global_forwarding_rule" "default" {
   # https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_global_forwarding_rule
   provider              = google-beta
-  name                  = "moshi-srv-lb"
-  description           = "This load balancer is used to route traffic to Moshi media server instances."
+  name                  = "moshi-srv-fwd"
+  description           = "This forwarding rule is used to route HTTPS traffic to Moshi media server instances."
   target                = google_compute_target_https_proxy.default.self_link
-  ip_address            = google_compute_global_address.default.address
+  ip_address            = "34.110.228.236"
   load_balancing_scheme = "EXTERNAL"
-  port_range            = "443-443"
+  port_range            = "443"
+  labels = {
+    environment = "dev"
+  }
 
 }
 
@@ -218,13 +236,9 @@ resource "google_compute_target_https_proxy" "default" {
   # https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_target_https_proxy
   provider    = google-beta
   name        = "moshi-srv-thp"
-  description = "This target HTTP proxy is used to route traffic to Moshi media server instances."
+  description = "This target HTTPS proxy is used to route traffic to Moshi media server instances."
 
   url_map          = google_compute_url_map.default.self_link
   ssl_certificates = ["projects/moshi-3/global/sslCertificates/moshi-srv-ssl"]
 }
 
-
-output "moshi-srv-external-ip" {
-  value = google_compute_global_address.default.address
-}

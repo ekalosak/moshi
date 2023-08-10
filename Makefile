@@ -1,28 +1,41 @@
-.PHONY: auth build dev publish precheck
+.PHONY: auth build cycle dev publish publish-nobump publish-nobump-nobuild precheck
 # Source: https://web.mit.edu/gnu/doc/html/make_6.html
 
-GOOGLE_CLOUD_PROJECT = moshi-002
-GOOGLE_CLOUD_PYPI_URL = https://us-east1-python.pkg.dev/moshi-002/moshi-002-repo/
+GOOGLE_CLOUD_PROJECT = moshi-3
+GOOGLE_CLOUD_PYPI_URL = https://us-central1-python.pkg.dev/moshi-3/pypi/
 
 auth:
 	gcloud auth login
 
-auth-install: auth
-	pip install twine keyring keyrings.google-artifactregistry-auth
+auth-install:
+	PIP_NO_INPUT=1 pip install twine keyring keyrings.google-artifactregistry-auth
+
+bake:
+	@echo "🍳 Baking..."
+	(cd ops/packer && packer build moshi-server.pkr.hcl)
+	@echo "🍳 Baked."
+
+build-install:
+	PIP_NO_INPUT=1 pip install --upgrade pip
+	PIP_NO_INPUT=1 pip install build twine
 
 build:
 	rm -rf dist 2>/dev/null
-	python -m build
-
-build-install:
-	pip install --upgrade pip && \
-    pip install build
+	PIP_NO_INPUT=1 python -m build
 
 bump:
 	./scripts/bump_version.sh
 
 confirm:
 	@echo -n "Are you sure? [y/N] " && read ans && [ $${ans:-N} = y ]
+
+# https://cloud.google.com/sdk/gcloud/reference/compute/instance-groups/managed/rolling-action/replace
+# Make the instance group use the latest version of the moshi-srv image by replacing all instances in the group.
+cycle:
+	gcloud compute instance-groups managed \
+		rolling-action replace \
+		moshi-srv-igm \
+		--zone us-central1-c
 
 dev-install: auth-install build-install
 	mkdir build 2>/dev/null || echo "build/ exists" && \
@@ -33,7 +46,10 @@ dev:
 
 publish: bump publish-nobump
 
-publish-nobump: build
+publish-nobump: build publish-nobump-nobuild
+
+publish-nobump-nobuild:
+	@echo "📦 Publishing to $(GOOGLE_CLOUD_PYPI_URL) ..."
 	python3 -m twine upload \
 		 --repository-url $(GOOGLE_CLOUD_PYPI_URL) \
 		 "dist/*" \
@@ -56,3 +72,10 @@ test:
 
 test-cov:
 	coverage report --format=total
+
+healthcheck:
+	gcloud compute backend-services get-health moshi-srv-bs \
+  --global \
+  --project $GOOGLE_CLOUD_PROJECT \
+  --format json \
+  --log-http

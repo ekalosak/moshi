@@ -22,6 +22,7 @@ client = texttospeech.TextToSpeechClient()
 
 logger.success("Loaded!")
 
+
 async def get_voice(langcode: str, gender="FEMALE", model="Standard") -> str:
     """Get a valid voice for the language. Just picks the first match.
     Args:
@@ -35,10 +36,7 @@ async def get_voice(langcode: str, gender="FEMALE", model="Standard") -> str:
     logger.debug(f"Getting voice for lang code: {langcode}")
     try:
         response = await asyncio.wait_for(
-            asyncio.to_thread(
-                client.list_voices,
-                language_code=langcode
-            ),
+            asyncio.to_thread(client.list_voices, language_code=langcode),
             timeout=GOOGLE_VOICE_SELECTION_TIMEOUT,
         )
     except Exception as e:
@@ -83,12 +81,13 @@ async def _synthesize_speech_bytes(text: str, voice: Voice, rate: int = 24000) -
             client.synthesize_speech,
             request=request,
         ),
-        timeout=GOOGLE_SPEECH_SYNTHESIS_TIMEOUT
+        timeout=GOOGLE_SPEECH_SYNTHESIS_TIMEOUT,
     )
     logger.debug(
         f"Got response from texttospeech.synthesize_speech: {textwrap.shorten(str(response.audio_content), 32)}"
     )
     return response.audio_content
+
 
 async def synthesize(text: str, voice: Voice, rate: int = 24000) -> AudioFrame:
     audio_bytes = await _synthesize_speech_bytes(text, voice, rate)
@@ -103,7 +102,9 @@ async def transcribe(audio_frame: AudioFrame, language: str = None) -> str:
     try:
         audio.write_audio_frame_to_wav(audio_frame, fp)
         with open(fp, "rb") as f:
-            transcript = await openai.Audio.atranscribe(OPENAI_TRANSCRIPTION_MODEL, f, language=language)
+            transcript = await openai.Audio.atranscribe(
+                OPENAI_TRANSCRIPTION_MODEL, f, language=language
+            )
     finally:
         os.remove(fp)
     return transcript["text"]

@@ -8,6 +8,7 @@ logger.debug("Creating Firestore client...")
 firestore_client = firestore.AsyncClient(project=GOOGLE_PROJECT)
 logger.info(f"Firestore client initialized.")
 
+
 async def get_profile(uid: str) -> Profile:
     """Get the user profile."""
     collection_ref = firestore_client.collection("profiles")

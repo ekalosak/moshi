@@ -1,0 +1,29 @@
+name: Deploy
+run-name: ${{ github.actor }} is deploying code
+# on merge to main
+on: [push]
+jobs:
+  Publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+          cache: 'pip'
+      - name: Setup build environment
+        run: mkdir build
+      - name: Install build dependencies
+        run: make build-install
+      - name: Build Python package
+        run: make build
+      - id: 'auth'
+        name: 'Authenticate to Google Cloud'
+        uses: 'google-github-actions/auth@v0.6.0'
+        with:
+          credentials_json: '${{ secrets.GCP_CREDENTIALS }}'
+          token_format: 'access_token'
+      - name: Publish to GCloud PyPI
+        run: make publish-nobump-nobuild

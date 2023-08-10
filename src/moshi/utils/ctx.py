@@ -1,4 +1,4 @@
 from contextvars import ContextVar
 
-user = ContextVar('user')
-profile = ContextVar('profile')
+user = ContextVar("user")
+profile = ContextVar("profile")

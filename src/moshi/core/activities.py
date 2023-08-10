@@ -15,6 +15,8 @@ from moshi.utils.storage import firestore_client
 from moshi.utils import speech, ctx
 
 transcript_col = firestore_client.collection("transcripts")
+
+
 @dataclasses.dataclass
 class Transcript:
     activity_type: str
@@ -33,8 +35,10 @@ class Transcript:
 class ActivityType(str, Enum):
     UNSTRUCTURED = "unstructured"
 
+
 class BaseActivity(ABC, BaseModel):
     """An Activity provides a prompt for a conversation and the database wrapper."""
+
     activity_type: ActivityType
     __transcript: Transcript = None
     __cid: str = None
@@ -110,9 +114,9 @@ class BaseActivity(ABC, BaseModel):
                 logger.debug(f"Cancelled saving conversation document.")
 
 
-
 class Unstructured(BaseActivity):
     activity_type: Literal[ActivityType.UNSTRUCTURED] = ActivityType.UNSTRUCTURED
+
     def _init_messages(self) -> list[Message]:
         messages = [
             Message(
@@ -130,4 +134,7 @@ class Unstructured(BaseActivity):
         ]
         return messages
 
-Activity = Annotated[Union[Unstructured, Unstructured], Field(discriminator="activity_type")]
+
+Activity = Annotated[
+    Union[Unstructured, Unstructured], Field(discriminator="activity_type")
+]

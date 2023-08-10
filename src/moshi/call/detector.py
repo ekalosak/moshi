@@ -12,15 +12,19 @@ from loguru import logger
 
 from moshi import audio
 
-UTT_START_TIMEOUT_SEC = 5.0  # wait for the user to start speaking for this long before giving up. 
+UTT_START_TIMEOUT_SEC = (
+    5.0  # wait for the user to start speaking for this long before giving up.
+)
 # TODO tune the UTT_END_TIMEOUT_SEC param for typical network conditions.
 UTT_END_TIMEOUT_SEC = 0.08  # when there's a gap of this length between frames, consider the utterance ended.
 UTT_MAX_LEN_SEC = 25.0  # maximum length of an utterance.
 
 logger.success("Loaded!")
 
+
 class UtteranceTooLongError(Exception):
     ...
+
 
 class UtteranceNotStartedError(Exception):
     ...
@@ -50,10 +54,10 @@ class UtteranceDetector:
         logger.debug("Track set")
 
     async def get_utterance(self) -> AudioFrame:
-        """ Raises:
-            - aiortc.MediaStreamError if user hangs up.
-            - UtteranceNotStartedError if the user doesn't start speaking within: UTT_START_TIMEOUT_SEC.
-            - UtteranceTooLongError if the utterance is longer than the maximum allowed length: UTT_MAX_LEN_SEC.
+        """Raises:
+        - aiortc.MediaStreamError if user hangs up.
+        - UtteranceNotStartedError if the user doesn't start speaking within: UTT_START_TIMEOUT_SEC.
+        - UtteranceTooLongError if the utterance is longer than the maximum allowed length: UTT_MAX_LEN_SEC.
         """
         logger.trace("Waiting for utterance to start...")
         try:

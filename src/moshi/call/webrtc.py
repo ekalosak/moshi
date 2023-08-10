@@ -30,9 +30,9 @@ assert MAX_LOOPS >= 0
 
 logger.success("Loaded!")
 
+
 class WebRTCAdapter:
-    """This adapter connects WebRTC audio and signalling to the activity.
-    """
+    """This adapter connects WebRTC audio and signalling to the activity."""
 
     def __init__(self, activity_type: activities.ActivityType):
         self.__dc = None
@@ -40,16 +40,22 @@ class WebRTCAdapter:
         self.__task = None
         self.__utt_start_count = 0
         self.act = activities.Activity(activity_type=activity_type)
-        self.detector = detector.UtteranceDetector()  # get_utterance: track -> AudioFrame
-        self.responder = responder.ResponsePlayer()  # play_response: AudioFrame -> track
+        self.detector = (
+            detector.UtteranceDetector()
+        )  # get_utterance: track -> AudioFrame
+        self.responder = (
+            responder.ResponsePlayer()
+        )  # play_response: AudioFrame -> track
 
     def __send(self, msg: str):
         """Send msg over dc with best effort."""
         # NOTE RTCDataChannel.send() does aio via ensure_future.
         # source: https://github.com/aiortc/aiortc/blob/main/src/aiortc/rtcsctptransport.py#L1796
-        logger.trace('sending: ' + msg)
+        logger.trace("sending: " + msg)
         if not self.__dc:
-            logger.warning(f"tried to send before dc connected, discarding message: {msg}")
+            logger.warning(
+                f"tried to send before dc connected, discarding message: {msg}"
+            )
             return
         self.__dc.send(msg)
 
@@ -65,7 +71,7 @@ class WebRTCAdapter:
             raise ValueError(
                 f"{msg.role} not supported user-facing transcript Role, must be USR or AST"
             )
-        self.__send('transcript ' + f"{msg.role.value} {msg.content}")
+        self.__send("transcript " + f"{msg.role.value} {msg.content}")
 
     async def _speak_to_user(self, text: str):
         """Speak to the user over audio channel.
@@ -80,7 +86,9 @@ class WebRTCAdapter:
             return
         self.__task = asyncio.create_task(self.__run(), name="Main chat task")
         logger.debug("Awaiting component startup...")
-        results = await asyncio.gather(self.act.start(), self.wait_dc_connected(), return_exceptions=True)
+        results = await asyncio.gather(
+            self.act.start(), self.wait_dc_connected(), return_exceptions=True
+        )
         for i, result in enumerate(results):
             if isinstance(result, Exception):
                 logger.error(f"Task {i} raised exception: {result}")
@@ -96,7 +104,9 @@ class WebRTCAdapter:
         except aiortc.exceptions.InvalidStateError as e:
             logger.debug("dc already closed, no-op.")
         self.__task.cancel(f"{self.__class__.__name__}.stop() called")
-        results = await asyncio.gather(self.act.stop(), self.__task, return_exceptions=True)
+        results = await asyncio.gather(
+            self.act.stop(), self.__task, return_exceptions=True
+        )
         self.__task = None
         for i, result in enumerate(results):
             if isinstance(result, Exception):
@@ -171,6 +181,7 @@ class WebRTCAdapter:
                 break
             except Exception as e:
                 import traceback
+
                 logger.error(f"Caught unexpected exception: {type(e)} {e}")
                 logger.error(traceback.format_exc())
                 self._send_error("internal")
@@ -204,7 +215,9 @@ class WebRTCAdapter:
 
         self.__utt_start_count = 0
         self._send_status("transcribing")
-        usr_text: str = await self.__transcribe_audio(usr_audio)  # TODO handle network errors
+        usr_text: str = await self.__transcribe_audio(
+            usr_audio
+        )  # TODO handle network errors
         usr_msg = self.__add_message(usr_text, Role.USR)
         self._send_transcript(usr_msg)
         self._send_status("thinking")
@@ -213,9 +226,13 @@ class WebRTCAdapter:
             ast_msg = self.__add_message(ast_text, Role.AST)
             self._send_transcript(ast_msg)
             self._send_status("speaking")
-            ast_audio: AudioFrame = await self.__synth_speech()  # TODO handle network errors
+            ast_audio: AudioFrame = (
+                await self.__synth_speech()
+            )  # TODO handle network errors
             logger.debug(f"Got assistant response audio: {ast_audio}, sending...")
-            await self.responder.send_utterance(ast_audio)  # TODO handle: Raises: MediaStreamError, TimeoutError
+            await self.responder.send_utterance(
+                ast_audio
+            )  # TODO handle: Raises: MediaStreamError, TimeoutError
         else:
             logger.warning("Got empty assistant response")
             raise UserResetError("empty assistant response")

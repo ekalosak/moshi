@@ -59,7 +59,7 @@ pip install build && \
     c. verify: `keyring --list-backends`
     d. prep the settings:
     ```fish
-    set -x GOOGLE_CLOUD_LOCATION us-east1
+    set -x GOOGLE_CLOUD_LOCATION us-central1
     gcloud artifacts print-settings python --project=$GOOGLE_CLOUD_PROJECT \
         --repository=$GOOGLE_CLOUD_PYPI_NAME \
         --location=$GOOGLE_CLOUD_LOCATION
@@ -70,46 +70,10 @@ pip install build && \
     h. `pip install keyrings.google-artifactregistry-auth` and hit enter
 7. Upload the package:
 ```fish
-set -x GOOGLE_CLOUD_PROJECT moshi-002
-set -x GOOGLE_CLOUD_PYPI_NAME moshi-002-repo
-set -x GOOGLE_CLOUD_PYPI_URL https://us-east1-python.pkg.dev/$GOOGLE_CLOUD_PROJECT/$GOOGLE_CLOUD_PYPI_NAME/
+set -x GOOGLE_CLOUD_PROJECT moshi-3
+set -x GOOGLE_CLOUD_PYPI_NAME moshi
+set -x GOOGLE_CLOUD_PYPI_URL https://us-central1-python.pkg.dev/$GOOGLE_CLOUD_PROJECT/$GOOGLE_CLOUD_PYPI_NAME/
 python3 -m twine upload \
     --repository-url $GOOGLE_CLOUD_PYPI_URL \
     "dist/*"
-```
-
-# Hosting
-
-For GC's App Engine. NOTE: you can't delete the `default` service, if you goof it, you will have to delete the whole
-Project. That's where `moshi-001` went, so be careful.
-1. Ensure requirements.txt specified
-    - https://cloud.google.com/docs/buildpacks/python#specifying_dependencies_with_pip
-2. With the Project already set up, add app.yaml
-    - https://cloud.google.com/appengine/docs/standard/python3/building-app/writing-web-service
-    - see demo/
-3. `.gcloudignore`
-4. `gcloud app deploy` from directory containing app.yaml
-
-## Run demo server locally before `app deploy`
-- https://cloud.google.com/appengine/docs/standard/tools/using-local-server?tab=python#set-up
-- `gcloud components install app-engine-python` to install the dev server
-- `gcloud info` to get the `CLOUD_SDK_ROOT`
-    - `set -x CLOUD_SDK_ROOT /Users/eric/bin/google-cloud-sdk`
-
-- https://cloud.google.com/docs/buildpacks/python?authuser=1#application_entrypoint
-- https://docs.aiohttp.org/en/stable/deployment.html#start-gunicorn
-
-Make sure py3 and py27 are available globally.
-```sh
-pyenv deactivate && \
-    pyenv global 3.7.4 2.7.18
-```
-
-Run the demo server from the moshi/ dir where the app.py lives.
-```sh
-set -x CLOUD_SDK_ROOT /Users/eric/bin/google-cloud-sdk
-set -x GOOGLE_CLOUD_PROJECT moshi-002
-python3 $CLOUD_SDK_ROOT/bin/dev_appserver.py \
-    --runtime_python_path="python3=/Users/eric/.pyenv/shims/python3,python27=/Users/eric/.pyenv/shims/python2" \
-    app.yaml
 ```

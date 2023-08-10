@@ -74,6 +74,24 @@ resource "google_compute_health_check" "autohealing" {
   }
 }
 
+# firewall rule to allow health checks
+resource "google_compute_firewall" "allow-health-checks" {
+  provider = google-beta
+  name     = "moshi-srv-allow-health-checks"
+  network  = "default"
+
+  allow {
+    protocol = "tcp"
+    ports    = ["8080"]
+  }
+
+  source_ranges = [
+    "130.211.0.0/22",
+    "35.191.0.0/16"
+  ]
+
+}
+
 resource "google_compute_instance_group_manager" "default" {
   // https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_instance_group_manager
   // https://cloud.google.com/compute/docs/instance-groups

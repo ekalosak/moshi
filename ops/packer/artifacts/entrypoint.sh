@@ -22,5 +22,5 @@ gunicorn main:app \
   --bind :8080 \
   --workers 1 \
   --threads 1 \
-  --timeout 45 \
+  --timeout 30 \
   --worker-class uvicorn.workers.UvicornWorker

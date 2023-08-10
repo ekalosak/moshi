@@ -210,6 +210,10 @@ resource "google_compute_url_map" "default" {
       service = google_compute_backend_service.default.self_link
     }
     path_rule {
+      paths   = ["/healthz"]
+      service = google_compute_backend_service.default.self_link
+    }
+    path_rule {
       paths   = ["/"]
       service = google_compute_backend_service.default.self_link
     }

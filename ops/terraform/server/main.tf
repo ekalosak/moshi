@@ -26,7 +26,7 @@ resource "google_compute_instance_template" "default" {
   name        = "moshi-srv-template"
   description = "This template is used to create Moshi media server instances."
 
-  tags = ["server", "moshi-srv", "moshi", "media-server"]
+  tags = ["http-server", "allow-health-checks"]
 
   labels = {
     environment = "dev"
@@ -62,7 +62,7 @@ resource "google_compute_instance_template" "default" {
 
 resource "google_compute_health_check" "autohealing" {
   provider            = google-beta
-  name                = "autohealing-health-check"
+  name                = "moshi-srv-hc"
   check_interval_sec  = 5
   timeout_sec         = 5
   healthy_threshold   = 2
@@ -128,9 +128,9 @@ resource "google_compute_security_policy" "default" {
     description = "rate limit"
     rate_limit_options {
       conform_action = "allow"
-      exceed_action = "deny(429)"
+      exceed_action  = "deny(429)"
       rate_limit_threshold {
-        count = 60
+        count        = 60
         interval_sec = 60
       }
       ban_duration_sec = 60
@@ -149,7 +149,7 @@ resource "google_compute_backend_service" "default" {
   timeout_sec = 30
 
   load_balancing_scheme = "EXTERNAL"
-  security_policy = google_compute_security_policy.default.id
+  security_policy       = google_compute_security_policy.default.id
 
   backend {
     group = google_compute_instance_group_manager.default.instance_group
@@ -189,10 +189,10 @@ resource "google_compute_global_forwarding_rule" "default" {
   provider              = google-beta
   name                  = "moshi-srv-lb"
   description           = "This load balancer is used to route traffic to Moshi media server instances."
-  target = google_compute_target_https_proxy.default.self_link
-  ip_address = google_compute_global_address.default.address
+  target                = google_compute_target_https_proxy.default.self_link
+  ip_address            = google_compute_global_address.default.address
   load_balancing_scheme = "EXTERNAL"
-  port_range = "443-443"
+  port_range            = "443-443"
 
 }
 
@@ -202,7 +202,7 @@ resource "google_compute_target_https_proxy" "default" {
   name        = "moshi-srv-thp"
   description = "This target HTTP proxy is used to route traffic to Moshi media server instances."
 
-  url_map = google_compute_url_map.default.self_link
+  url_map          = google_compute_url_map.default.self_link
   ssl_certificates = ["projects/moshi-3/global/sslCertificates/moshi-srv-ssl"]
 }
 

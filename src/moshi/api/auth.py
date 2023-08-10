@@ -1,7 +1,6 @@
 """Contains Firebase HTTP auth middleware."""
 import asyncio
 from contextvars import ContextVar
-import os
 
 import firebase_admin
 from fastapi import Depends, HTTPException
@@ -17,11 +16,14 @@ from moshi.utils import ctx, storage, GOOGLE_PROJECT
 
 gcreds = ContextVar("gcreds")
 
-firebase_app = firebase_admin.initialize_app()
-logger.info(f"Firebase authentication initialized: {firebase_app.project_id}")
-assert (
-    GOOGLE_PROJECT == firebase_app.project_id
-), f"Initialized auth for unexpected project_id: {firebase_app.project_id}"
+try:
+    firebase_app = firebase_admin.initialize_app()
+    logger.info(f"Firebase authentication initialized: {firebase_app.project_id}")
+    assert (
+        GOOGLE_PROJECT == firebase_app.project_id
+    ), f"Initialized auth for unexpected project_id: {firebase_app.project_id}"
+except ValueError:
+    logger.warning("Firebase authentication already initialized.")
 
 security = HTTPBearer()
 logger.success("Loaded!")

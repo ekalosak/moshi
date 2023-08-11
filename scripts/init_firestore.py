@@ -96,9 +96,9 @@ def _init_info(db):
         })
     doc_ref = db.collection("info").document()
     doc_ref.set({
-        "title": "Latest updates",
-        "subtitle": "Please check for updates regularly.",
-        "body": "Please visit www.chatmoshi.com for the latest updates to the Moshi app.",
+        "title": "Updates",
+        "subtitle": "We'll post updates here as we make them.",
+        "body": "Please visit www.chatmoshi.com for the latest on the Moshi app.",
         "type": "update",
         "timestamp": datetime.now(),
     })

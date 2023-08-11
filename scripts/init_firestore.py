@@ -90,7 +90,7 @@ def _init_info(db):
     doc_ref.set({
         "title": "Privacy Policy",
         "subtitle": "Last updated: 2023-08-09",
-        "body": "We take your privacy seriously. What data we do store is encrypted at rest and in flight. We do not share your data with anyone but you and select 3rd party API providers. We do not sell your data. We do not currently use your data for advertising purposes, but may do so in the future in de-identified aggregate.\nWe do use your data to improve our service. We do not currently have a way for you to delete your data in the App, but we will happily do so upon request by email at moshi.feedback@gmail.com. We do not store audio recordings, but we do store transcripts of the conversations you have with Moshi. These transcripts are available to you on the Transcripts page.\nWe do not knowingly collect data from children under 13. If you are a parent or guardian and believe we have collected data from your child, please contact us at moshi.feedback@gmail.com and we will remove it immediately.\nWe may update this privacy policy at any time, please check back for updates.",
+        "body": "We take your privacy seriously. What data we do store is encrypted at rest and in flight. We do not share your data with anyone but you and select 3rd party API providers. We do not sell your data. We do not currently use your data for advertising purposes, but may do so in the future in de-identified aggregate.\n\nWe do use your data to improve our service. We do not currently have a way for you to delete your data in the App, but we will happily do so upon request by email at moshi.feedback@gmail.com. We do not store audio recordings, but we do store transcripts of the conversations you have with Moshi. These transcripts are available to you on the Transcripts page.\n\nWe do not knowingly collect data from children under 13. If you are a parent or guardian and believe we have collected data from your child, please contact us at moshi.feedback@gmail.com and we will remove it immediately.\n\nWe may update this privacy policy at any time, please check back for updates.",
         "type": "privacy_policy",
         "timestamp": datetime.now(),
         })
@@ -106,11 +106,33 @@ def _init_info(db):
     doc_ref.set({
         "title": "Moshi Beta is live!",
         "subtitle": "Thank you for giving Moshi a try!",
-        "body": "The Moshi Beta is now live! Thank you for your patience as we continue to improve the service. Please reach out with any suggestions or feedback via the Feedback page.",
+        "body": "The Moshi Beta is now live! Thank you for your patience as we continue to improve the service. Please reach out with any suggestions or feedback via the Feedback page.\n\n",
         "type": "news",
         "timestamp": datetime.now(),
     })
     print("Successfully initialized the info collection.")
+
+def _init_feed(db):
+    """Initialize the user feed collection."""
+    doc_ref = db.collection("feed").document()
+    doc_ref.set({
+        "uid": "test",
+        "body": "This is a test feed message.",
+        "timestamp": datetime.now(),
+        "type": "test",
+    })
+    print("Successfully initialized the feed collection.")
+
+def _init_feedback(db):
+    """Initialize the feedback collection."""
+    doc_ref = db.collection("feedback").document()
+    doc_ref.set({
+        "uid": "test",
+        "body": "This is a test feedback message.",
+        "timestamp": datetime.now(),
+        "type": "test",
+    })
+    print("Successfully initialized the feedback collection.")
 
 def _init_profile(db, uid):
     """Initialize the profiles collection."""
@@ -126,6 +148,7 @@ def _init_user(auth):
     """Initialize the default user."""
     try:
         user = auth.create_user(
+            uid="test",
             email=DEFAULT_USER_EMAIL,
             password=DEFAULT_USER_PASSWORD,
             display_name=DEFAULT_USER_NAME,
@@ -135,7 +158,7 @@ def _init_user(auth):
         user = auth.get_user_by_email(DEFAULT_USER_EMAIL)
     else:
         print('Successfully created new user.')
-    print("Default user: ",  user.email, user.display_name)
+    print("\tDefault user: ",  user.email, user.display_name)
     return user.uid
 
 def main():
@@ -146,6 +169,8 @@ def main():
     _init_profile(db, uid)
     _init_config(db)
     _init_info(db)
+    _init_feed(db)
+    _init_feedback(db)
 
 if __name__ == "__main__":
     print("START")

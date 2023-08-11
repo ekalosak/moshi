@@ -103,7 +103,7 @@ def _completion_payload_from_messages(messages: list[Message]) -> CompletionPayl
 
 
 async def _chat_completion(
-    payload: ChatCompletionPayload, n: int, model: Model, **kwargs
+    payload: ChatCompletionPayload, n: int, model: Model, user: str | None = None, **kwargs
 ) -> list[str]:
     """Get the message"""
     msg_contents = []
@@ -112,6 +112,7 @@ async def _chat_completion(
         model=model,
         messages=payload,
         n=n,
+        user=user,
         **kwargs,
     )
     logger.debug(f"response:\n{pformat(response)}")
@@ -126,7 +127,7 @@ async def _chat_completion(
 
 
 async def _completion(
-    payload: CompletionPayload, n: int, model: Model, **kwargs
+    payload: CompletionPayload, n: int, model: Model, user: str | None = None, **kwargs
 ) -> list[str]:
     assert _get_type_of_model(model) == ModelType.COMP
     msg_contents = []
@@ -134,6 +135,7 @@ async def _completion(
         model=model,
         prompt=payload,
         n=n,
+        user=user,
         **kwargs,
     )
     logger.debug(f"response:\n{pformat(response)}")
@@ -150,7 +152,11 @@ async def _completion(
 
 
 async def completion_from_assistant(
-    messages: list[Message], n: int = 1, model=Model.TEXTDAVINCI002, **kwargs
+    messages: list[Message],
+    n: int = 1,
+    model=Model.TEXTDAVINCI002,
+    user: str | None = None,
+    **kwargs,
 ) -> list[str]:
     """Get the conversational response from the LLM.
     Args:
@@ -165,12 +171,12 @@ async def completion_from_assistant(
     msg_contents = []
     if _get_type_of_model(model) == ModelType.CHAT:
         payload = _chat_completion_payload_from_messages(messages)
-        msg_contents = await _chat_completion(payload, n, model, **kwargs)
+        msg_contents = await _chat_completion(payload, n, model, user, **kwargs)
     elif _get_type_of_model(model) == ModelType.COMP:
         payload = _completion_payload_from_messages(messages)
-        msg_contents = await _completion(payload, n, model, **kwargs)
+        msg_contents = await _completion(payload, n, model, user, **kwargs)
     else:
-        raise TypeError(f"Model not supported: {MODEL}")
+        raise TypeError(f"Model not supported: {model}")
     assert isinstance(msg_contents, list)
     assert all(isinstance(mc, str) for mc in msg_contents)
     return msg_contents

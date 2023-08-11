@@ -16,6 +16,7 @@ from moshi import (
     utils,
 )
 from moshi.core import activities
+from moshi.utils import ctx
 from . import (
     detector,
     responder,
@@ -263,7 +264,7 @@ class WebRTCAdapter:
             n=1,
             max_tokens=MAX_RESPONSE_TOKENS,
             stop=STOP_TOKENS,
-            # user=ctx.user.get().uid,  # TODO for moderation
+            user=ctx.user.get().uid,
         )
         assert len(ast_txts) == 1
         ast_txt = ast_txts[0]

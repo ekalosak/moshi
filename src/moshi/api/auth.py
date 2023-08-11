@@ -13,6 +13,7 @@ from loguru import logger
 from moshi.core.base import User, Profile
 from moshi.utils import ctx, storage, GOOGLE_PROJECT
 
+DEFAULT_DAILY_CONVO_LIMIT = 5
 
 gcreds = ContextVar("gcreds")
 
@@ -55,7 +56,10 @@ async def firebase_auth(
         decoded_token["uid"],
     )
     logger.trace(f"User claims: {fuser.custom_claims}")
-    daily_convo_limit = fuser.custom_claims.get("daily_convo_limit", 3)
+    try:
+        daily_convo_limit = fuser.custom_claims.get("daily_convo_limit", DEFAULT_DAILY_CONVO_LIMIT)
+    except AttributeError:
+        daily_convo_limit = DEFAULT_DAILY_CONVO_LIMIT
     user = User(
         uid=decoded_token["uid"],
         email=decoded_token["email"],

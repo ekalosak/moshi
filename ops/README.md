@@ -22,7 +22,11 @@ Most of the IaC has hardcoded parameters so the values are tracked by version co
 ### Manual steps
 1. After running the `terraform apply` for the `storage/` components, run `gcloud storage cp artifacts/entrypoint.sh gs://moshi-<STORAGE_NAME>/entrypoint.sh` using the output from that tf apply command.
 1. After running the `terraform apply` for GitHub components, retrieve the PROVIDER_NAME and SA_EMAIL; add these as secrets for the GH repo. [GCP OICD docs](https://github.com/terraform-google-modules/terraform-google-github-actions-runners/tree/master/modules/gh-oidc)
+
+#### Firebase
 1. Initialize a Firestore database in the console (I used multi-region nam5)
+1. Activate FB Auth.
+1. Update DNS records with custom domain.
 
 ## PyPi
 To be able to publish to GCP Artifact Repo's PyPi, do this:

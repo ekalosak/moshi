@@ -27,16 +27,3 @@ def _get_client() -> "Client":
     """Get the translation client."""
     _setup_client()
     return gdbclient.get()
-
-
-async def is_email_authorized(email: str) -> bool:
-    db = _get_client()
-    users_ref = db.collection("authorized_users")
-    query = users_ref.where("email", "==", email).limit(1)
-    results = await query.get()
-    if len(results) > 0:
-        logger.info(f"User exists in authorized_users collection: {email}")
-        return True
-    else:
-        logger.info(f"User not in authorized_users collection: {email}")
-        return False

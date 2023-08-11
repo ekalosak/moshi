@@ -14,6 +14,7 @@ from moshi.core.base import User, Profile
 from moshi.utils import ctx, storage, GOOGLE_PROJECT
 
 DEFAULT_DAILY_CONVO_LIMIT = 5
+logger.info(f"DAILY_CONVO_LIMIT: {DEFAULT_DAILY_CONVO_LIMIT}")
 
 gcreds = ContextVar("gcreds")
 
@@ -99,18 +100,6 @@ async def user_profile(user: User = Depends(firebase_auth)) -> Profile:
             yield profile
         finally:
             ctx.profile.reset(token)
-
-
-async def is_email_authorized(email: str) -> bool:
-    users_ref = storage.firestore_client.collection("authorized_users")
-    query = users_ref.where("email", "==", email).limit(1)
-    results = await query.get()
-    if len(results) > 0:
-        logger.info(f"User exists in authorized_users collection: {email}")
-        return True
-    else:
-        logger.info(f"User not in authorized_users collection: {email}")
-        return False
 
 
 async def root_authenticate():

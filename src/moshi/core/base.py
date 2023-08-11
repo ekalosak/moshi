@@ -3,11 +3,13 @@ import dataclasses
 from dataclasses import dataclass
 from enum import Enum
 
+DEFAULT_DAILY_CONVO_LIMIT = 3
 
 @dataclass
 class User:
     uid: str
     email: str
+    daily_convo_limit: int = DEFAULT_DAILY_CONVO_LIMIT
 
 
 @dataclass

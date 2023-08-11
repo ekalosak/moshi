@@ -50,7 +50,17 @@ async def firebase_auth(
     except fauth.ExpiredIdTokenError:
         logger.trace("Expired authentication token")
         raise HTTPException(status_code=401, detail="Expired authentication token")
-    user = User(uid=decoded_token["uid"], email=decoded_token["email"])
+    fuser = await asyncio.to_thread(
+        fauth.get_user,
+        decoded_token["uid"],
+    )
+    logger.trace(f"User claims: {fuser.custom_claims}")
+    daily_convo_limit = fuser.custom_claims.get("daily_convo_limit", 3)
+    user = User(
+        uid=decoded_token["uid"],
+        email=decoded_token["email"],
+        daily_convo_limit=daily_convo_limit,
+    )
     with logger.contextualize(
         uid=decoded_token["uid"],
         email=decoded_token["email"],

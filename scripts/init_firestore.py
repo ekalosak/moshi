@@ -117,6 +117,8 @@ def _init_feed(db):
     doc_ref = db.collection("feed").document()
     doc_ref.set({
         "uid": "test",
+        "title": "Test feed message",
+        "subtitle": "This is a test feed message.",
         "body": "This is a test feed message.",
         "timestamp": datetime.now(),
         "type": "test",

@@ -63,6 +63,10 @@ class WebRTCAdapter:
     def _send_status(self, status: str):
         self.__send(f"status {status}")
 
+    def _send_info(self, var: str, val: str):
+        assert " " not in var, "var cannot contain spaces"
+        self.__send(f"info {var} {val}")
+
     def _send_error(self, err: str):
         logger.error("Sending error to user: " + err)
         self.__send("error " + err)
@@ -96,6 +100,7 @@ class WebRTCAdapter:
 
         logger.success("WebRTC Adapter started")
         self._send_status("start")
+        self._send_info("tid", self.act.cid)
 
     async def stop(self):
         if self.__task == None:

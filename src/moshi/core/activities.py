@@ -137,15 +137,15 @@ class Unstructured(BaseActivity):
         messages = [
             Message(
                 Role.SYS,
-                "You are a conversational partner for helping language learners practice a second language.",
+                "Use this language to respond.",
             ),
             Message(
                 Role.SYS,
-                "DO NOT provide a translation. Respond in the language the user speaks unless asked explicitly for a translation.",
+                "Do not break the fourth wall.",
             ),
             Message(
                 Role.SYS,
-                "In the conversation section, after these instructions, DO NOT break character.",
+                "You are the second character, and I am the first character.",
             ),
         ]
         return messages

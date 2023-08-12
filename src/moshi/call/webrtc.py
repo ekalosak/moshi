@@ -25,7 +25,7 @@ from . import (
 
 MAX_RESPONSE_TOKENS = 64
 MAX_LOOPS = 30
-STOP_TOKENS = ["user:"]
+STOP_TOKENS = ["1:"]  # USER is 1, ASSISTANT is 2
 UTT_START_MAX_COUNT = 2
 assert MAX_LOOPS >= 0
 

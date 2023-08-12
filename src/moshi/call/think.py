@@ -39,16 +39,16 @@ def _get_type_of_model(model: Model) -> ModelType:
 
 def _clean_completion(msg: str) -> str:
     """Remove all the formatting the completion model thinks it should give."""
-    logger.debug("Cleaning response...")
+    logger.trace("Cleaning response...")
     # 1. only keep first response, remove its prefix
-    pattern = r"(?:\n|^)([A-Za-z]+:)(?:[ \n\t]*)([^\n\t]+)"
+    pattern = r"(?:\n|^)([0-9]+:)(?:[ \n\t]*)([^\n\t]+)"
     match = re.search(pattern, msg)
     if match:
         first_response = match.group(2)
-        logger.debug(f"Regex matched: {first_response}")
+        logger.trace(f"Regex matched: {first_response}")
         result = first_response
     else:
-        logger.debug("Regex did not match.")
+        logger.trace("Regex did not match.")
         result = msg
     return result
 
@@ -77,30 +77,23 @@ def _completion_payload_from_messages(messages: list[Message]) -> CompletionPayl
     Source:
         - https://platform.openai.com/docs/api-reference/completions/create
     """
-    payload = ["INSTRUCTIONS"]
-    instructions = 1
-    instr = f"{instructions}. You are the 'assistant', the human participant is the 'user'."  # chat_completion has this notion natively
-    payload.append(instr)
+    payload = []
     sys_done = False
-    for msg in messages:
+    for i, msg in enumerate(messages):
         if msg.role == Role.SYS:
             if sys_done:
                 logger.warning(
-                    f"System message out of place, skipping:\n{msg}\n{[msg.role for msg in messages]}"
+                    f"System message out of place:\n{msg}\n{[msg.role for msg in messages]}"
                 )
-                continue
-            instructions += 1
-            msgstr = f"{instructions}. {msg.content}"
+            msgstr = f"{msg.content}"
         else:
-            if not sys_done:
-                payload.append("CONVERSATION")
             sys_done = True
-            msgstr = f"{msg.role}: {msg.content}"
+            role = "1" if msg.role == Role.USR else "2"
+            msgstr = f"{role}: {msg.content}"
         payload.append(msgstr)
-    payload = "\n".join(payload)
+    payload = "\n".join(payload) + "\n2:"
     logger.debug(f"payload:\n{pformat(payload)}")
     return payload
-
 
 async def _chat_completion(
     payload: ChatCompletionPayload, n: int, model: Model, user: str | None = None, **kwargs

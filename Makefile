@@ -11,8 +11,13 @@ auth-install:
 	PIP_NO_INPUT=1 pip install twine keyring keyrings.google-artifactregistry-auth
 
 bake:
-	@echo "🍳 Baking..."
+	@echo "🍳 Baking moshi image..."
 	(cd ops/packer && packer build moshi-server.pkr.hcl)
+	@echo "🍳 Baked."
+
+bake-base:
+	@echo "🍳 Baking base image..."
+	(cd ops/packer && packer build debian11-python3.pkr.hcl)
 	@echo "🍳 Baked."
 
 build-install:
@@ -38,10 +43,12 @@ confirm:
 # https://cloud.google.com/sdk/gcloud/reference/compute/instance-groups/managed/rolling-action/replace
 # Make the instance group use the latest version of the moshi-srv image by replacing all instances in the group.
 cycle:
+	@echo "🔄 Cycling moshi-srv instances..."
 	gcloud compute instance-groups managed \
 		rolling-action replace \
 		moshi-srv-igm \
 		--zone us-central1-c
+	@echo "🔄✅ Cycled."
 
 dev-install: auth-install build-install
 	mkdir build 2>/dev/null || echo "build/ exists" && \

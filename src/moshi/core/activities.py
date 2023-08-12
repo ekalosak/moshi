@@ -12,7 +12,7 @@ from pydantic import BaseModel, Field
 from .base import Message, Role
 from .character import Character
 from moshi.utils.storage import firestore_client
-from moshi.utils import speech, ctx
+from moshi.utils import speech, ctx, lang
 
 transcript_col = firestore_client.collection("transcripts")
 
@@ -45,7 +45,7 @@ class BaseActivity(ABC, BaseModel):
     __character: Character = None
 
     @abstractmethod
-    def _init_messages(self) -> list[Message]:
+    def _prompt(self) -> list[Message]:
         """Assemble the prompt."""
         ...
 
@@ -68,29 +68,45 @@ class BaseActivity(ABC, BaseModel):
     def add_msg(self, msg: Message):
         self.__transcript.messages.append(msg)
 
+    @logger.catch
     async def start(self):
-        await asyncio.gather(self.__init_transcript(), self.__init_character())
+        await asyncio.gather(
+            self.__init_transcript(),
+            self.__init_character(),
+            )
         logger.success("Activity started!")
 
     async def stop(self):
         """Save the transcript to Firestore."""
         await self.__save()
 
+    async def _translate_prompt(self) -> list[Message]:
+        """Translate the prompt into the user's target language. Timeout handled by caller. Requires a profile to be set."""
+        logger.trace("Translating prompt...")
+        prompt = self._prompt()
+        prompt = await lang.translate_messages(prompt, ctx.profile.get().lang)
+        logger.trace(f"Translated prompt: {prompt}")
+        return prompt
+
     async def __init_transcript(self):
         """Create the Firestore artifacts for this conversation."""
+        logger.trace("Initializing transcript...")
+        messages = await asyncio.wait_for(self._translate_prompt(), timeout=5)
+        logger.trace(f"Translated prompt: {messages}")
         self.__transcript = Transcript(
             activity_type=self.activity_type,
             uid=ctx.user.get().uid,
             language=ctx.profile.get().lang,
-            messages=self._init_messages(),
+            messages=messages,
         )
         await self.__save()
-        logger.debug(f"Transcript initialized.")
+        logger.trace(f"Transcript initialized.")
 
     async def __init_character(self):
         """Initialize the character for this conversation."""
         logger.debug(f"Creating character...")
         lang = ctx.profile.get().lang
+        logger.trace("Getting voice")
         voice = await speech.get_voice(lang)
         logger.debug(f"Selected voice: {voice}")
         self.__character = Character(voice)
@@ -117,7 +133,7 @@ class BaseActivity(ABC, BaseModel):
 class Unstructured(BaseActivity):
     activity_type: Literal[ActivityType.UNSTRUCTURED] = ActivityType.UNSTRUCTURED
 
-    def _init_messages(self) -> list[Message]:
+    def _prompt(self) -> list[Message]:
         messages = [
             Message(
                 Role.SYS,

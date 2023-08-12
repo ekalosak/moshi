@@ -22,6 +22,14 @@ client = texttospeech.TextToSpeechClient()
 
 logger.success("Loaded!")
 
+def gender_match(g1: str, g2: 'SsmlVoiceGender') -> bool:
+    if g1.lower() == "female" and g2 == 2:
+        return True
+    elif g1.lower() == "male" and g2 == 1:
+        return True
+    else:
+        return False
+
 
 async def get_voice(langcode: str, gender="FEMALE", model="Standard") -> str:
     """Get a valid voice for the language. Just picks the first match.
@@ -33,7 +41,7 @@ async def get_voice(langcode: str, gender="FEMALE", model="Standard") -> str:
     Source:
         - https://cloud.google.com/text-to-speech/pricing for list of valid voice model classes
     """
-    logger.debug(f"Getting voice for lang code: {langcode}")
+    logger.trace(f"Getting voice for lang code: {langcode}")
     try:
         response = await asyncio.wait_for(
             asyncio.to_thread(client.list_voices, language_code=langcode),
@@ -45,7 +53,9 @@ async def get_voice(langcode: str, gender="FEMALE", model="Standard") -> str:
     voices = response.voices
     logger.trace(f"Language {langcode} has {len(voices)} supported voices.")
     for voice in voices:
-        if model in voice.name and gender in str(voice.ssml_gender):
+        logger.trace(f"Checking voice: {voice}")
+        if model in voice.name and gender_match(gender, voice.ssml_gender):
+            logger.trace("Found match")
             return voice
     raise ValueError(
         f"Voice not found for langcode={langcode}, gender={gender}, model={model}"

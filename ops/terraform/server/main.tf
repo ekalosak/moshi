@@ -180,12 +180,10 @@ resource "google_compute_backend_service" "default" {
 
 resource "google_compute_url_map" "default" {
   # https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_url_map
-  # provider    = google-beta
   project     = "moshi-3"
   name        = "moshi-srv-um"
   description = "This URL map is used to route call traffic to Moshi media server instances."
 
-  # default_service = google_compute_backend_service.default.self_link
   default_url_redirect {
     https_redirect = true
     host_redirect  = "dev.chatmoshi.com"
@@ -206,15 +204,7 @@ resource "google_compute_url_map" "default" {
       strip_query    = true
     }
     path_rule {
-      paths   = ["/call/*"]
-      service = google_compute_backend_service.default.self_link
-    }
-    path_rule {
-      paths   = ["/healthz"]
-      service = google_compute_backend_service.default.self_link
-    }
-    path_rule {
-      paths   = ["/"]
+      paths   = ["/", "/healthz", "/version", "/call/*"]
       service = google_compute_backend_service.default.self_link
     }
   }

@@ -1,5 +1,5 @@
 #!/bin/bash
-PYTHON_VERSION=3.10
+PYTHON_VERSION=3.11
 echo "👉 whoami: $(whoami)"
 echo "👉 PYTHON_VERSION: $PYTHON_VERSION"
 cd ~ && \

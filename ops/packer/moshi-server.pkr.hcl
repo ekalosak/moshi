@@ -7,7 +7,7 @@ source "googlecompute" "moshi" {
   zone                  = "us-central1-c"
   machine_type          = "e2-micro"
   ssh_username          = "${local.ssh_username}"
-  source_image          = "debian11-python310-1691178818"
+  source_image_family   = "python3"
   disk_size             = 10
   image_name            = "moshi-srv-{{timestamp}}"
   image_family          = "moshi-srv"

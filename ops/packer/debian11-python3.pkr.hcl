@@ -42,7 +42,7 @@ source "googlecompute" "debian11python3" {
   ssh_username        = var.ssh_username
   source_image_family = "debian-11"
   disk_size           = 10
-  image_name          = "debian11-python310-{{timestamp}}"
+  image_name          = "debian11-python311-{{timestamp}}"
   image_family        = local.image_family
 }
 

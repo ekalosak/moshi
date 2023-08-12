@@ -19,14 +19,18 @@ build-install:
 	@echo "📦 Installing build tools..."
 	PIP_NO_INPUT=1 pip install --upgrade pip
 	PIP_NO_INPUT=1 pip install build twine
-	@echo "✅ Installed."
+	@echo "📦✅ Installed."
 
 build:
+	@echo "🏗 Building Python3 package..."
 	rm -rf dist 2>/dev/null
 	PIP_NO_INPUT=1 python -m build
+	@echo "🏗✅ Built."
 
 bump:
+	@echo "📈 Bumping version..."
 	./scripts/bump_version.sh
+	@echo "📈✅ Bumped."
 
 confirm:
 	@echo -n "Are you sure? [y/N] " && read ans && [ $${ans:-N} = y ]
@@ -51,12 +55,12 @@ publish: bump publish-nobump
 publish-nobump: build publish-nobump-nobuild
 
 publish-nobump-nobuild:
-	@echo "📦 Publishing to $(GOOGLE_CLOUD_PYPI_URL) ..."
+	@echo "📤 Publishing to $(GOOGLE_CLOUD_PYPI_URL) ..."
 	python3 -m twine upload \
 		 --repository-url $(GOOGLE_CLOUD_PYPI_URL) \
 		 "dist/*" \
 		 --verbose
-	@echo "✅ Published."
+	@echo "📤✅ Published."
 
 precheck:
 	@python3 -c 'import sys; assert sys.version_info >= (3, 10), f"Python version >= 3.10 required, found {sys.version_info}"' \
@@ -70,10 +74,14 @@ precheck:
         || echo "❌ GOOGLE_SDK_ROOT missing in env"
 
 test:
+	@echo "🧪 Running tests..."
 	pytest -v --cov=moshi
+	@echo "🧪✅ Tests passed. Run `make test-cov` to view report."
 
 test-cov:
+	@echo "📊 Showing test coverage report..."
 	coverage report --format=total
+	@echo "📊✅ Done."
 
 healthcheck:
 	gcloud compute backend-services get-health moshi-srv-bs \

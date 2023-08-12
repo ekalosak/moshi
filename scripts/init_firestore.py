@@ -90,8 +90,8 @@ def _init_info(db):
     doc_ref.set({
         "title": "Privacy Policy",
         "subtitle": "Last updated: 2023-08-09",
-        "body": "We take your privacy seriously. What data we do store is encrypted at rest and in flight. We do not share your data with anyone but you and select 3rd party API providers. We do not sell your data. We do not currently use your data for advertising purposes, but may do so in the future in de-identified aggregate.\n\nWe do use your data to improve our service. We do not currently have a way for you to delete your data in the App, but we will happily do so upon request by email at moshi.feedback@gmail.com. We do not store audio recordings, but we do store transcripts of the conversations you have with Moshi. These transcripts are available to you on the Transcripts page.\n\nWe do not knowingly collect data from children under 13. If you are a parent or guardian and believe we have collected data from your child, please contact us at moshi.feedback@gmail.com and we will remove it immediately.\n\nWe may update this privacy policy at any time, please check back for updates.",
-        "type": "privacy_policy",
+        "body": "We take your privacy seriously. What data we do store is encrypted at rest and in flight. We do not share your data with anyone but you and select 3rd party API providers.\n\nWe do not sell your data. We do not currently use your data for advertising purposes, but may do so in the future in de-identified aggregate. We do use your data to improve our service.\n\nWe do not currently have a way for you to delete your data in the App, but we will happily do so upon request via the Feedback page. We do not store audio recordings, but we do store transcripts of the conversations you have with Moshi. These transcripts are available to you on the Transcripts page.\n\nWe do not knowingly collect data from children under 13. If you are a parent or guardian and believe we have collected data from your child, please contact us at moshi.feedback@gmail.com and we will remove it immediately.\n\nWe may update this privacy policy at any time, please check back for updates.",
+        "type": "policy",
         "timestamp": datetime.now(),
         })
     doc_ref = db.collection("info").document()
@@ -106,7 +106,7 @@ def _init_info(db):
     doc_ref.set({
         "title": "Moshi Beta is live!",
         "subtitle": "Thank you for giving Moshi a try!",
-        "body": "The Moshi Beta is now live! Thank you for your patience as we continue to improve the service. Please reach out with any suggestions or feedback via the Feedback page.\n\n",
+        "body": "The Moshi Beta is now live! Thank you for your patience as we continue to improve the service. To get started, open the menu by clicking the hamburger icon on the upper left.\n\n",
         "type": "news",
         "timestamp": datetime.now(),
     })

@@ -39,8 +39,10 @@ class LogRequestMiddleware(BaseHTTPMiddleware):
     async def dispatch(
         self, request: Request, call_next: RequestResponseEndpoint
     ) -> Response:
-        user_agent = request.headers.get("User-Agent", "Unknown agent")
-        logger.trace(f"{request.method} from '{user_agent}' to {request.url}")
+        with logger.contextualize(
+            method=request.method, url=str(request.url), useragent=request.headers.get("user-agent"), ip=request.client.host, path=request.url.path, content_type=request.headers.get("content-type"), content_length=request.headers.get("content-length")
+        ):
+            logger.trace("Request received.")
         response = await call_next(request)
         return response
 
@@ -52,7 +54,7 @@ app.add_middleware(LogRequestMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_methods=["GET", "POST", "PUT", "DELETE"],
+    allow_methods=["GET", "POST"],
     allow_headers=["*"],
     expose_headers=["*"],
 )

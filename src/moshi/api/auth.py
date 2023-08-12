@@ -1,12 +1,14 @@
 """Contains Firebase HTTP auth middleware."""
 import asyncio
 from contextvars import ContextVar
+import datetime
 
 import firebase_admin
 from fastapi import Depends, HTTPException
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from firebase_admin import auth as fauth
 from google import auth as gauth
+from google.cloud.firestore_v1.base_query import FieldFilter
 from google.auth.transport.requests import Request
 from loguru import logger
 
@@ -30,6 +32,23 @@ except ValueError:
 security = HTTPBearer()
 logger.success("Loaded!")
 
+async def exceeded_daily_limit(profile: User) -> bool:
+    """Check if user has exceeded their daily conversation limit by counting the number of conversations they've had today.
+    Conversations are stored in the transcripts collection; their uid attribute must match the users uid.
+    """
+    col = storage.firestore_client.collection("transcripts")
+    d1ago = datetime.datetime.today() - datetime.timedelta(days=1)
+    ffs = [FieldFilter("uid", "==", profile.uid), FieldFilter("timestamp", ">=", d1ago)]
+    query = col.where(filter=ffs[0]).where(filter=ffs[1]).count()
+    try:
+        result = await query.get(timeout = 10)
+    except asyncio.TimeoutError:
+        logger.trace("Timed out while querying Firestore")
+        raise HTTPException(status_code=500, detail="Timed out while querying Firestore")
+    n_convos = result[0][0].value
+    logger.trace(f"User has had {n_convos} conversations in the last 24 hours.")
+    return n_convos >= profile.daily_convo_limit
+    
 
 async def firebase_auth(
     credentials: HTTPAuthorizationCredentials = Depends(security),
@@ -66,6 +85,13 @@ async def firebase_auth(
         email=decoded_token["email"],
         daily_convo_limit=daily_convo_limit,
     )
+    limited = await exceeded_daily_limit(user)
+    if limited:
+        raise HTTPException(
+            status_code=429,
+            detail=f"Daily limit of {user.daily_convo_limit} conversations exceeded. Please try again tomorrow.",
+        )
+
     with logger.contextualize(
         uid=decoded_token["uid"],
         email=decoded_token["email"],

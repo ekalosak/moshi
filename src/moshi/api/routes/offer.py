@@ -5,7 +5,7 @@ from typing import Literal
 from fastapi import APIRouter, Depends, HTTPException, Request
 from aiortc import RTCPeerConnection, RTCSessionDescription, RTCDataChannel
 from loguru import logger
-from pydantic import BaseModel, validator
+from pydantic import BaseModel
 
 from moshi.core.activities import ActivityType
 from moshi.core.base import User
@@ -30,9 +30,7 @@ async def shutdown():
 
 class Offer(BaseModel):
     sdp: str
-    # type: Literal["offer"]
     type: str
-
 
 @router.post("/call/{activity_type}")
 async def new_call(
@@ -48,7 +46,7 @@ async def new_call(
         - RFC 2327
     """
     adapter = WebRTCAdapter(activity_type=activity_type)
-    desc = RTCSessionDescription(**offer.dict())
+    desc = RTCSessionDescription(**offer.model_dump())
     pc = RTCPeerConnection()
     pcs.add(pc)
     logger.trace(f"offer: {offer}")

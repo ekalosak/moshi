@@ -28,7 +28,7 @@ class Role(str, Enum):
 
 @dataclass
 class Message:
-    # NOTE .asdict()
+    # NOTE dataclasses.dataclass.asdict()
     role: Role
     content: str
 

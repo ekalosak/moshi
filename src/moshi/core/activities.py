@@ -11,6 +11,7 @@ from pydantic import BaseModel, Field
 
 from .base import Message, Role
 from .character import Character
+from moshi import __version__ as moshi_version
 from moshi.utils.storage import firestore_client
 from moshi.utils import speech, ctx, lang
 
@@ -24,6 +25,7 @@ class Transcript:
     uid: str  # user id from FBA, required to index transcripts in db
     language: str
     timestamp: datetime.datetime = None
+    moshi_version: str = moshi_version
 
     def asdict(self) -> dict:
         return dataclasses.asdict(self)

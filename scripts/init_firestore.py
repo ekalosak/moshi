@@ -88,6 +88,14 @@ def _init_info(db):
     """Initialize the moshinews collection."""
     doc_ref = db.collection("info").document()
     doc_ref.set({
+        "title": "Terms of Service",
+        "subtitle": "Last updated: 2023-08-12",
+        "body": "This is the beta version of Moshi. We are still working out the kinks, so please be patient with us. Here are the things you need to know:\n\n - We may update this terms of service at any time.\n\n - Moshi is free, with limits.\n\n - Please do not use Moshi for anything sensitive or confidential.\n\n - If you voilate our internal content moderation policies, we may ban you without notice.\n\n - We don't have ads yet, but we will need to add them (no pun intended) if we want to keep the lights on.\n\n - Please read the privacy policy for more information about what we do with your data.",
+        "type": "policy",
+        "timestamp": datetime.now(),
+    })
+    doc_ref = db.collection("info").document()
+    doc_ref.set({
         "title": "Privacy Policy",
         "subtitle": "Last updated: 2023-08-09",
         "body": "We take your privacy seriously. What data we do store is encrypted at rest and in flight. We do not share your data with anyone but you and select 3rd party API providers.\n\nWe do not sell your data. We do not currently use your data for advertising purposes, but may do so in the future in de-identified aggregate. We do use your data to improve our service.\n\nWe do not currently have a way for you to delete your data in the App, but we will happily do so upon request via the Feedback page. We do not store audio recordings, but we do store transcripts of the conversations you have with Moshi. These transcripts are available to you on the Transcripts page.\n\nWe do not knowingly collect data from children under 13. If you are a parent or guardian and believe we have collected data from your child, please contact us at moshi.feedback@gmail.com and we will remove it immediately.\n\nWe may update this privacy policy at any time, please check back for updates.",

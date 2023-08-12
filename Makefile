@@ -16,8 +16,10 @@ bake:
 	@echo "🍳 Baked."
 
 build-install:
+	@echo "📦 Installing build tools..."
 	PIP_NO_INPUT=1 pip install --upgrade pip
 	PIP_NO_INPUT=1 pip install build twine
+	@echo "✅ Installed."
 
 build:
 	rm -rf dist 2>/dev/null

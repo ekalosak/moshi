@@ -28,6 +28,10 @@ def _gcp_log_severity_map(level: str) -> str:
             return "INFO"
         case "INSTRUCTION":
             return "DEBUG"
+        case "TRANSCRIPT":
+            return "INFO"
+        case "TRACE":
+            return "DEBUG"
         case _:
             return level
 

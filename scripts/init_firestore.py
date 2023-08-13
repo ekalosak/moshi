@@ -41,12 +41,20 @@ DEFAULT_USER_NAME = "Timmy Test"
 DEFAULT_USER_LANG = "en-US"
 DEFAULT_USER_PRIMARY_LANG = "en-US"
 
-if not os.getenv("FIRESTORE_EMULATOR_HOST"):
-    print("FIRESTORE_EMULATOR_HOST not set, exiting.")
-    exit(1)
-if not os.getenv("FIREBASE_AUTH_EMULATOR_HOST"):
-    print("FIREBASE_AUTH_EMULATOR_HOST not set, exiting.")
-    exit(1)
+envvars = ["FIRESTORE_EMULATOR_HOST", "FIREBASE_AUTH_EMULATOR_HOST"]
+missing = []
+for envvar in envvars:
+    val = os.getenv(envvar)
+    print(f"Found {envvar}={val}")
+    if not val:
+        missing.append(envvar)
+if missing:
+    # confirm with user
+    print(f"Missing environment variables: {missing}")
+    print("🧯 Without these variables, this script will use the production database for the current gcloud project.")
+    ok = input("Continue? [y/N] ")
+    if ok.lower() != "y":
+        exit(1)
 
 SUPPORTED_LANGS = [
     "en-US",
@@ -174,7 +182,8 @@ def _init_user(auth):
 def main():
     """Initialize the Firestore database."""
     auth = _init_auth()
-    uid = _init_user(auth)
+    # uid = _init_user(auth)
+    uid = "gaybRfuMyvXtAz5eK5mdgxqD9wv1"
     db = _init_firestore()
     _init_profile(db, uid)
     _init_config(db)

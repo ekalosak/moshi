@@ -36,13 +36,19 @@ app.add_event_handler("startup", on_startup)
 
 
 class LogRequestMiddleware(BaseHTTPMiddleware):
+    printed_first_healthz = False
+
     async def dispatch(
         self, request: Request, call_next: RequestResponseEndpoint
     ) -> Response:
+        if request.url.path == "/healthz" and self.printed_first_healthz:
+            return await call_next(request)
         with logger.contextualize(
             method=request.method, url=str(request.url), useragent=request.headers.get("user-agent"), ip=request.client.host, path=request.url.path, content_type=request.headers.get("content-type"), content_length=request.headers.get("content-length")
         ):
-            logger.trace("Request received.")
+            logger.trace(f"Request received: {request.method} {request.url}")
+            if request.url.path == "/healthz":
+                self.printed_first_healthz = True
         response = await call_next(request)
         return response
 

@@ -32,6 +32,7 @@ class Offer(BaseModel):
     sdp: str
     type: str
 
+@logger.catch
 @router.post("/call/{activity_type}")
 async def new_call(
     offer: Offer,

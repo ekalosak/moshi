@@ -27,6 +27,10 @@ Most of the IaC has hardcoded parameters so the values are tracked by version co
 1. Initialize a Firestore database in the console (I used multi-region nam5)
 1. Activate FB Auth.
 1. Update DNS records with custom domain.
+1. Add admin user.
+1. `firebase projects:list` and ensure you have `moshi-3` as current.
+1. `python scripts/init_firestore.py` to PUT the initial objects in.
+1. `firebase deploy --only firestore:rules` to allow access for users.
 
 ## PyPi
 To be able to publish to GCP Artifact Repo's PyPi, do this:

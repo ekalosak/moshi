@@ -69,18 +69,28 @@ logger.warning(
 )
 
 # NOTE healthz must not require auth so health checks can be performed
+logger.debug("Adding healthz route...")
+@logger.catch
 @app.get("/healthz")
 def healthz():
     return "OK"
+logger.debug("healthz route added.")
 
-
+logger.debug("Adding version route...")
+@logger.catch
 @app.get("/version")
 def version(user: dict = Depends(firebase_auth)):
     return moshi_version
+logger.debug("version route added.")
 
 
+logger.debug("Adding index route...")
+@logger.catch
 @app.get("/")
 def index():
     return "Under construction..."
+logger.debug("index route added.")
 
+logger.debug("Adding offer route...")
 app.include_router(offer.router)
+logger.debug("offer route added.")

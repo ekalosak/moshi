@@ -9,16 +9,36 @@ provider "google-beta" {
 }
 
 resource "google_service_account" "default" {
+  // https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/service_account
   provider     = google-beta
   account_id   = "moshi-srv-sa"
-  display_name = "Service Account for the Moshi media server's managed instance group."
+  display_name = "Service Account for the Moshi media server's VMs."
+  // https://cloud.google.com/iam/docs/understanding-roles#compute-engine-roles
 }
 
-resource "google_project_iam_member" "default" {
+resource "google_project_iam_member" "logging-write" {
   project = "moshi-3"
-  role    = "roles/compute.instanceAdmin"
+  role    = "roles/logging.logWriter"
   member  = "serviceAccount:${google_service_account.default.email}"
 }
+
+# resource "google_project_iam_member" "texttospeech-use" {
+#   project = "moshi-3"
+#   role    = "roles/texttospeech.user"
+#   member  = "serviceAccount:${google_service_account.default.email}"
+# }
+
+resource "google_project_iam_member" "secrets-read" {
+  project = "moshi-3"
+  role    = "roles/secretmanager.secretAccessor"
+  member  = "serviceAccount:${google_service_account.default.email}"
+}
+
+# resource "google_project_iam_member" "translate-use" {
+#   project = "moshi-3"
+#   role    = "roles/translate.user"
+#   member  = "serviceAccount:${google_service_account.default.email}"
+# }
 
 resource "google_compute_instance_template" "default" {
   // https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_instance_template
@@ -54,7 +74,8 @@ resource "google_compute_instance_template" "default" {
   }
 
   service_account {
-    # Google recommends custom service accounts that have cloud-platform scope and permissions granted via IAM Roles.
+    // Service account to attach to the instance.
+    // Google recommends custom service accounts that have cloud-platform scope and permissions granted via IAM Roles.
     email  = google_service_account.default.email
     scopes = ["cloud-platform"]
   }

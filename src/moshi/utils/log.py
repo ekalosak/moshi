@@ -1,9 +1,6 @@
-from http.cookies import SimpleCookie
+import asyncio
 import os
 import sys
-from textwrap import shorten
-import uuid
-import warnings
 
 from google.cloud import logging
 from loguru import logger
@@ -88,15 +85,26 @@ def setup_loguru():
         logging_client = logging.Client()
         gcp_logger = logging_client.logger("gcp-logger")
 
-        def log_to_gcp(message):
-            logdict = _to_log_dict(message.record)
-            gcp_logger.log_struct(logdict)
+        async def _log_to_gcp(message):
+            try:
+                logdict = _to_log_dict(message.record)
+                print("logdict", logdict)
+                await asyncio.to_thread(gcp_logger.log_struct, logdict)
+                # gcp_logger.log_struct(logdict)
+            except Exception as e:
+                print(f"Error logging to GCP: {e}")
 
+        def log_to_gcp(message):
+            """Sends log messages to GCP logging with best effort."""
+            asyncio.ensure_future(_log_to_gcp(message))
+
+        print('asdf')
         logger.add(
             log_to_gcp,
             level=LOG_LEVEL,
             format="{message}",
         )
+        print('qwer')
 
 
 def splash(text: str):

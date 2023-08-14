@@ -18,3 +18,8 @@ resource "google_project_service" "translate" {
   project = "moshi-3"
   service = "translate.googleapis.com"
 }
+
+resource "google_project_service" "logging" {
+  project = "moshi-3"
+  service = "logging.googleapis.com"
+}

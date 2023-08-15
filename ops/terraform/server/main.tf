@@ -6,6 +6,7 @@
 
 provider "google-beta" {
   project = "moshi-3"
+  zone    = "us-central1-c"
 }
 
 resource "google_service_account" "default" {
@@ -22,23 +23,25 @@ resource "google_project_iam_member" "logging-write" {
   member  = "serviceAccount:${google_service_account.default.email}"
 }
 
-# resource "google_project_iam_member" "texttospeech-use" {
-#   project = "moshi-3"
-#   role    = "roles/texttospeech.user"
-#   member  = "serviceAccount:${google_service_account.default.email}"
-# }
-
 resource "google_project_iam_member" "secrets-read" {
   project = "moshi-3"
   role    = "roles/secretmanager.secretAccessor"
   member  = "serviceAccount:${google_service_account.default.email}"
 }
 
-# resource "google_project_iam_member" "translate-use" {
-#   project = "moshi-3"
-#   role    = "roles/translate.user"
-#   member  = "serviceAccount:${google_service_account.default.email}"
-# }
+resource "google_project_iam_member" "storage-read" {
+  project = "moshi-3"
+  role    = "roles/storage.objectViewer"
+  member  = "serviceAccount:${google_service_account.default.email}"
+}
+
+// read from and write to firestore
+resource "google_project_iam_member" "firestore-read" {
+  project = "moshi-3"
+  role    = "roles/datastore.user"
+  member  = "serviceAccount:${google_service_account.default.email}"
+}
+
 
 resource "google_compute_instance_template" "default" {
   // https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_instance_template
@@ -257,3 +260,24 @@ resource "google_compute_target_https_proxy" "default" {
   ssl_certificates = ["projects/moshi-3/global/sslCertificates/moshi-srv-ssl"]
 }
 
+
+// Need a NAT gateway to allow instances to access the internet.
+// The NAT requires a few other network resources (router, subnetwork, etc.) that are defined below.
+resource "google_compute_router_nat" "default" {
+  # https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_router_nat
+  // - Static Port Allocation, NOT Dynamic
+  // - Endpoint-Independent Mapping
+  provider                           = google-beta
+  name                               = "moshi-srv-nat"
+  router                             = google_compute_router.default.name
+  nat_ip_allocate_option             = "AUTO_ONLY"
+  source_subnetwork_ip_ranges_to_nat = "ALL_SUBNETWORKS_ALL_IP_RANGES"
+}
+
+resource "google_compute_router" "default" {
+  // https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_router
+  provider    = google-beta
+  name        = "moshi-srv-router"
+  description = "This router is used to support the NAT required by Moshi server instances to access the Internet."
+  network     = "default"
+}

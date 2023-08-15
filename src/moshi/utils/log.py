@@ -64,7 +64,9 @@ def setup_loguru():
     logger.remove()
     log_format = LOGURU_FORMAT + " | <g><d>{extra}</d></g>"
     logger.level("TRANSCRIPT", no=15, color="<magenta>", icon="📜")
+    print(f"Logging configuration: LEVEL={LOG_LEVEL} STDOUT={STDOUT_LOGS}, FILE={FILE_LOGS}, CLOUD={CLOUD_LOGS}")
     if STDOUT_LOGS:
+        print("Adding stdout logger...")
         logger.add(
             diagnose=True,
             sink=sys.stderr,
@@ -74,6 +76,7 @@ def setup_loguru():
         )
         logger.warning("Logging to stdout, including diagnostics.")
     if FILE_LOGS:
+        print("Adding file logger...")
         logger.add(
             "logs/server.log",
             level=LOG_LEVEL,
@@ -82,6 +85,7 @@ def setup_loguru():
         )
     # Google logging  (https://github.com/Delgan/loguru/issues/789)
     if CLOUD_LOGS:
+        print("Creating GCP logging client...")
         logging_client = logging.Client()
         gcp_logger = logging_client.logger("gcp-logger")
 
@@ -98,13 +102,13 @@ def setup_loguru():
             """Sends log messages to GCP logging with best effort."""
             asyncio.ensure_future(_log_to_gcp(message))
 
-        print('asdf')
+        print('Adding GCP logger...')
         logger.add(
             log_to_gcp,
             level=LOG_LEVEL,
             format="{message}",
         )
-        print('qwer')
+        print('GCP logger added.')
 
 
 def splash(text: str):

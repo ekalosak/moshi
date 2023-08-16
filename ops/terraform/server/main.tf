@@ -35,10 +35,17 @@ resource "google_project_iam_member" "storage-read" {
   member  = "serviceAccount:${google_service_account.default.email}"
 }
 
-// read from and write to firestore
+// Read from and write to Firestore
 resource "google_project_iam_member" "firestore-read" {
   project = "moshi-3"
   role    = "roles/datastore.user"
+  member  = "serviceAccount:${google_service_account.default.email}"
+}
+
+// Check user's auth tokens via Firebase Auth
+resource "google_project_iam_member" "firebase-auth-read" {
+  project = "moshi-3"
+  role    = "roles/firebaseauth.viewer"
   member  = "serviceAccount:${google_service_account.default.email}"
 }
 

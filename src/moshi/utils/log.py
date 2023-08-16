@@ -92,9 +92,7 @@ def setup_loguru():
         async def _log_to_gcp(message):
             try:
                 logdict = _to_log_dict(message.record)
-                print("logdict", logdict)
                 await asyncio.to_thread(gcp_logger.log_struct, logdict)
-                # gcp_logger.log_struct(logdict)
             except Exception as e:
                 print(f"Error logging to GCP: {e}")
 

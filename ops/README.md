@@ -23,14 +23,27 @@ Most of the IaC has hardcoded parameters so the values are tracked by version co
 1. After running the `terraform apply` for the `storage/` components, run `gcloud storage cp artifacts/entrypoint.sh gs://moshi-<STORAGE_NAME>/entrypoint.sh` using the output from that tf apply command.
 1. After running the `terraform apply` for GitHub components, retrieve the PROVIDER_NAME and SA_EMAIL; add these as secrets for the GH repo. [GCP OICD docs](https://github.com/terraform-google-modules/terraform-google-github-actions-runners/tree/master/modules/gh-oidc)
 
-#### Firebase
+#### Firebase Auth
 1. Initialize a Firestore database in the console (I used multi-region nam5)
 1. Activate FB Auth.
 1. Update DNS records with custom domain.
 1. Add admin user.
 1. `firebase projects:list` and ensure you have `moshi-3` as current.
+
+#### Firestore
 1. `python scripts/init_firestore.py` to PUT the initial objects in.
 1. `firebase deploy --only firestore:rules` to allow access for users.
+
+❌👉 WARNING: You will need to create Firebase indexes. There is not parity on the emulator for this requirement, as the emulator automatically calculates and applies indices required for queries. The good news is that those queries, when tried against the production Firestore, will barf with a link that, when clicked, will create the required index remotely.
+cf https://github.com/firebase/firebase-tools/issues/2027
+
+#### Firebase App Distribution
+1. Go to the console and click "get started" to activate the service.
+
+Sources:
+- For Android:
+    - https://firebase.google.com/docs/app-distribution/android/distribute-cli
+
 
 ## PyPi
 To be able to publish to GCP Artifact Repo's PyPi, do this:

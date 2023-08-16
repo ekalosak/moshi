@@ -236,9 +236,13 @@ class WebRTCAdapter:
                 await self.__synth_speech()
             )  # TODO handle network errors
             logger.debug(f"Got assistant response audio: {ast_audio}, sending...")
-            await self.responder.send_utterance(
-                ast_audio
-            )  # TODO handle: Raises: MediaStreamError, TimeoutError
+            try:
+                await self.responder.send_utterance(
+                    ast_audio
+                )  # TODO handle: Raises: MediaStreamError
+            except asyncio.TimeoutError as e:
+                logger.debug(f"TimeoutError: {e}")
+                raise UserResetError("timeout") from e
         else:
             logger.warning("Got empty assistant response")
             raise UserResetError("empty assistant response")

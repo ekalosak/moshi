@@ -42,6 +42,15 @@ resource "google_compute_global_forwarding_rule" "default" {
 
 }
 
+# // forwarding rule for UDP traffic
+# resource "google_compute_global_forwarding_rule" "udp" {
+#   // https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_global_forwarding_rule
+#   provider              = google-beta
+#   name                  = "moshi-srv-fwd-udp"
+#   description           = "This forwarding rule is used to route UDP traffic to Moshi media server instances."
+#   target                = google_compute_target_udp_proxy.udp.self_link
+
+
 resource "google_compute_target_https_proxy" "default" {
   # https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_target_https_proxy
   // The target https proxy terminates HTTPS connections from clients. A forwarding rule directs traffic to the proxy, then the proxy uses a URL map to decide how to direct traffic to a backend.
@@ -79,12 +88,12 @@ resource "google_compute_firewall" "allow-webrtc" {
 
   allow {
     protocol = "udp"
-    ports    = ["3478", "5349", "49152-65535"]
+    ports    = ["3478", "5349", "30000-65535"]
   }
 
   allow {
     protocol = "tcp"
-    ports    = ["3478", "5349", "49152-65535"]
+    ports    = ["3478", "5349", "30000-65535"]
   }
 
   target_tags   = ["allow-webrtc"]
@@ -201,11 +210,11 @@ resource "google_compute_instance_template" "default" {
   network_interface {
     network    = google_compute_network.default.self_link
     subnetwork = google_compute_subnetwork.default.self_link
-    # access_config {
-    #   // Ephemeral IP provided when this block is null.
-    #   // https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_instance_template#nested_access_config
-    #   // https://cloud.google.com/compute/docs/reference/rest/v1/instanceTemplates
-    # }
+    access_config {
+      // Ephemeral IP provided when this block is null.
+      // https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_instance_template#nested_access_config
+      // https://cloud.google.com/compute/docs/reference/rest/v1/instanceTemplates
+    }
   }
 
   service_account {

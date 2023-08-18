@@ -26,14 +26,6 @@ resource "google_compute_subnetwork" "default" {
   private_ip_google_access = true
 }
 
-# resource "google_compute_router" "default" {
-#   // https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_router
-#   provider    = google-beta
-#   name        = "moshi-srv-router"
-#   description = "This router is used to support the NAT required by Moshi server instances to access the Internet."
-#   network     = google_compute_network.default.self_link
-# }
-
 resource "google_compute_global_forwarding_rule" "default" {
   # https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_global_forwarding_rule
   provider              = google-beta
@@ -61,19 +53,6 @@ resource "google_compute_target_https_proxy" "default" {
   ssl_certificates = ["projects/moshi-3/global/sslCertificates/moshi-srv-ssl"]
 }
 
-
-# // Need a NAT gateway to allow instances to access the internet.
-# // The NAT requires a few other network resources (router, subnetwork, etc.) that are defined below.
-# resource "google_compute_router_nat" "default" {
-#   # https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_router_nat
-#   // - Static Port Allocation, NOT Dynamic
-#   // - Endpoint-Independent Mapping
-#   provider                           = google-beta
-#   name                               = "moshi-srv-nat"
-#   router                             = google_compute_router.default.name
-#   nat_ip_allocate_option             = "AUTO_ONLY"
-#   source_subnetwork_ip_ranges_to_nat = "ALL_SUBNETWORKS_ALL_IP_RANGES"
-# }
 
 resource "google_compute_firewall" "allow-health-checks" {
   provider = google-beta
@@ -320,3 +299,24 @@ resource "google_compute_backend_service" "default" {
 
 
 }
+
+// This NAT config allowed instances to access the internet, but did not allow them to be accessed from the internet, which was a requirement for ICE to work.
+# // Need a NAT gateway to allow instances to access the internet.
+# // The NAT requires a few other network resources (router, subnetwork, etc.) that are defined below.
+# resource "google_compute_router_nat" "default" {
+#   # https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_router_nat
+#   // - Static Port Allocation, NOT Dynamic
+#   // - Endpoint-Independent Mapping
+#   provider                           = google-beta
+#   name                               = "moshi-srv-nat"
+#   router                             = google_compute_router.default.name
+#   nat_ip_allocate_option             = "AUTO_ONLY"
+#   source_subnetwork_ip_ranges_to_nat = "ALL_SUBNETWORKS_ALL_IP_RANGES"
+# }
+# resource "google_compute_router" "default" {
+#   // https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_router
+#   provider    = google-beta
+#   name        = "moshi-srv-router"
+#   description = "This router is used to support the NAT required by Moshi server instances to access the Internet."
+#   network     = google_compute_network.default.self_link
+# }

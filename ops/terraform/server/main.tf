@@ -1,22 +1,132 @@
-# 1. image template in us-central1 that uses the latest image from the "moshi-srv" image family
-# 2. Instance group in us-central1 that uses the image template 
-# 3. Load balancer (ALB) in us-central1 that routes traffic to the instance group
-# 4. External IP address in us-central1 that is used by the load balancer
-# 5. Health check in us-central1 that is used by the load balancer against the vm's /heathz endpoint
+// This Terraform file creates the resources required to run the Moshi media server.
+//
+// Sources:
+// - https://cloud.google.com/load-balancing/docs/network/setting-up-network-backend-service
 
 provider "google-beta" {
   project = "moshi-3"
   zone    = "us-central1-c"
 }
 
-resource "google_service_account" "default" {
-  // https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/service_account
-  provider     = google-beta
-  account_id   = "moshi-srv-sa"
-  display_name = "Service Account for the Moshi media server's VMs."
-  // https://cloud.google.com/iam/docs/understanding-roles#compute-engine-roles
+// NETWORK RESOURCES
+// Including ALB, NAT, and firewall rules
+
+resource "google_compute_network" "default" {
+  name                    = "moshi-srv-network"
+  provider                = google-beta
+  auto_create_subnetworks = false
 }
 
+resource "google_compute_subnetwork" "default" {
+  name          = "moshi-srv-subnetwork"
+  provider      = google-beta
+  ip_cidr_range = "10.0.1.0/24"
+  network       = google_compute_network.default.self_link
+  # region = "us-central1"
+  private_ip_google_access = true
+}
+
+# resource "google_compute_router" "default" {
+#   // https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_router
+#   provider    = google-beta
+#   name        = "moshi-srv-router"
+#   description = "This router is used to support the NAT required by Moshi server instances to access the Internet."
+#   network     = google_compute_network.default.self_link
+# }
+
+resource "google_compute_global_forwarding_rule" "default" {
+  # https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_global_forwarding_rule
+  provider              = google-beta
+  name                  = "moshi-srv-fwd"
+  description           = "This forwarding rule is used to route HTTPS traffic to Moshi media server instances."
+  target                = google_compute_target_https_proxy.default.self_link
+  ip_address            = "34.110.228.236"
+  load_balancing_scheme = "EXTERNAL_MANAGED"
+  port_range            = "443"
+  labels = {
+    environment = "dev"
+  }
+
+}
+
+resource "google_compute_target_https_proxy" "default" {
+  # https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_target_https_proxy
+  // The target https proxy terminates HTTPS connections from clients. A forwarding rule directs traffic to the proxy, then the proxy uses a URL map to decide how to direct traffic to a backend.
+  # https://cloud.google.com/load-balancing/docs/https#target-proxies
+  provider    = google-beta
+  name        = "moshi-srv-thp"
+  description = "This target HTTPS proxy is used to route traffic to Moshi media server instances."
+
+  url_map          = google_compute_url_map.default.self_link
+  ssl_certificates = ["projects/moshi-3/global/sslCertificates/moshi-srv-ssl"]
+}
+
+
+# // Need a NAT gateway to allow instances to access the internet.
+# // The NAT requires a few other network resources (router, subnetwork, etc.) that are defined below.
+# resource "google_compute_router_nat" "default" {
+#   # https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_router_nat
+#   // - Static Port Allocation, NOT Dynamic
+#   // - Endpoint-Independent Mapping
+#   provider                           = google-beta
+#   name                               = "moshi-srv-nat"
+#   router                             = google_compute_router.default.name
+#   nat_ip_allocate_option             = "AUTO_ONLY"
+#   source_subnetwork_ip_ranges_to_nat = "ALL_SUBNETWORKS_ALL_IP_RANGES"
+# }
+
+resource "google_compute_firewall" "allow-health-checks" {
+  provider = google-beta
+  name     = "moshi-srv-allow-health-checks"
+  network  = google_compute_network.default.self_link
+
+  allow {
+    protocol = "tcp"
+    ports    = ["8080"]
+  }
+
+  source_ranges = [
+    "130.211.0.0/22",
+    "35.191.0.0/16"
+  ]
+
+}
+
+resource "google_compute_url_map" "default" {
+  # https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_url_map
+  project     = "moshi-3"
+  name        = "moshi-srv-um"
+  description = "This URL map is used to route call traffic to Moshi media server instances."
+
+  default_url_redirect {
+    https_redirect = true
+    host_redirect  = "dev.chatmoshi.com"
+    path_redirect  = "/"
+    strip_query    = true
+  }
+
+  host_rule {
+    hosts        = ["dev.chatmoshi.com"]
+    path_matcher = "all"
+  }
+  path_matcher {
+    name = "all"
+    default_url_redirect {
+      https_redirect = true
+      host_redirect  = "dev.chatmoshi.com"
+      path_redirect  = "/"
+      strip_query    = true
+    }
+    path_rule {
+      paths   = ["/", "/healthz", "/version", "/call/*"]
+      service = google_compute_backend_service.default.self_link
+    }
+  }
+}
+
+
+
+// SERVICE ACCOUNT
 resource "google_project_iam_member" "logging-write" {
   project = "moshi-3"
   role    = "roles/logging.logWriter"
@@ -49,7 +159,17 @@ resource "google_project_iam_member" "firebase-auth-read" {
   member  = "serviceAccount:${google_service_account.default.email}"
 }
 
+resource "google_service_account" "default" {
+  // https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/service_account
+  provider     = google-beta
+  account_id   = "moshi-srv-sa"
+  display_name = "Service Account for the Moshi media server's VMs."
+  // https://cloud.google.com/iam/docs/understanding-roles#compute-engine-roles
+}
 
+
+
+// VM RESOURCES
 resource "google_compute_instance_template" "default" {
   // https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_instance_template
   provider    = google-beta
@@ -80,7 +200,13 @@ resource "google_compute_instance_template" "default" {
   }
 
   network_interface {
-    network = "default"
+    network    = google_compute_network.default.self_link
+    subnetwork = google_compute_subnetwork.default.self_link
+    access_config {
+      // Ephemeral IP provided when this block is null.
+      // https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_instance_template#nested_access_config
+      // https://cloud.google.com/compute/docs/reference/rest/v1/instanceTemplates
+    }
   }
 
   service_account {
@@ -92,6 +218,7 @@ resource "google_compute_instance_template" "default" {
 }
 
 resource "google_compute_health_check" "autohealing" {
+  # https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_health_check
   provider            = google-beta
   name                = "moshi-srv-hc"
   check_interval_sec  = 5
@@ -103,24 +230,6 @@ resource "google_compute_health_check" "autohealing" {
     request_path = "/healthz"
     port         = "8080"
   }
-}
-
-# firewall rule to allow health checks
-resource "google_compute_firewall" "allow-health-checks" {
-  provider = google-beta
-  name     = "moshi-srv-allow-health-checks"
-  network  = "default"
-
-  allow {
-    protocol = "tcp"
-    ports    = ["8080"]
-  }
-
-  source_ranges = [
-    "130.211.0.0/22",
-    "35.191.0.0/16"
-  ]
-
 }
 
 resource "google_compute_instance_group_manager" "default" {
@@ -142,6 +251,9 @@ resource "google_compute_instance_group_manager" "default" {
     name = "http"
     port = 8080
   }
+
+  # external IP ephemeral
+
 
   auto_healing_policies {
     health_check      = google_compute_health_check.autohealing.id
@@ -197,7 +309,7 @@ resource "google_compute_backend_service" "default" {
   port_name   = "http"
   timeout_sec = 30
 
-  load_balancing_scheme = "EXTERNAL"
+  load_balancing_scheme = "EXTERNAL_MANAGED"
   security_policy       = google_compute_security_policy.default.id
 
   backend {
@@ -207,84 +319,4 @@ resource "google_compute_backend_service" "default" {
   health_checks = [google_compute_health_check.autohealing.id]
 
 
-}
-
-resource "google_compute_url_map" "default" {
-  # https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_url_map
-  project     = "moshi-3"
-  name        = "moshi-srv-um"
-  description = "This URL map is used to route call traffic to Moshi media server instances."
-
-  default_url_redirect {
-    https_redirect = true
-    host_redirect  = "dev.chatmoshi.com"
-    path_redirect  = "/"
-    strip_query    = true
-  }
-
-  host_rule {
-    hosts        = ["dev.chatmoshi.com"]
-    path_matcher = "all"
-  }
-  path_matcher {
-    name = "all"
-    default_url_redirect {
-      https_redirect = true
-      host_redirect  = "dev.chatmoshi.com"
-      path_redirect  = "/"
-      strip_query    = true
-    }
-    path_rule {
-      paths   = ["/", "/healthz", "/version", "/call/*"]
-      service = google_compute_backend_service.default.self_link
-    }
-  }
-}
-
-
-resource "google_compute_global_forwarding_rule" "default" {
-  # https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_global_forwarding_rule
-  provider              = google-beta
-  name                  = "moshi-srv-fwd"
-  description           = "This forwarding rule is used to route HTTPS traffic to Moshi media server instances."
-  target                = google_compute_target_https_proxy.default.self_link
-  ip_address            = "34.110.228.236"
-  load_balancing_scheme = "EXTERNAL"
-  port_range            = "443"
-  labels = {
-    environment = "dev"
-  }
-
-}
-
-resource "google_compute_target_https_proxy" "default" {
-  # https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_target_https_proxy
-  provider    = google-beta
-  name        = "moshi-srv-thp"
-  description = "This target HTTPS proxy is used to route traffic to Moshi media server instances."
-
-  url_map          = google_compute_url_map.default.self_link
-  ssl_certificates = ["projects/moshi-3/global/sslCertificates/moshi-srv-ssl"]
-}
-
-
-// Need a NAT gateway to allow instances to access the internet.
-// The NAT requires a few other network resources (router, subnetwork, etc.) that are defined below.
-resource "google_compute_router_nat" "default" {
-  # https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_router_nat
-  // - Static Port Allocation, NOT Dynamic
-  // - Endpoint-Independent Mapping
-  provider                           = google-beta
-  name                               = "moshi-srv-nat"
-  router                             = google_compute_router.default.name
-  nat_ip_allocate_option             = "AUTO_ONLY"
-  source_subnetwork_ip_ranges_to_nat = "ALL_SUBNETWORKS_ALL_IP_RANGES"
-}
-
-resource "google_compute_router" "default" {
-  // https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_router
-  provider    = google-beta
-  name        = "moshi-srv-router"
-  description = "This router is used to support the NAT required by Moshi server instances to access the Internet."
-  network     = "default"
 }

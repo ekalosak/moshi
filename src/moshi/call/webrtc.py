@@ -97,6 +97,7 @@ class WebRTCAdapter:
         for i, result in enumerate(results):
             if isinstance(result, Exception):
                 logger.error(f"Task {i} raised exception: {result}")
+                raise result
 
         logger.success("WebRTC Adapter started")
         self._send_status("start")

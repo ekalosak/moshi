@@ -15,7 +15,7 @@ from loguru import logger
 from moshi.core.base import User, Profile
 from moshi.utils import ctx, storage, GOOGLE_PROJECT
 
-DEFAULT_DAILY_CONVO_LIMIT = 5
+DEFAULT_DAILY_CONVO_LIMIT = 500
 logger.info(f"DAILY_CONVO_LIMIT: {DEFAULT_DAILY_CONVO_LIMIT}")
 
 gcreds = ContextVar("gcreds")

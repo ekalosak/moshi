@@ -76,8 +76,12 @@ async def new_call(
             await pc.close()
             pcs.discard(pc)
         elif pc.connectionState == "connecting":
-            # on_track should have been called by this point, so start should be ok
-            await adapter.start()
+            try:
+                await adapter.start()
+            except Exception as e:
+                logger.error(f"Exception starting adapter: {e}")
+                await pc.close()
+                pcs.discard(pc)
         elif pc.connectionState == "connected":
             try:
                 await asyncio.wait_for(

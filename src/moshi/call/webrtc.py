@@ -121,7 +121,7 @@ class WebRTCAdapter:
 
     async def wait_dc_connected(self):
         logger.trace("pc connected, awaiting dc...")
-        await self.__dc_connected.wait()
+        await asyncio.wait_for(self.__dc_connected.wait(), timeout=2)
         logger.trace("dc connected.")
 
     def add_dc(self, dc: RTCDataChannel):

@@ -2,6 +2,7 @@
 //
 // Sources:
 // - https://cloud.google.com/load-balancing/docs/network/setting-up-network-backend-service
+// - https://cloud.google.com/load-balancing/docs/network/udp-with-network-load-balancing
 
 provider "google-beta" {
   project = "moshi-3"
@@ -18,11 +19,11 @@ resource "google_compute_network" "default" {
 }
 
 resource "google_compute_subnetwork" "default" {
-  name          = "moshi-srv-subnetwork"
-  provider      = google-beta
-  ip_cidr_range = "10.0.1.0/24"
-  network       = google_compute_network.default.self_link
-  # region = "us-central1"
+  name                     = "moshi-srv-subnetwork"
+  provider                 = google-beta
+  ip_cidr_range            = "10.1.2.0/24"
+  network                  = google_compute_network.default.self_link
+  region                   = "us-central1"
   private_ip_google_access = true
 }
 
@@ -68,7 +69,26 @@ resource "google_compute_firewall" "allow-health-checks" {
     "130.211.0.0/22",
     "35.191.0.0/16"
   ]
+}
 
+// allow UDP and TCP from anyone to the templated instances
+resource "google_compute_firewall" "allow-webrtc" {
+  provider = google-beta
+  name     = "moshi-srv-allow-webrtc"
+  network  = google_compute_network.default.self_link
+
+  allow {
+    protocol = "udp"
+    ports    = ["3478", "5349", "49152-65535"]
+  }
+
+  allow {
+    protocol = "tcp"
+    ports    = ["3478", "5349", "49152-65535"]
+  }
+
+  target_tags   = ["allow-webrtc"]
+  source_ranges = ["0.0.0.0/0"]
 }
 
 resource "google_compute_url_map" "default" {
@@ -155,7 +175,7 @@ resource "google_compute_instance_template" "default" {
   name        = "moshi-srv-template"
   description = "This template is used to create Moshi media server instances."
 
-  tags = ["http-server", "allow-health-checks"]
+  tags = ["allow-health-checks", "allow-webrtc"]
 
   labels = {
     environment = "dev"
@@ -181,11 +201,11 @@ resource "google_compute_instance_template" "default" {
   network_interface {
     network    = google_compute_network.default.self_link
     subnetwork = google_compute_subnetwork.default.self_link
-    access_config {
-      // Ephemeral IP provided when this block is null.
-      // https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_instance_template#nested_access_config
-      // https://cloud.google.com/compute/docs/reference/rest/v1/instanceTemplates
-    }
+    # access_config {
+    #   // Ephemeral IP provided when this block is null.
+    #   // https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_instance_template#nested_access_config
+    #   // https://cloud.google.com/compute/docs/reference/rest/v1/instanceTemplates
+    # }
   }
 
   service_account {
@@ -230,9 +250,6 @@ resource "google_compute_instance_group_manager" "default" {
     name = "http"
     port = 8080
   }
-
-  # external IP ephemeral
-
 
   auto_healing_policies {
     health_check      = google_compute_health_check.autohealing.id
@@ -300,7 +317,6 @@ resource "google_compute_backend_service" "default" {
 
 }
 
-// This NAT config allowed instances to access the internet, but did not allow them to be accessed from the internet, which was a requirement for ICE to work.
 # // Need a NAT gateway to allow instances to access the internet.
 # // The NAT requires a few other network resources (router, subnetwork, etc.) that are defined below.
 # resource "google_compute_router_nat" "default" {

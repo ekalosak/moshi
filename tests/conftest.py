@@ -144,7 +144,7 @@ def Sink() -> "Sink":
 
 
 @pytest.fixture
-def status_fn() -> Callable[str, None]:
+def status_fn() -> Callable[[str], None]:
     fn = lambda x: print(f"Status: {x}")
     return fn
 

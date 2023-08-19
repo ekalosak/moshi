@@ -186,6 +186,9 @@ class WebRTCAdapter:
             except asyncio.CancelledError as e:
                 logger.info("Cancelled.")
                 break
+            except aiortc.exceptions.InvalidStateError as e:
+                logger.info("DataChannel closed.")
+                break
             except Exception as e:
                 import traceback
 
@@ -193,7 +196,6 @@ class WebRTCAdapter:
                 logger.error(traceback.format_exc())
                 self._send_error("internal")
                 break
-        self._send_status("bye")
         utils.log.splash("bye")
 
     async def __main(self):

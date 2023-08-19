@@ -5,12 +5,13 @@ export PATH="$PYENV_ROOT/bin:$PATH" && \
 echo "👋 I am: $(whoami)" && \
 echo "👉 PATH: $PATH" && \
 eval "$(pyenv init -)" && \
-echo "👉 PYENV: $(command -v pyenv)" && \
+echo "👉 PYENV: $(pyenv --version)" && \
 echo "🔧 Activating Python virtual environment..." && \
 pyenv activate moshi && \
 echo "✅ Python virtual environment activated!" && \
-echo "👉 PYTHON3: $(command -v python3)" && \
-echo "👉 GUNICORN: $(command -v gunicorn)" && \
+echo "👉 PYTHON3: $(python3 -V)" && \
+echo "👉 GUNICORN: $(gunicorn --version)" && \
+echo "👉 MOSHI: $(python3 -c 'import moshi; print(moshi.__version__)')" && \
 echo "🔧 Running Moshi..." && \
 GOOGLE_PROJECT_ID=moshi-3 \
 MLOGLEVEL=TRACE \

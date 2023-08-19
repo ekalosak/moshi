@@ -10,6 +10,7 @@ from starlette.responses import Response
 
 from moshi import __version__ as moshi_version
 from moshi.utils.log import setup_loguru
+from moshi.utils import secrets
 from .auth import firebase_auth
 from .routes import offer
 
@@ -29,6 +30,7 @@ app.add_event_handler("shutdown", on_shutdown)
 async def on_startup():
     logger.debug("Starting up...")
     setup_loguru()
+    await secrets.login_openai()
     logger.info("Started up.")
 
 

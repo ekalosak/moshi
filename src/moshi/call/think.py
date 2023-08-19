@@ -16,16 +16,8 @@ OPENAI_COMPLETION_MODEL = Model(
     os.getenv("OPENAI_COMPLETION_MODEL", "text-davinci-002")
 )
 logger.info(f"Using completion model: {OPENAI_COMPLETION_MODEL}")
-OPENAI_APIKEY_SECRET = os.getenv("OPENAI_APIKEY_SECRET", "openai-apikey-0")
-logger.info(f"Using API key from: {OPENAI_APIKEY_SECRET}")
 
 logger.success("Loaded!")
-
-
-async def _setup_api_key():
-    if not openai.api_key:
-        openai.api_key = await secrets.get_secret(OPENAI_APIKEY_SECRET)
-        logger.info("Set OpenAI API key")
 
 
 def _get_type_of_model(model: Model) -> ModelType:
@@ -163,7 +155,7 @@ async def completion_from_assistant(
     assert n > 0 and isinstance(n, int)
     if n > 1:
         logger.warning(f"Generating many responses at once can be costly: n={n}")
-    await _setup_api_key()
+    await secrets.login_openai()
     msg_contents = []
     if _get_type_of_model(model) == ModelType.CHAT:
         payload = _chat_completion_payload_from_messages(messages)

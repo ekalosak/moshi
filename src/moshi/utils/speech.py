@@ -10,6 +10,7 @@ from google.cloud.texttospeech import Voice
 from loguru import logger
 
 from . import audio
+from moshi.utils import secrets
 
 GOOGLE_SPEECH_SYNTHESIS_TIMEOUT = int(os.getenv("GOOGLE_SPEECH_SYNTHESIS_TIMEOUT", 5))
 logger.info(f"Using speech synth timeout: {GOOGLE_SPEECH_SYNTHESIS_TIMEOUT}")
@@ -108,6 +109,7 @@ async def synthesize(text: str, voice: Voice, rate: int = 24000) -> AudioFrame:
 
 
 async def transcribe(audio_frame: AudioFrame, language: str = None) -> str:
+    await secrets.login_openai()
     _, fp = tempfile.mkstemp(suffix=".wav")
     try:
         audio.write_audio_frame_to_wav(audio_frame, fp)

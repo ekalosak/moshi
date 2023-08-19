@@ -4,11 +4,14 @@ import os
 
 from google.cloud import secretmanager
 from loguru import logger
+import openai
 
 from moshi.utils import gcloud
 
 SECRET_TIMEOUT = os.getenv("MOSHISECRETTIMEOUT", 2)
 logger.info(f"Using SECRET_TIMEOUT={SECRET_TIMEOUT}")
+OPENAI_APIKEY_SECRET = os.getenv("OPENAI_APIKEY_SECRET", "openai-apikey-0")
+logger.info(f"Using API key from: {OPENAI_APIKEY_SECRET}")
 
 gsecretclient = contextvars.ContextVar("gsecretclient")
 
@@ -56,3 +59,8 @@ async def get_secret(
     logger.trace(f"Secret length: {len(secret)}")
     logger.trace(f"Secret type: {type(secret)}")
     return secret
+
+async def login_openai():
+    if not openai.api_key:
+        openai.api_key = await get_secret(OPENAI_APIKEY_SECRET)
+        logger.info("Set OpenAI API key")

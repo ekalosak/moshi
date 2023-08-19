@@ -23,7 +23,9 @@ logger.success("Loaded!")
 
 
 async def _setup_api_key():
-    openai.api_key = await secrets.get_secret(OPENAI_APIKEY_SECRET)
+    if not openai.api_key:
+        openai.api_key = await secrets.get_secret(OPENAI_APIKEY_SECRET)
+        logger.info("Set OpenAI API key")
 
 
 def _get_type_of_model(model: Model) -> ModelType:
@@ -161,6 +163,7 @@ async def completion_from_assistant(
     assert n > 0 and isinstance(n, int)
     if n > 1:
         logger.warning(f"Generating many responses at once can be costly: n={n}")
+    await _setup_api_key()
     msg_contents = []
     if _get_type_of_model(model) == ModelType.CHAT:
         payload = _chat_completion_payload_from_messages(messages)

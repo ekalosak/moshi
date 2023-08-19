@@ -42,6 +42,7 @@ class BaseActivity(ABC, BaseModel):
     """An Activity provides a prompt for a conversation and the database wrapper."""
 
     activity_type: ActivityType
+    __update_transcript_task: asyncio.Task = None
     __transcript: Transcript = None
     __cid: str = None
     __character: Character = None
@@ -69,6 +70,11 @@ class BaseActivity(ABC, BaseModel):
 
     def add_msg(self, msg: Message):
         self.__transcript.messages.append(msg)
+        logger.debug("Updating transcript in Firestore with best effort.")
+        if self.__update_transcript_task:
+            if self.__update_transcript_task.cancel():
+                logger.warning("Cancelled previous update transcript task.")
+        self.__update_transcript_task = asyncio.create_task(self.__save())
 
     @logger.catch
     async def start(self):
@@ -80,7 +86,14 @@ class BaseActivity(ABC, BaseModel):
 
     async def stop(self):
         """Save the transcript to Firestore."""
+        logger.info("Stopping activity...")
+        if self.__update_transcript_task:
+            if self.__update_transcript_task.cancel():
+                logger.warning("Cancelled previous update transcript task.")
+        logger.debug("Saving transcript to Firestore...")
         await self.__save()
+        logger.debug("Saved transcript to Firestore.")
+        logger.success("Activity stopped!")
 
     async def _translate_prompt(self) -> list[Message]:
         """Translate the prompt into the user's target language. Timeout handled by caller. Requires a profile to be set."""
@@ -127,7 +140,7 @@ class BaseActivity(ABC, BaseModel):
             logger.debug(f"Saving conversation document...")
             try:
                 await doc_ref.set(self.__transcript.asdict())
-                logger.success(f"Updated conversation document!")
+                logger.success(f"Saved conversation document!")
             except asyncio.CancelledError:
                 logger.debug(f"Cancelled saving conversation document.")
 

@@ -13,12 +13,12 @@ auth-install:
 bake:
 	@echo "🍳 Baking moshi image..."
 	(cd ops/packer && packer build moshi-server.pkr.hcl)
-	@echo "🍳 Baked."
+	@echo "🍳✅ Baked."
 
 bake-base:
 	@echo "🍳 Baking base image..."
 	(cd ops/packer && packer build debian11-python3.pkr.hcl)
-	@echo "🍳 Baked."
+	@echo "🍳✅ Baked."
 
 build-install:
 	@echo "📦 Installing build tools..."

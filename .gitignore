@@ -1,7 +1,7 @@
 build/
 dist/
 logs/
-credentials/
+creds/
 htmlcov/
 .coverage
 *creds.js

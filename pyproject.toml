@@ -1,6 +1,6 @@
 [project]
 name = "moshi"
-version = "23.8.19"
+version = "23.8.20"
 description = "Moshi is a spoken language tutor."
 readme = "README.md"
 requires-python = ">=3.7"

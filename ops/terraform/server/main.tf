@@ -51,7 +51,7 @@ resource "google_compute_target_https_proxy" "default" {
   description = "This target HTTPS proxy is used to route traffic to Moshi media server instances."
 
   url_map          = google_compute_url_map.default.self_link
-  ssl_certificates = ["projects/moshi-3/global/sslCertificates/moshi-srv-ssl"]
+  ssl_certificates = ["projects/moshi-3/global/sslCertificates/moshi-ssl-cert"]
 }
 
 

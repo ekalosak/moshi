@@ -7,6 +7,13 @@ Dev uses the latest VM image from the `moshi-srv` family.
 
 The only IaC that's not in this `ops/` directory are the GitHub Actions in `./github/workflows` and the `Makefile`.
 
+# Hacks
+
+## Reusing this LB for moshi-website as well
+For now, some of the `moshi-web` static website is integrated here (I don't want to pay for two LBs).
+Soon, this `moshi-srv` ops will be moved to `moshi-infra` along with the .tf from `-web`, but until then, please note
+that there are some hardcoded ID values pointing to `-web` components, especially in the `server/main.tf`.
+
 # Runbook
 
 ## First time on a brand new GCP project

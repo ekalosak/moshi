@@ -42,15 +42,6 @@ resource "google_compute_global_forwarding_rule" "default" {
 
 }
 
-# // forwarding rule for UDP traffic
-# resource "google_compute_global_forwarding_rule" "udp" {
-#   // https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_global_forwarding_rule
-#   provider              = google-beta
-#   name                  = "moshi-srv-fwd-udp"
-#   description           = "This forwarding rule is used to route UDP traffic to Moshi media server instances."
-#   target                = google_compute_target_udp_proxy.udp.self_link
-
-
 resource "google_compute_target_https_proxy" "default" {
   # https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_target_https_proxy
   // The target https proxy terminates HTTPS connections from clients. A forwarding rule directs traffic to the proxy, then the proxy uses a URL map to decide how to direct traffic to a backend.
@@ -106,13 +97,10 @@ resource "google_compute_url_map" "default" {
   name        = "moshi-srv-um"
   description = "This URL map is used to route call traffic to Moshi media server instances."
 
-  default_url_redirect {
-    host_redirect  = "dev.chatmoshi.com"
-    https_redirect = true
-    path_redirect  = "/"
-    strip_query    = true
-  }
+  # www.chatmoshi.com
+  default_service = "projects/moshi-3/global/backendBuckets/moshi-web-bb"
 
+  # dev.chatmoshi.com
   host_rule {
     hosts        = ["dev.chatmoshi.com"]
     path_matcher = "com-chatmoshi-dev"
@@ -325,23 +313,3 @@ resource "google_compute_backend_service" "default" {
 
 
 }
-
-# // Need a NAT gateway to allow instances to access the internet.
-# // The NAT requires a few other network resources (router, subnetwork, etc.) that are defined below.
-# resource "google_compute_router_nat" "default" {
-#   # https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_router_nat
-#   // - Static Port Allocation, NOT Dynamic
-#   // - Endpoint-Independent Mapping
-#   provider                           = google-beta
-#   name                               = "moshi-srv-nat"
-#   router                             = google_compute_router.default.name
-#   nat_ip_allocate_option             = "AUTO_ONLY"
-#   source_subnetwork_ip_ranges_to_nat = "ALL_SUBNETWORKS_ALL_IP_RANGES"
-# }
-# resource "google_compute_router" "default" {
-#   // https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_router
-#   provider    = google-beta
-#   name        = "moshi-srv-router"
-#   description = "This router is used to support the NAT required by Moshi server instances to access the Internet."
-#   network     = google_compute_network.default.self_link
-# }

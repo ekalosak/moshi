@@ -97,7 +97,7 @@ resource "google_compute_url_map" "default" {
   name        = "moshi-srv-um"
   description = "This URL map is used to route call traffic to Moshi media server instances."
 
-  # www.chatmoshi.com
+  # www.chatmoshi.com etc.
   default_service = "projects/moshi-3/global/backendBuckets/moshi-web-bb"
 
   # dev.chatmoshi.com

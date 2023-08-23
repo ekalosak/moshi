@@ -97,21 +97,21 @@ resource "google_compute_url_map" "default" {
   description = "This URL map is used to route call traffic to Moshi media server instances."
 
   default_url_redirect {
-    host_redirect          = "chatmoshi.com"
-    https_redirect         = true
-    strip_query            = true
+    host_redirect  = "chatmoshi.com"
+    https_redirect = true
+    strip_query    = true
     redirect_response_code = "FOUND"
   }
   host_rule {
     hosts        = ["dev.chatmoshi.com"]
-    path_matcher = "com-chatmoshi-dev"
+    path_matcher = "dev-api"
   }
   host_rule {
-    hosts        = ["chatmoshi.com", "www.chatmoshi.com"]
-    path_matcher = "com-chatmoshi-www"
+    hosts = ["chatmoshi.com", "www.chatmoshi.com"]
+    path_matcher = "public-website"
   }
   path_matcher {
-    name = "com-chatmoshi-www"
+    name = "public-website"
     default_url_redirect {
       https_redirect = true
       host_redirect  = "chatmoshi.com"
@@ -124,7 +124,7 @@ resource "google_compute_url_map" "default" {
     }
   }
   path_matcher {
-    name = "com-chatmoshi-dev"
+    name = "dev-api"
     default_url_redirect {
       https_redirect = true
       host_redirect  = "dev.chatmoshi.com"

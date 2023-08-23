@@ -44,11 +44,10 @@ resource "google_compute_global_forwarding_rule" "default" {
 
 resource "google_compute_target_https_proxy" "default" {
   # https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_target_https_proxy
-  // The target https proxy terminates HTTPS connections from clients. A forwarding rule directs traffic to the proxy, then the proxy uses a URL map to decide how to direct traffic to a backend.
   # https://cloud.google.com/load-balancing/docs/https#target-proxies
   provider    = google-beta
   name        = "moshi-srv-thp"
-  description = "This target HTTPS proxy is used to route traffic to Moshi media server instances."
+  description = "This is used to route traffic to Moshi media server instances."
 
   url_map          = google_compute_url_map.default.self_link
   ssl_certificates = ["projects/moshi-3/global/sslCertificates/moshi-ssl-cert"]
@@ -97,13 +96,32 @@ resource "google_compute_url_map" "default" {
   name        = "moshi-srv-um"
   description = "This URL map is used to route call traffic to Moshi media server instances."
 
-  # www.chatmoshi.com etc.
-  default_service = "projects/moshi-3/global/backendBuckets/moshi-web-bb"
-
-  # dev.chatmoshi.com
+  default_url_redirect {
+    host_redirect          = "chatmoshi.com"
+    https_redirect         = true
+    strip_query            = true
+    redirect_response_code = "FOUND"
+  }
   host_rule {
     hosts        = ["dev.chatmoshi.com"]
     path_matcher = "com-chatmoshi-dev"
+  }
+  host_rule {
+    hosts        = ["chatmoshi.com", "www.chatmoshi.com"]
+    path_matcher = "com-chatmoshi-www"
+  }
+  path_matcher {
+    name = "com-chatmoshi-www"
+    default_url_redirect {
+      https_redirect = true
+      host_redirect  = "chatmoshi.com"
+      path_redirect  = "/"
+      strip_query    = true
+    }
+    path_rule {
+      paths   = ["*"]
+      service = "projects/moshi-3/global/backendBuckets/moshi-web-bb"
+    }
   }
   path_matcher {
     name = "com-chatmoshi-dev"
@@ -119,8 +137,6 @@ resource "google_compute_url_map" "default" {
     }
   }
 }
-
-
 
 // SERVICE ACCOUNT
 resource "google_project_iam_member" "logging-write" {

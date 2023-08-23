@@ -97,9 +97,9 @@ resource "google_compute_url_map" "default" {
   description = "This URL map is used to route call traffic to Moshi media server instances."
 
   default_url_redirect {
-    host_redirect  = "chatmoshi.com"
-    https_redirect = true
-    strip_query    = true
+    host_redirect          = "chatmoshi.com"
+    https_redirect         = true
+    strip_query            = true
     redirect_response_code = "FOUND"
   }
   host_rule {
@@ -107,7 +107,7 @@ resource "google_compute_url_map" "default" {
     path_matcher = "dev-api"
   }
   host_rule {
-    hosts = ["chatmoshi.com", "www.chatmoshi.com"]
+    hosts        = ["chatmoshi.com", "www.chatmoshi.com"]
     path_matcher = "public-website"
   }
   path_matcher {
@@ -121,6 +121,15 @@ resource "google_compute_url_map" "default" {
     path_rule {
       paths   = ["*"]
       service = "projects/moshi-3/global/backendBuckets/moshi-web-bb"
+      route_action {
+        cors_policy {
+          allow_credentials = false
+          allow_origins     = ["https://chatmoshi.com", "https://www.chatmoshi.com"]
+          allow_methods     = ["GET", "OPTIONS"]
+          allow_headers     = ["Content-Type"]
+          disabled          = false
+        }
+      }
     }
   }
   path_matcher {
@@ -134,6 +143,15 @@ resource "google_compute_url_map" "default" {
     path_rule {
       paths   = ["/", "/healthz", "/version", "/call/*"]
       service = google_compute_backend_service.default.self_link
+      route_action {
+        cors_policy {
+          allow_credentials = true
+          allow_origins     = ["https://dev.chatmoshi.com"]
+          allow_methods     = ["GET", "POST", "OPTIONS"]
+          allow_headers     = ["Content-Type", "Authorization"]
+          disabled          = false
+        }
+      }
     }
   }
 }

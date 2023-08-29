@@ -210,7 +210,7 @@ class WebRTCAdapter:
             usr_audio: AudioFrame = await self.detector.get_utterance()
         except detector.UtteranceTooLongError as e:
             logger.debug("User utterance too long, prompting user to try again.")
-            self._send_error("uttTooLong")
+            # self._send_error("uttTooLong")  # NOTE unhandled errors on the client side cause a hang-up!
             return
         except detector.UtteranceNotStartedError as e:
             logger.trace(f"User didn't start speaking {self.__utt_start_count} times.")
@@ -225,7 +225,7 @@ class WebRTCAdapter:
         # if usr_audio is very short, send a message to the user and try again
         if usr_audio.samples < 1028:  # TODO set to min frame size
             logger.debug(f"User utterance too short: {usr_audio.samples}")
-            self._send_error("uttTooShort")
+            # self._send_error("uttTooShort")
             return
 
         self.__utt_start_count = 0

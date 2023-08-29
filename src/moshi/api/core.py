@@ -14,6 +14,7 @@ from moshi.utils import secrets
 from .auth import firebase_auth
 from .routes import offer
 
+setup_loguru()
 app = FastAPI()
 
 
@@ -29,7 +30,6 @@ app.add_event_handler("shutdown", on_shutdown)
 @logger.catch
 async def on_startup():
     logger.debug("Starting up...")
-    setup_loguru()
     await secrets.login_openai()
     logger.info("Started up.")
 
@@ -70,29 +70,12 @@ logger.warning(
     "Using permissive CORS for development. In production, only allow requests from known origins."
 )
 
-# NOTE healthz must not require auth so health checks can be performed
-logger.debug("Adding healthz route...")
-@logger.catch
 @app.get("/healthz")
 def healthz():
     return "OK"
-logger.debug("healthz route added.")
 
-logger.debug("Adding version route...")
-@logger.catch
 @app.get("/version")
 def version(user: dict = Depends(firebase_auth)):
     return moshi_version
-logger.debug("version route added.")
 
-
-logger.debug("Adding index route...")
-@logger.catch
-@app.get("/")
-def index():
-    return "Under construction..."
-logger.debug("index route added.")
-
-logger.debug("Adding offer route...")
 app.include_router(offer.router)
-logger.debug("offer route added.")

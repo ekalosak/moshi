@@ -31,6 +31,7 @@ dependencies = [
   "google-cloud-translate",
   "google-cloud-texttospeech",
   "google-cloud-secret-manager",
+  "iso639",
   "jinja2",
   "loguru",
   "numpy",

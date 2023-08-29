@@ -152,15 +152,19 @@ class Unstructured(BaseActivity):
         messages = [
             Message(
                 Role.SYS,
-                "Use this language to respond.",
+                "When appropriate, change the topic of the conversation to one from the following categories: sports, science, entertainment, and technology.",
             ),
             Message(
                 Role.SYS,
-                "Do not break the fourth wall.",
+                "Keep the language clean. Don't be rude.",
             ),
             Message(
                 Role.SYS,
-                "You are the second character, and I am the first character.",
+                "Be engaging! Suggest new topics, ask questions, and keep the conversation going. Don't respond with 'I don't know' or 'I don't care.' or non-sequiturs.",
+            ),
+            Message(
+                Role.SYS,
+                "Do not respond with 'what do you think?' or 'what do you want to talk about?' Come up with a topic yourself.",
             ),
         ]
         return messages

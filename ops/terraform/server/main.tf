@@ -42,25 +42,15 @@ resource "google_compute_global_forwarding_rule" "default" {
 
 }
 
-# // forwarding rule for UDP traffic
-# resource "google_compute_global_forwarding_rule" "udp" {
-#   // https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_global_forwarding_rule
-#   provider              = google-beta
-#   name                  = "moshi-srv-fwd-udp"
-#   description           = "This forwarding rule is used to route UDP traffic to Moshi media server instances."
-#   target                = google_compute_target_udp_proxy.udp.self_link
-
-
 resource "google_compute_target_https_proxy" "default" {
   # https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_target_https_proxy
-  // The target https proxy terminates HTTPS connections from clients. A forwarding rule directs traffic to the proxy, then the proxy uses a URL map to decide how to direct traffic to a backend.
   # https://cloud.google.com/load-balancing/docs/https#target-proxies
   provider    = google-beta
   name        = "moshi-srv-thp"
-  description = "This target HTTPS proxy is used to route traffic to Moshi media server instances."
+  description = "This is used to route traffic to Moshi media server instances."
 
   url_map          = google_compute_url_map.default.self_link
-  ssl_certificates = ["projects/moshi-3/global/sslCertificates/moshi-srv-ssl"]
+  ssl_certificates = ["projects/moshi-3/global/sslCertificates/moshi-ssl-cert"]
 }
 
 
@@ -107,18 +97,43 @@ resource "google_compute_url_map" "default" {
   description = "This URL map is used to route call traffic to Moshi media server instances."
 
   default_url_redirect {
-    https_redirect = true
-    host_redirect  = "dev.chatmoshi.com"
-    path_redirect  = "/"
-    strip_query    = true
+    host_redirect          = "chatmoshi.com"
+    https_redirect         = true
+    strip_query            = true
+    redirect_response_code = "FOUND"
   }
-
   host_rule {
     hosts        = ["dev.chatmoshi.com"]
-    path_matcher = "all"
+    path_matcher = "dev-api"
+  }
+  host_rule {
+    hosts        = ["chatmoshi.com", "www.chatmoshi.com"]
+    path_matcher = "public-website"
   }
   path_matcher {
-    name = "all"
+    name = "public-website"
+    default_url_redirect {
+      https_redirect = true
+      host_redirect  = "chatmoshi.com"
+      path_redirect  = "/"
+      strip_query    = true
+    }
+    path_rule {
+      paths   = ["*"]
+      service = "projects/moshi-3/global/backendBuckets/moshi-web-bb"
+      route_action {
+        cors_policy {
+          allow_credentials = false
+          allow_origins     = ["https://chatmoshi.com", "https://www.chatmoshi.com"]
+          allow_methods     = ["GET", "OPTIONS"]
+          allow_headers     = ["Content-Type"]
+          disabled          = false
+        }
+      }
+    }
+  }
+  path_matcher {
+    name = "dev-api"
     default_url_redirect {
       https_redirect = true
       host_redirect  = "dev.chatmoshi.com"
@@ -128,11 +143,18 @@ resource "google_compute_url_map" "default" {
     path_rule {
       paths   = ["/", "/healthz", "/version", "/call/*"]
       service = google_compute_backend_service.default.self_link
+      route_action {
+        cors_policy {
+          allow_credentials = true
+          allow_origins     = ["https://dev.chatmoshi.com"]
+          allow_methods     = ["GET", "POST", "OPTIONS"]
+          allow_headers     = ["Content-Type", "Authorization"]
+          disabled          = false
+        }
+      }
     }
   }
 }
-
-
 
 // SERVICE ACCOUNT
 resource "google_project_iam_member" "logging-write" {
@@ -325,23 +347,3 @@ resource "google_compute_backend_service" "default" {
 
 
 }
-
-# // Need a NAT gateway to allow instances to access the internet.
-# // The NAT requires a few other network resources (router, subnetwork, etc.) that are defined below.
-# resource "google_compute_router_nat" "default" {
-#   # https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_router_nat
-#   // - Static Port Allocation, NOT Dynamic
-#   // - Endpoint-Independent Mapping
-#   provider                           = google-beta
-#   name                               = "moshi-srv-nat"
-#   router                             = google_compute_router.default.name
-#   nat_ip_allocate_option             = "AUTO_ONLY"
-#   source_subnetwork_ip_ranges_to_nat = "ALL_SUBNETWORKS_ALL_IP_RANGES"
-# }
-# resource "google_compute_router" "default" {
-#   // https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_router
-#   provider    = google-beta
-#   name        = "moshi-srv-router"
-#   description = "This router is used to support the NAT required by Moshi server instances to access the Internet."
-#   network     = google_compute_network.default.self_link
-# }

@@ -24,7 +24,7 @@ from . import (
 )
 
 MAX_RESPONSE_TOKENS = 64
-MAX_LOOPS = 30
+MAX_LOOPS = 25
 STOP_TOKENS = ["1:"]  # USER is 1, ASSISTANT is 2
 UTT_START_MAX_COUNT = 2
 assert MAX_LOOPS >= 0
@@ -169,7 +169,7 @@ class WebRTCAdapter:
             if i == MAX_LOOPS and MAX_LOOPS != 0:
                 msg = f"Reached MAX_LOOPS={MAX_LOOPS}, i={i}"
                 logger.info(msg)
-                self._send_status("maxlen", msg)
+                self._send_status("maxlen")
                 break
             logger.debug(f"Starting loop {i}")
             with logger.contextualize(i=i):
@@ -210,7 +210,7 @@ class WebRTCAdapter:
             usr_audio: AudioFrame = await self.detector.get_utterance()
         except detector.UtteranceTooLongError as e:
             logger.debug("User utterance too long, prompting user to try again.")
-            await self._send_error("utttoolong")
+            # self._send_error("uttTooLong")  # NOTE unhandled errors on the client side cause a hang-up!
             return
         except detector.UtteranceNotStartedError as e:
             logger.trace(f"User didn't start speaking {self.__utt_start_count} times.")
@@ -220,6 +220,13 @@ class WebRTCAdapter:
             logger.trace("Prompting user to try again.")
             await self._speak_to_user("Are you still there?")
             self.__utt_start_count += 1
+            return
+
+        # if usr_audio is very short, send a message to the user and try again
+        too_short = int(44100 * 0.2)   # NOTE openai's min is 0.1 seconds
+        if usr_audio.samples < too_short:
+            logger.error(f"User utterance too short: {usr_audio.samples}")
+            # self._send_error("uttTooShort")
             return
 
         self.__utt_start_count = 0
@@ -277,6 +284,10 @@ class WebRTCAdapter:
             max_tokens=MAX_RESPONSE_TOKENS,
             stop=STOP_TOKENS,
             user=ctx.user.get().uid,
+            presence_penalty=1.6,
+            frequency_penalty=1.6,
+            # temperature=1.6,
+            top_p=0.9,
         )
         assert len(ast_txts) == 1
         ast_txt = ast_txts[0]

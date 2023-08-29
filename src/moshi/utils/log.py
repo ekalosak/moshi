@@ -63,7 +63,10 @@ def _to_log_dict(rec: dict) -> dict:
 def setup_loguru():
     logger.remove()
     log_format = LOGURU_FORMAT + " | <g><d>{extra}</d></g>"
-    logger.level("TRANSCRIPT", no=15, color="<magenta>", icon="📜")
+    try:
+        logger.level("TRANSCRIPT", no=15, color="<magenta>", icon="📜")
+    except:
+        pass
     print(f"Logging configuration: LEVEL={LOG_LEVEL} STDOUT={STDOUT_LOGS}, FILE={FILE_LOGS}, CLOUD={CLOUD_LOGS}")
     if STDOUT_LOGS:
         print("Adding stdout logger...")
